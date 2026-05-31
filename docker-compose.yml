@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: talentos-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: talentos
+      POSTGRES_USER: talentos
+      POSTGRES_PASSWORD: talentos
+    ports:
+      - "5432:5432"
+    volumes:
+      - talentos_postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U talentos -d talentos"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  talentos_postgres_data:
