@@ -105,6 +105,13 @@ enum InterviewType {
   FINAL
 }
 
+enum CalendarSyncStatus {
+  NOT_SYNCED
+  SYNCED
+  CANCELLED
+  FAILED
+}
+
 enum EmailStatus {
   DRAFT
   QUEUED
@@ -147,6 +154,7 @@ model Organization {
   applications    Application[]
   auditEvents     AuditEvent[]
   automationRules AutomationRule[]
+  calendarConnections CalendarConnection[]
   candidates      Candidate[]
   candidateNotes  CandidateNote[]
   emailMessages   EmailMessage[]
@@ -174,6 +182,7 @@ model User {
   updatedAt    DateTime  @updatedAt
 
   auditEvents         AuditEvent[]
+  calendarConnections CalendarConnection[]
   candidateNotes      CandidateNote[]
   createdJobs         Job[]           @relation("JobCreatedBy")
   memberships         Membership[]
@@ -438,7 +447,12 @@ model Interview {
   endsAt          DateTime
   timezone        String          @default("America/Sao_Paulo")
   meetingUrl      String?
+  calendarProvider String?
   calendarEventId String?
+  calendarEventUrl String?
+  calendarSyncStatus CalendarSyncStatus @default(NOT_SYNCED)
+  calendarSyncedAt DateTime?
+  calendarSyncError String?
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 
@@ -450,6 +464,29 @@ model Interview {
 
   @@index([organizationId, startsAt])
   @@index([candidateId])
+}
+
+model CalendarConnection {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  provider       String   @default("google")
+  connectedEmail String?
+  calendarId     String   @default("primary")
+  accessToken    String
+  refreshToken   String?
+  scope          String?
+  tokenType      String?
+  expiresAt      DateTime?
+  connectedAt    DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId, provider])
+  @@index([organizationId])
+  @@index([userId])
 }
 
 model EmailTemplate {

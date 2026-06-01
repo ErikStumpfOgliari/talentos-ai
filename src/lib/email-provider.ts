@@ -1,4 +1,4 @@
-import { Resend } from "resend";
+import { Resend, type WebhookEventPayload } from "resend";
 import { EmailStatus } from "@/generated/prisma/client";
 
 type SendTransactionalEmailInput = {
@@ -14,8 +14,19 @@ type SendTransactionalEmailResult = {
   status: EmailStatus;
 };
 
+type VerifyResendWebhookInput = {
+  payload: string;
+  signature: string | null;
+  timestamp: string | null;
+  webhookId: string | null;
+};
+
 function getResendApiKey() {
   return process.env.RESEND_API_KEY?.trim() || null;
+}
+
+function getResendWebhookSecret() {
+  return process.env.RESEND_WEBHOOK_SECRET?.trim() || null;
 }
 
 export function getEmailProviderStatus() {
@@ -25,7 +36,41 @@ export function getEmailProviderStatus() {
     configured: Boolean(apiKey),
     from: process.env.EMAIL_FROM?.trim() || "TalentOS AI <onboarding@resend.dev>",
     provider: apiKey ? "resend" : "local-outbox",
+    webhookConfigured: Boolean(getResendWebhookSecret()),
   };
+}
+
+export function verifyResendWebhook({
+  payload,
+  signature,
+  timestamp,
+  webhookId,
+}: VerifyResendWebhookInput): WebhookEventPayload {
+  const webhookSecret = getResendWebhookSecret();
+
+  if (!webhookSecret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("RESEND_WEBHOOK_SECRET is required in production.");
+    }
+
+    return JSON.parse(payload) as WebhookEventPayload;
+  }
+
+  if (!signature || !timestamp || !webhookId) {
+    throw new Error("Missing Resend webhook signature headers.");
+  }
+
+  const resend = new Resend(getResendApiKey() ?? undefined);
+
+  return resend.webhooks.verify({
+    payload,
+    headers: {
+      id: webhookId,
+      signature,
+      timestamp,
+    },
+    webhookSecret,
+  });
 }
 
 function escapeHtml(value: string) {

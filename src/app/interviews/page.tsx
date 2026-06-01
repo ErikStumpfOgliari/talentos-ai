@@ -13,7 +13,7 @@ import {
   Users,
   Video,
 } from "lucide-react";
-import { createInterview, updateInterviewStatus } from "@/app/interviews/actions";
+import { createInterview, disconnectGoogleCalendar, updateInterviewStatus } from "@/app/interviews/actions";
 import { recruitingRoles, requireRole } from "@/lib/auth";
 import { getInterviewsPageData } from "@/lib/interviews-data";
 
@@ -69,14 +69,107 @@ function Field({
   );
 }
 
+function getCalendarNoticeTone(calendar: string) {
+  if (calendar === "synced" || calendar === "connected") {
+    return "border-emerald-200 bg-emerald-50 text-emerald-800";
+  }
+
+  if (calendar === "cancelled" || calendar === "already_removed") {
+    return "border-sky-200 bg-sky-50 text-sky-800";
+  }
+
+  if (calendar === "failed" || calendar === "missing-config" || calendar === "state-mismatch" || calendar === "cancel_failed") {
+    return "border-rose-200 bg-rose-50 text-rose-800";
+  }
+
+  return "border-amber-200 bg-amber-50 text-amber-800";
+}
+
+function getCalendarNoticeMessage(calendar: string) {
+  if (calendar === "connected") {
+    return "Google Calendar connected.";
+  }
+
+  if (calendar === "disconnected") {
+    return "Google Calendar disconnected.";
+  }
+
+  if (calendar === "synced") {
+    return "Interview synced to Google Calendar.";
+  }
+
+  if (calendar === "cancelled") {
+    return "Google Calendar event cancelled.";
+  }
+
+  if (calendar === "already_removed") {
+    return "Interview updated. The Google Calendar event was already removed.";
+  }
+
+  if (calendar === "calendar_not_connected") {
+    return "Interview scheduled. Connect Google Calendar to sync future events.";
+  }
+
+  if (calendar === "missing_organizer") {
+    return "Interview scheduled. Assign an organizer to sync with Google Calendar.";
+  }
+
+  if (calendar === "missing-config") {
+    return "Google Calendar OAuth is missing client configuration.";
+  }
+
+  if (calendar === "state-mismatch") {
+    return "Google Calendar connection failed state validation.";
+  }
+
+  if (calendar === "cancel_failed") {
+    return "Interview status updated, but Google Calendar cancellation failed.";
+  }
+
+  if (calendar === "failed") {
+    return "Interview scheduled, but Google Calendar sync failed.";
+  }
+
+  return "Interview scheduled without calendar sync.";
+}
+
+function getCalendarBadge(status: string) {
+  if (status === "SYNCED") {
+    return {
+      label: "Google Calendar",
+      tone: "bg-emerald-50 text-emerald-700",
+    };
+  }
+
+  if (status === "CANCELLED") {
+    return {
+      label: "Calendar cancelled",
+      tone: "bg-sky-50 text-sky-700",
+    };
+  }
+
+  if (status === "FAILED") {
+    return {
+      label: "Calendar failed",
+      tone: "bg-rose-50 text-rose-700",
+    };
+  }
+
+  return null;
+}
+
 export default async function InterviewsPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ created?: string; updated?: string }>;
+  searchParams?: Promise<{ calendar?: string; created?: string; updated?: string }>;
 }) {
   const params = await searchParams;
-  await requireRole(recruitingRoles);
-  const data = await getInterviewsPageData();
+  const session = await requireRole(recruitingRoles);
+  const data = await getInterviewsPageData({
+    organizationId: session.organization.id,
+    userId: session.user.id,
+  });
+  const calendarNotice = params?.calendar ? getCalendarNoticeMessage(params.calendar) : null;
 
   return (
     <main className="min-h-screen bg-slate-100 text-slate-950">
@@ -128,6 +221,11 @@ export default async function InterviewsPage({
               Interview status updated.
             </div>
           ) : null}
+          {params?.calendar && calendarNotice ? (
+            <div className={`rounded-lg border px-4 py-3 text-sm font-semibold ${getCalendarNoticeTone(params.calendar)}`}>
+              {calendarNotice}
+            </div>
+          ) : null}
 
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {[
@@ -160,7 +258,7 @@ export default async function InterviewsPage({
             <div className="grid gap-3">
               {data.interviews.map((interview) => (
                 <article className="rounded-lg border border-slate-200 p-4" key={interview.id}>
-                  <div className="grid gap-4 xl:grid-cols-[1fr_260px]">
+                  <div className="grid gap-4 xl:grid-cols-[1fr_280px]">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <h2 className="text-base font-semibold text-slate-950">{interview.title}</h2>
@@ -190,6 +288,15 @@ export default async function InterviewsPage({
                         <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600">{interview.type}</span>
                         <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600">{interview.durationMinutes} min</span>
                         <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600">{interview.stage}</span>
+                        {getCalendarBadge(interview.calendarSyncStatus) ? (
+                          <span
+                            className={`rounded-md px-2 py-1 text-xs font-medium ${
+                              getCalendarBadge(interview.calendarSyncStatus)?.tone
+                            }`}
+                          >
+                            {getCalendarBadge(interview.calendarSyncStatus)?.label}
+                          </span>
+                        ) : null}
                       </div>
                     </div>
 
@@ -208,6 +315,28 @@ export default async function InterviewsPage({
                           <LinkIcon className="h-4 w-4" aria-hidden="true" />
                           Meeting link
                         </a>
+                      ) : null}
+                      {interview.calendarEventUrl && interview.calendarSyncStatus !== "CANCELLED" ? (
+                        <a
+                          className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                          href={interview.calendarEventUrl}
+                          rel="noreferrer"
+                          target="_blank"
+                        >
+                          <CalendarDays className="h-4 w-4" aria-hidden="true" />
+                          Calendar event
+                        </a>
+                      ) : null}
+                      {interview.calendarSyncError ? (
+                        <div className="rounded-lg bg-rose-50 p-3">
+                          <p className="text-xs font-semibold uppercase text-rose-500">Calendar sync</p>
+                          <p className="mt-1 text-sm font-semibold text-rose-800">Needs attention</p>
+                        </div>
+                      ) : interview.calendarSyncedAt ? (
+                        <div className="rounded-lg bg-slate-50 p-3">
+                          <p className="text-xs font-semibold uppercase text-slate-500">Calendar sync</p>
+                          <p className="mt-1 text-sm font-semibold text-slate-950">{interview.calendarSyncedAt}</p>
+                        </div>
                       ) : null}
                       <form action={updateInterviewStatus} className="grid grid-cols-[1fr_auto] gap-2">
                         <input name="interviewId" type="hidden" value={interview.id} />
@@ -241,6 +370,47 @@ export default async function InterviewsPage({
         </section>
 
         <aside className="space-y-5">
+          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="mb-4 flex items-center gap-2">
+              <CalendarDays className="h-4 w-4 text-emerald-700" aria-hidden="true" />
+              <p className="text-sm font-semibold text-slate-950">Google Calendar</p>
+            </div>
+            <div className="grid gap-2">
+              <div className="rounded-lg bg-slate-50 p-3">
+                <p className="text-xs font-semibold uppercase text-slate-500">Status</p>
+                <p className="mt-1 text-sm font-semibold text-slate-950">
+                  {data.calendarConnection.connected ? "Connected" : data.calendarConnection.configured ? "Ready to connect" : "Missing OAuth config"}
+                </p>
+              </div>
+              <div className="rounded-lg bg-slate-50 p-3">
+                <p className="text-xs font-semibold uppercase text-slate-500">Account</p>
+                <p className="mt-1 break-words text-sm font-semibold text-slate-950">{data.calendarConnection.connectedEmail}</p>
+              </div>
+              {data.calendarConnection.connected ? (
+                <form action={disconnectGoogleCalendar}>
+                  <input name="next" type="hidden" value="/interviews" />
+                  <button
+                    className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                    type="submit"
+                  >
+                    Disconnect
+                  </button>
+                </form>
+              ) : (
+                <a
+                  className={`inline-flex h-10 items-center justify-center gap-2 rounded-lg px-3 text-sm font-semibold transition ${
+                    data.calendarConnection.configured
+                      ? "bg-slate-950 text-white hover:bg-slate-800"
+                      : "cursor-not-allowed bg-slate-200 text-slate-500"
+                  }`}
+                  href={data.calendarConnection.configured ? "/api/integrations/google-calendar/connect" : "#"}
+                >
+                  Connect Google Calendar
+                </a>
+              )}
+            </div>
+          </section>
+
           <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm" id="schedule">
             <div className="mb-4 flex items-center gap-2">
               <Video className="h-4 w-4 text-sky-700" aria-hidden="true" />
@@ -296,7 +466,7 @@ export default async function InterviewsPage({
                 <input className={inputClass} name="timezone" defaultValue={data.timezone} />
               </Field>
               <Field label="Meeting URL">
-                <input className={inputClass} name="meetingUrl" placeholder="https://meet.google.com/..." type="url" />
+                <input className={inputClass} name="meetingUrl" placeholder="Leave empty for Google Meet" type="url" />
               </Field>
               <button
                 className="mt-1 inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"

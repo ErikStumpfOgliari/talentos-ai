@@ -1,4 +1,4 @@
-import { defaultOrganizationSlug } from "@/lib/organization";
+import { isGoogleCalendarConfigured } from "@/lib/google-calendar";
 import { prisma } from "@/lib/prisma";
 
 export type InterviewsPageInterview = {
@@ -17,6 +17,11 @@ export type InterviewsPageInterview = {
   organizer: string;
   matchScore: number;
   stage: string;
+  calendarEventUrl: string | null;
+  calendarEventId: string | null;
+  calendarSyncError: string | null;
+  calendarSyncStatus: string;
+  calendarSyncedAt: string | null;
 };
 
 export type InterviewsPageApplication = {
@@ -35,6 +40,11 @@ export type InterviewsPageOrganizer = {
 };
 
 export type InterviewsPageData = {
+  calendarConnection: {
+    connected: boolean;
+    connectedEmail: string;
+    configured: boolean;
+  };
   organizationName: string;
   timezone: string;
   interviews: InterviewsPageInterview[];
@@ -73,6 +83,10 @@ function formatTime(date: Date, timezone: string) {
   }).format(date);
 }
 
+function formatDateTime(date: Date, timezone: string) {
+  return `${formatDate(date, timezone)} ${formatTime(date, timezone)}`;
+}
+
 function minutesBetween(start: Date, end: Date) {
   return Math.max(15, Math.round((end.getTime() - start.getTime()) / 60000));
 }
@@ -88,12 +102,25 @@ function isSameLocalDay(left: Date, right: Date, timezone: string) {
   return formatter.format(left) === formatter.format(right);
 }
 
-export async function getInterviewsPageData(): Promise<InterviewsPageData> {
+export async function getInterviewsPageData({
+  organizationId,
+  userId,
+}: {
+  organizationId: string;
+  userId: string;
+}): Promise<InterviewsPageData> {
   const organization = await prisma.organization.findUnique({
     where: {
-      slug: defaultOrganizationSlug,
+      id: organizationId,
     },
     include: {
+      calendarConnections: {
+        where: {
+          provider: "google",
+          userId,
+        },
+        take: 1,
+      },
       applications: {
         where: {
           status: "ACTIVE",
@@ -140,6 +167,11 @@ export async function getInterviewsPageData(): Promise<InterviewsPageData> {
 
   if (!organization) {
     return {
+      calendarConnection: {
+        connected: false,
+        connectedEmail: "Not connected",
+        configured: isGoogleCalendarConfigured(),
+      },
       organizationName: "No organization",
       timezone: "America/Sao_Paulo",
       interviews: [],
@@ -155,6 +187,7 @@ export async function getInterviewsPageData(): Promise<InterviewsPageData> {
   }
 
   const now = new Date();
+  const calendarConnection = organization.calendarConnections[0];
   const interviews = organization.interviews.map((interview) => ({
     id: interview.id,
     title: interview.title,
@@ -171,9 +204,19 @@ export async function getInterviewsPageData(): Promise<InterviewsPageData> {
     organizer: interview.organizer?.name ?? "Unassigned",
     matchScore: interview.application.matchScore ?? 0,
     stage: interview.application.stage?.name ?? "Unassigned",
+    calendarEventUrl: interview.calendarEventUrl,
+    calendarEventId: interview.calendarEventId,
+    calendarSyncError: interview.calendarSyncError,
+    calendarSyncStatus: interview.calendarSyncStatus,
+    calendarSyncedAt: interview.calendarSyncedAt ? formatDateTime(interview.calendarSyncedAt, interview.timezone) : null,
   }));
 
   return {
+    calendarConnection: {
+      connected: Boolean(calendarConnection),
+      connectedEmail: calendarConnection?.connectedEmail ?? "Not connected",
+      configured: isGoogleCalendarConfigured(),
+    },
     organizationName: organization.name,
     timezone: organization.timezone,
     interviews,

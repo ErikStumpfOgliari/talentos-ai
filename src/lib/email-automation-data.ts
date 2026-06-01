@@ -73,6 +73,7 @@ export type EmailAutomationPageData = {
     providerConfigured: boolean;
     providerFrom: string;
     providerName: string;
+    webhookConfigured: boolean;
     queued: number;
     sent: number;
   };
@@ -200,6 +201,7 @@ export async function getEmailAutomationPageData(): Promise<EmailAutomationPageD
         providerConfigured: providerStatus.configured,
         providerFrom: providerStatus.from,
         providerName: providerStatus.provider,
+        webhookConfigured: providerStatus.webhookConfigured,
         queued: 0,
         sent: 0,
       },
@@ -269,6 +271,7 @@ export async function getEmailAutomationPageData(): Promise<EmailAutomationPageD
       providerConfigured: providerStatus.configured,
       providerFrom: providerStatus.from,
       providerName: providerStatus.provider,
+      webhookConfigured: providerStatus.webhookConfigured,
       queued: organization.emailMessages.filter((message) => message.status === "QUEUED").length,
       sent: organization.emailMessages.filter((message) => message.status === "SENT" || message.status === "DELIVERED").length,
     },

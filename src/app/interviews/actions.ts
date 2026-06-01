@@ -4,12 +4,14 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
   AutomationTrigger,
+  CalendarSyncStatus,
   InterviewStatus,
   InterviewType,
   PipelineCategory,
 } from "@/generated/prisma/client";
 import { queueAutomationEmails } from "@/lib/email-automation";
 import { recruitingRoles, requireRole } from "@/lib/auth";
+import { createGoogleCalendarEvent, deleteGoogleCalendarEvent, disconnectGoogleCalendarConnection } from "@/lib/google-calendar";
 import { prisma } from "@/lib/prisma";
 
 function readString(formData: FormData, key: string) {
@@ -101,6 +103,67 @@ export async function createInterview(formData: FormData) {
       meetingUrl: readOptionalString(formData, "meetingUrl"),
     },
   });
+  let calendarStatus = "not_connected";
+
+  try {
+    const calendarEvent = await createGoogleCalendarEvent({
+      application,
+      endsAt: interview.endsAt,
+      interviewId: interview.id,
+      meetingUrl: interview.meetingUrl,
+      organizationId: organization.id,
+      organizerId,
+      startsAt: interview.startsAt,
+      timezone: interview.timezone,
+      title,
+    });
+
+    if (calendarEvent.skipped) {
+      calendarStatus = calendarEvent.reason ?? "skipped";
+    } else {
+      calendarStatus = "synced";
+      await prisma.interview.update({
+        where: {
+          id: interview.id,
+        },
+        data: {
+          calendarEventUrl: calendarEvent.eventUrl,
+          calendarEventId: calendarEvent.eventId,
+          calendarProvider: "google",
+          calendarSyncedAt: new Date(),
+          calendarSyncError: null,
+          calendarSyncStatus: CalendarSyncStatus.SYNCED,
+          meetingUrl: calendarEvent.meetingUrl,
+        },
+      });
+    }
+  } catch (error) {
+    calendarStatus = "failed";
+    await prisma.interview.update({
+      where: {
+        id: interview.id,
+      },
+      data: {
+        calendarSyncError: error instanceof Error ? error.message : "Unknown Google Calendar sync error.",
+        calendarSyncStatus: CalendarSyncStatus.FAILED,
+      },
+    });
+    await prisma.auditEvent.create({
+      data: {
+        organizationId: organization.id,
+        actorId: session.user.id,
+        jobId: application.jobId,
+        candidateId: application.candidateId,
+        applicationId: application.id,
+        action: "calendar.google_sync_failed",
+        entityType: "interview",
+        entityId: interview.id,
+        metadata: {
+          error: error instanceof Error ? error.message : "Unknown Google Calendar sync error.",
+        },
+      },
+    });
+  }
 
   await prisma.application.update({
     where: {
@@ -123,6 +186,7 @@ export async function createInterview(formData: FormData) {
       entityType: "interview",
       entityId: interview.id,
       metadata: {
+        calendarStatus,
         title,
         type,
         startsAt: startsAt.toISOString(),
@@ -152,7 +216,34 @@ export async function createInterview(formData: FormData) {
   revalidatePath("/candidates");
   revalidatePath("/email-automation");
 
-  redirect("/interviews?created=1");
+  redirect(`/interviews?created=1&calendar=${calendarStatus}`);
+}
+
+export async function disconnectGoogleCalendar(formData: FormData) {
+  const session = await requireRole(recruitingRoles);
+  const organization = session.organization;
+  const next = readOptionalString(formData, "next") ?? "/interviews";
+
+  await disconnectGoogleCalendarConnection({
+    organizationId: organization.id,
+    userId: session.user.id,
+  });
+
+  await prisma.auditEvent.create({
+    data: {
+      organizationId: organization.id,
+      actorId: session.user.id,
+      action: "calendar.google_disconnected",
+      entityType: "calendar_connection",
+      entityId: session.user.id,
+      metadata: {
+        provider: "google",
+      },
+    },
+  });
+
+  revalidatePath("/interviews");
+  redirect(`${next}?calendar=disconnected`);
 }
 
 export async function updateInterviewStatus(formData: FormData) {
@@ -176,13 +267,79 @@ export async function updateInterviewStatus(formData: FormData) {
     throw new Error("Interview not found for this organization.");
   }
 
+  let calendarStatus: string | null = null;
+  const interviewUpdate: {
+    calendarSyncedAt?: Date;
+    calendarSyncError?: string | null;
+    calendarSyncStatus?: CalendarSyncStatus;
+    status: InterviewStatus;
+  } = {
+    status,
+  };
+
+  if (
+    status === InterviewStatus.CANCELLED &&
+    interview.status !== InterviewStatus.CANCELLED &&
+    interview.calendarEventId &&
+    interview.calendarSyncStatus === CalendarSyncStatus.SYNCED
+  ) {
+    try {
+      const deletion = await deleteGoogleCalendarEvent({
+        calendarEventId: interview.calendarEventId,
+        organizationId: organization.id,
+        organizerId: interview.organizerId,
+      });
+
+      calendarStatus = deletion.reason === "already_removed" ? "already_removed" : "cancelled";
+      interviewUpdate.calendarSyncedAt = new Date();
+      interviewUpdate.calendarSyncError = null;
+      interviewUpdate.calendarSyncStatus = CalendarSyncStatus.CANCELLED;
+
+      await prisma.auditEvent.create({
+        data: {
+          organizationId: organization.id,
+          actorId: session.user.id,
+          jobId: interview.jobId,
+          candidateId: interview.candidateId,
+          applicationId: interview.applicationId,
+          action: "calendar.google_cancelled",
+          entityType: "interview",
+          entityId: interview.id,
+          metadata: {
+            calendarEventId: interview.calendarEventId,
+            reason: deletion.reason,
+          },
+        },
+      });
+    } catch (error) {
+      calendarStatus = "cancel_failed";
+      interviewUpdate.calendarSyncError = error instanceof Error ? error.message : "Unknown Google Calendar cancellation error.";
+      interviewUpdate.calendarSyncStatus = CalendarSyncStatus.FAILED;
+
+      await prisma.auditEvent.create({
+        data: {
+          organizationId: organization.id,
+          actorId: session.user.id,
+          jobId: interview.jobId,
+          candidateId: interview.candidateId,
+          applicationId: interview.applicationId,
+          action: "calendar.google_cancel_failed",
+          entityType: "interview",
+          entityId: interview.id,
+          metadata: {
+            calendarEventId: interview.calendarEventId,
+            error: error instanceof Error ? error.message : "Unknown Google Calendar cancellation error.",
+          },
+        },
+      });
+    }
+  }
+
   await prisma.interview.update({
     where: {
       id: interview.id,
     },
-    data: {
-      status,
-    },
+    data: interviewUpdate,
   });
 
   await prisma.auditEvent.create({
@@ -196,6 +353,7 @@ export async function updateInterviewStatus(formData: FormData) {
       entityType: "interview",
       entityId: interview.id,
       metadata: {
+        calendarStatus,
         status,
       },
     },
@@ -204,5 +362,5 @@ export async function updateInterviewStatus(formData: FormData) {
   revalidatePath("/");
   revalidatePath("/interviews");
 
-  redirect("/interviews?updated=1");
+  redirect(`/interviews?updated=1${calendarStatus ? `&calendar=${calendarStatus}` : ""}`);
 }

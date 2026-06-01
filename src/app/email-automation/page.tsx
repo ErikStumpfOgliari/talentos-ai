@@ -333,6 +333,10 @@ export default async function EmailAutomationPage({
                 <p className="text-xs font-semibold uppercase text-slate-500">From</p>
                 <p className="mt-1 break-words text-sm font-semibold text-slate-950">{data.stats.providerFrom}</p>
               </div>
+              <div className="rounded-lg bg-slate-50 p-3">
+                <p className="text-xs font-semibold uppercase text-slate-500">Webhook endpoint</p>
+                <p className="mt-1 break-words text-sm font-semibold text-slate-950">/api/webhooks/resend</p>
+              </div>
               <span
                 className={
                   data.stats.providerConfigured
@@ -341,6 +345,15 @@ export default async function EmailAutomationPage({
                 }
               >
                 {data.stats.providerConfigured ? "Ready to send" : "Outbox mode"}
+              </span>
+              <span
+                className={
+                  data.stats.webhookConfigured
+                    ? "rounded-md bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700"
+                    : "rounded-md bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700"
+                }
+              >
+                {data.stats.webhookConfigured ? "Webhooks verified" : "Webhook secret missing"}
               </span>
             </div>
           </section>
