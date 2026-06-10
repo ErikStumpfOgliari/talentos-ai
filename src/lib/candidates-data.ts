@@ -90,11 +90,9 @@ function formatEducation(
   return [firstEducation.degree, firstEducation.field, firstEducation.institution].filter(Boolean).join(", ");
 }
 
-export async function getCandidatesPageData(): Promise<CandidatesPageData> {
+export async function getCandidatesPageData(organizationId?: string): Promise<CandidatesPageData> {
   const organization = await prisma.organization.findUnique({
-    where: {
-      slug: defaultOrganizationSlug,
-    },
+    where: organizationId ? { id: organizationId } : { slug: defaultOrganizationSlug },
     include: {
       candidates: {
         include: {

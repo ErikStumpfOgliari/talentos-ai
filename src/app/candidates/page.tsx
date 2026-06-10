@@ -1,6 +1,5 @@
 import Link from "next/link";
 import {
-  ArrowLeft,
   BadgeCheck,
   BriefcaseBusiness,
   ChevronRight,
@@ -11,19 +10,118 @@ import {
   Plus,
   Search,
   Sparkles,
-  Upload,
   Users,
 } from "lucide-react";
 import { createCandidate, parseResumeUpload } from "@/app/candidates/actions";
+import { ResumeParserForm } from "@/components/resume-parser-form";
+import { WorkspacePageShell } from "@/components/workspace-page-shell";
 import { recruitingRoles, requireRole } from "@/lib/auth";
-import { getCandidatesPageData } from "@/lib/candidates-data";
+import { getCandidatesPageData, type CandidatesPageJob } from "@/lib/candidates-data";
 
 export const dynamic = "force-dynamic";
 
 const inputClass =
-  "h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400";
+  "h-10 w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400";
 const textareaClass =
-  "min-h-24 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm leading-6 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400";
+  "min-h-24 w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm leading-6 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400";
+
+function AddCandidateForm({ jobs }: { jobs: CandidatesPageJob[] }) {
+  return (
+    <form action={createCandidate} className="grid gap-3">
+      <Field label="Name">
+        <input className={inputClass} name="name" placeholder="Juliana Pereira" required />
+      </Field>
+      <div className="grid gap-3">
+        <Field label="Email">
+          <input className={inputClass} name="email" placeholder="juliana@example.com" type="email" />
+        </Field>
+        <Field label="Phone">
+          <input className={inputClass} name="phone" placeholder="+55 11 90000-0000" />
+        </Field>
+      </div>
+      <div className="grid gap-3">
+        <Field label="Title">
+          <input className={inputClass} name="currentTitle" placeholder="AI Product Engineer" />
+        </Field>
+        <Field label="Location">
+          <input className={inputClass} name="location" placeholder="Sao Paulo, BR" />
+        </Field>
+      </div>
+      <div className="grid gap-3">
+        <Field label="Source">
+          <select className={inputClass} name="source" defaultValue="MANUAL">
+            <option value="MANUAL">Manual</option>
+            <option value="LINKEDIN">LinkedIn</option>
+            <option value="REFERRAL">Referral</option>
+            <option value="INBOUND">Inbound</option>
+            <option value="INDEED">Indeed</option>
+            <option value="TALENT_POOL">Talent pool</option>
+            <option value="CAREERS_PAGE">Careers page</option>
+            <option value="OTHER">Other</option>
+          </select>
+        </Field>
+        <Field label="Experience">
+          <input className={inputClass} min="0" name="yearsExperience" placeholder="6" type="number" />
+        </Field>
+      </div>
+      <div className="grid gap-3">
+        <Field label="Currency">
+          <input className={inputClass} maxLength={3} name="currency" placeholder="USD" />
+        </Field>
+        <Field label="Salary">
+          <input className={inputClass} min="0" name="salaryExpectation" placeholder="75000" type="number" />
+        </Field>
+        <Field label="Availability">
+          <input className={inputClass} name="availability" placeholder="2 weeks" />
+        </Field>
+      </div>
+      <Field label="Apply to job">
+        <select className={inputClass} name="jobId" defaultValue="">
+          <option value="">Only add to database</option>
+          {jobs.map((job) => (
+            <option key={job.id} value={job.id}>
+              {job.title} ({job.status})
+            </option>
+          ))}
+        </select>
+      </Field>
+      <Field label="Summary">
+        <textarea className={textareaClass} name="summary" placeholder="Short recruiter-facing profile summary." />
+      </Field>
+      <Field label="Skills">
+        <textarea className={textareaClass} name="skills" placeholder={"React\nNode.js\nOpenAI\nPostgreSQL"} />
+      </Field>
+      <div className="grid gap-3">
+        <Field label="Degree">
+          <input className={inputClass} name="degree" placeholder="B.S." />
+        </Field>
+        <Field label="Field">
+          <input className={inputClass} name="field" placeholder="Computer Science" />
+        </Field>
+        <Field label="Institution">
+          <input className={inputClass} name="institution" placeholder="USP" />
+        </Field>
+      </div>
+      <Field label="Resume file name">
+        <input className={inputClass} name="resumeFileName" placeholder="juliana-pereira.pdf" />
+      </Field>
+      <Field label="Resume text">
+        <textarea
+          className={textareaClass}
+          name="resumeText"
+          placeholder="Paste extracted resume text here for now. The resume upload parser can fill this automatically."
+        />
+      </Field>
+      <button
+        className="mt-1 inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:scale-[1.03] hover:bg-slate-800 active:scale-[0.98]"
+        type="submit"
+      >
+        <Plus className="h-4 w-4" aria-hidden="true" />
+        Save candidate
+      </button>
+    </form>
+  );
+}
 
 function Field({
   children,
@@ -67,7 +165,21 @@ function getResumeMessage(status?: string) {
   if (status === "needs-review") {
     return {
       tone: "border-amber-200 bg-amber-50 text-amber-800",
+      message: "Resume saved for review. No structured data was extracted automatically.",
+    };
+  }
+
+  if (status === "openai-not-configured") {
+    return {
+      tone: "border-amber-200 bg-amber-50 text-amber-800",
       message: "Resume saved for review. Configure OPENAI_API_KEY to enable full AI parsing for PDFs.",
+    };
+  }
+
+  if (status === "parse-failed") {
+    return {
+      tone: "border-rose-200 bg-rose-50 text-rose-800",
+      message: "OpenAI parsing failed. The resume was saved; check the parser model, billing, or retry.",
     };
   }
 
@@ -94,49 +206,31 @@ export default async function CandidatesPage({
   searchParams?: Promise<{ resume?: string }>;
 }) {
   const params = await searchParams;
-  await requireRole(recruitingRoles);
-  const data = await getCandidatesPageData();
+  const session = await requireRole(recruitingRoles);
+  const data = await getCandidatesPageData(session.organization.id);
   const resumeMessage = getResumeMessage(params?.resume);
 
   return (
-    <main className="min-h-screen bg-slate-100 text-slate-950">
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-4 md:flex-row md:items-center md:justify-between lg:px-6">
-          <div className="min-w-0">
-            <Link className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition hover:text-slate-950" href="/">
-              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-              Dashboard
-            </Link>
-            <div className="mt-3 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-950 text-white">
-                <Users className="h-5 w-5" aria-hidden="true" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase text-slate-500">{data.organizationName}</p>
-                <h1 className="text-2xl font-semibold text-slate-950">Candidates</h1>
-              </div>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Link
-              className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-              href="/jobs"
-            >
-              <BriefcaseBusiness className="h-4 w-4" aria-hidden="true" />
-              Jobs
-            </Link>
-            <a
-              className="inline-flex h-10 items-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-              href="#new-candidate"
-            >
-              <Plus className="h-4 w-4" aria-hidden="true" />
-              Candidate
-            </a>
-          </div>
-        </div>
-      </header>
-
-      <div className="mx-auto grid max-w-7xl gap-5 px-4 py-5 lg:grid-cols-[1fr_390px] lg:px-6">
+    <WorkspacePageShell
+      actions={
+        <Link
+          className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:scale-[1.03] hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98]"
+          href="/jobs"
+        >
+          <BriefcaseBusiness className="h-4 w-4" aria-hidden="true" />
+          Jobs
+        </Link>
+      }
+      icon={<Users className="h-5 w-5" aria-hidden="true" />}
+      organizationName={data.organizationName}
+      rightPanel={<AddCandidateForm jobs={data.jobs} />}
+      rightPanelButtonIcon={<Plus className="h-4 w-4" aria-hidden="true" />}
+      rightPanelButtonLabel="Candidate"
+      rightPanelDescription="Add a manual profile to the CRM."
+      rightPanelTitle="Add candidate"
+      title="Candidates"
+    >
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
         <section className="space-y-5">
           {resumeMessage ? (
             <div className={`rounded-lg border px-4 py-3 text-sm font-semibold ${resumeMessage.tone}`}>
@@ -167,7 +261,7 @@ export default async function CandidatesPage({
                 <p className="text-sm font-semibold text-slate-950">Talent database</p>
                 <p className="mt-1 text-xs text-slate-500">Profiles, parsed resume state, skills, and active applications.</p>
               </div>
-              <label className="relative min-w-[240px]">
+              <label className="relative w-full min-w-0 md:max-w-xs">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input
                   className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-slate-400"
@@ -180,7 +274,7 @@ export default async function CandidatesPage({
             <div className="grid gap-3">
               {data.candidates.map((candidate) => (
                 <article className="rounded-lg border border-slate-200 p-4" key={candidate.id}>
-                  <div className="grid gap-4 xl:grid-cols-[1fr_260px]">
+                  <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_260px]">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <Link className="text-base font-semibold text-slate-950 transition hover:text-slate-600" href={`/candidates/${candidate.id}`}>
@@ -274,158 +368,9 @@ export default async function CandidatesPage({
           <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm" id="resume-parser">
             <div className="mb-4 flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-violet-700" aria-hidden="true" />
-              <p className="text-sm font-semibold text-slate-950">AI resume parser</p>
+              <p className="text-sm font-semibold text-slate-950">Smart resume parser</p>
             </div>
-            <form action={parseResumeUpload} className="grid gap-3">
-              <Field label="Resume file">
-                <input
-                  accept=".pdf,.txt,.md,text/plain,application/pdf"
-                  className="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-3 py-3 text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-slate-950 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white"
-                  name="resumeFile"
-                  type="file"
-                />
-              </Field>
-              <Field label="Fallback resume text">
-                <textarea
-                  className={textareaClass}
-                  name="resumeText"
-                  placeholder="Optional for PDFs. Required for TXT-free local fallback when no OpenAI key is configured."
-                />
-              </Field>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <Field label="Source">
-                  <select className={inputClass} name="source" defaultValue="INBOUND">
-                    <option value="INBOUND">Inbound</option>
-                    <option value="LINKEDIN">LinkedIn</option>
-                    <option value="REFERRAL">Referral</option>
-                    <option value="CAREERS_PAGE">Careers page</option>
-                    <option value="MANUAL">Manual</option>
-                    <option value="OTHER">Other</option>
-                  </select>
-                </Field>
-                <Field label="Apply to job">
-                  <select className={inputClass} name="jobId" defaultValue="">
-                    <option value="">Only add to database</option>
-                    {data.jobs.map((job) => (
-                      <option key={job.id} value={job.id}>
-                        {job.title}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-              </div>
-              <button
-                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-                type="submit"
-              >
-                <Sparkles className="h-4 w-4" aria-hidden="true" />
-                Parse resume
-              </button>
-            </form>
-          </section>
-
-          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm" id="new-candidate">
-            <div className="mb-4 flex items-center gap-2">
-              <Upload className="h-4 w-4 text-emerald-700" aria-hidden="true" />
-              <p className="text-sm font-semibold text-slate-950">Add candidate</p>
-            </div>
-            <form action={createCandidate} className="grid gap-3">
-              <Field label="Name">
-                <input className={inputClass} name="name" placeholder="Juliana Pereira" required />
-              </Field>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <Field label="Email">
-                  <input className={inputClass} name="email" placeholder="juliana@example.com" type="email" />
-                </Field>
-                <Field label="Phone">
-                  <input className={inputClass} name="phone" placeholder="+55 11 90000-0000" />
-                </Field>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <Field label="Title">
-                  <input className={inputClass} name="currentTitle" placeholder="AI Product Engineer" />
-                </Field>
-                <Field label="Location">
-                  <input className={inputClass} name="location" placeholder="Sao Paulo, BR" />
-                </Field>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <Field label="Source">
-                  <select className={inputClass} name="source" defaultValue="MANUAL">
-                    <option value="MANUAL">Manual</option>
-                    <option value="LINKEDIN">LinkedIn</option>
-                    <option value="REFERRAL">Referral</option>
-                    <option value="INBOUND">Inbound</option>
-                    <option value="INDEED">Indeed</option>
-                    <option value="TALENT_POOL">Talent pool</option>
-                    <option value="CAREERS_PAGE">Careers page</option>
-                    <option value="OTHER">Other</option>
-                  </select>
-                </Field>
-                <Field label="Experience">
-                  <input className={inputClass} min="0" name="yearsExperience" placeholder="6" type="number" />
-                </Field>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-3">
-                <Field label="Currency">
-                  <input className={inputClass} maxLength={3} name="currency" placeholder="USD" />
-                </Field>
-                <Field label="Salary">
-                  <input className={inputClass} min="0" name="salaryExpectation" placeholder="75000" type="number" />
-                </Field>
-                <Field label="Availability">
-                  <input className={inputClass} name="availability" placeholder="2 weeks" />
-                </Field>
-              </div>
-              <Field label="Apply to job">
-                <select className={inputClass} name="jobId" defaultValue="">
-                  <option value="">Only add to database</option>
-                  {data.jobs.map((job) => (
-                    <option key={job.id} value={job.id}>
-                      {job.title} ({job.status})
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="Summary">
-                <textarea
-                  className={textareaClass}
-                  name="summary"
-                  placeholder="Short recruiter-facing profile summary."
-                />
-              </Field>
-              <Field label="Skills">
-                <textarea className={textareaClass} name="skills" placeholder={"React\nNode.js\nOpenAI\nPostgreSQL"} />
-              </Field>
-              <div className="grid gap-3 sm:grid-cols-3">
-                <Field label="Degree">
-                  <input className={inputClass} name="degree" placeholder="B.S." />
-                </Field>
-                <Field label="Field">
-                  <input className={inputClass} name="field" placeholder="Computer Science" />
-                </Field>
-                <Field label="Institution">
-                  <input className={inputClass} name="institution" placeholder="USP" />
-                </Field>
-              </div>
-              <Field label="Resume file name">
-                <input className={inputClass} name="resumeFileName" placeholder="juliana-pereira.pdf" />
-              </Field>
-              <Field label="Resume text">
-                <textarea
-                  className={textareaClass}
-                  name="resumeText"
-                  placeholder="Paste extracted resume text here for now. The next module will replace this with real file upload and AI parsing."
-                />
-              </Field>
-              <button
-                className="mt-1 inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-                type="submit"
-              >
-                <Plus className="h-4 w-4" aria-hidden="true" />
-                Save candidate
-              </button>
-            </form>
+            <ResumeParserForm action={parseResumeUpload} jobs={data.jobs} />
           </section>
 
           <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
@@ -446,6 +391,6 @@ export default async function CandidatesPage({
           </section>
         </aside>
       </div>
-    </main>
+    </WorkspacePageShell>
   );
 }

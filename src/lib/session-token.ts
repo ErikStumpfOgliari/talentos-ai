@@ -4,6 +4,7 @@ import { SESSION_MAX_AGE_SECONDS } from "@/lib/auth-constants";
 type SessionPayload = {
   exp: number;
   iat: number;
+  organizationId?: string;
   userId: string;
 };
 
@@ -32,10 +33,11 @@ function timingSafeStringEqual(left: string, right: string) {
   return timingSafeEqual(leftBuffer, rightBuffer);
 }
 
-export function createSessionToken(userId: string) {
+export function createSessionToken(userId: string, organizationId?: string) {
   const now = Math.floor(Date.now() / 1000);
   const payload: SessionPayload = {
     userId,
+    organizationId,
     iat: now,
     exp: now + SESSION_MAX_AGE_SECONDS,
   };

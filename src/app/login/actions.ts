@@ -2,7 +2,6 @@
 
 import { redirect } from "next/navigation";
 import { MembershipStatus } from "@/generated/prisma/client";
-import { defaultOrganizationSlug } from "@/lib/organization";
 import { prisma } from "@/lib/prisma";
 import { setSessionCookie } from "@/lib/auth";
 import { verifyPassword } from "@/lib/passwords";
@@ -18,7 +17,7 @@ function normalizeEmail(email: string) {
 
 function getSafeNext(value: string) {
   if (!value || !value.startsWith("/") || value.startsWith("//")) {
-    return "/";
+    return "/dashboard";
   }
 
   return value;
@@ -45,9 +44,12 @@ export async function login(formData: FormData) {
       memberships: {
         where: {
           status: MembershipStatus.ACTIVE,
-          organization: {
-            slug: defaultOrganizationSlug,
-          },
+        },
+        include: {
+          organization: true,
+        },
+        orderBy: {
+          createdAt: "asc",
         },
         take: 1,
       },
@@ -73,6 +75,6 @@ export async function login(formData: FormData) {
     },
   });
 
-  await setSessionCookie(user.id);
+  await setSessionCookie(user.id, user.memberships[0].organizationId);
   redirect(next);
 }

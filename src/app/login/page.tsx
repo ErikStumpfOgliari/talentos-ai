@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
   BriefcaseBusiness,
@@ -12,11 +13,11 @@ import { getCurrentSession } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 
 const inputClass =
-  "h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400";
+  "h-11 w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400";
 
 function getSafeNext(value?: string) {
   if (!value || !value.startsWith("/") || value.startsWith("//")) {
-    return "/";
+    return "/dashboard";
   }
 
   return value;
@@ -30,14 +31,14 @@ export default async function LoginPage({
   const session = await getCurrentSession();
 
   if (session) {
-    redirect("/");
+    redirect("/dashboard");
   }
 
   const params = await searchParams;
   const next = getSafeNext(params?.next);
 
   return (
-    <main className="grid min-h-screen bg-slate-100 text-slate-950 lg:grid-cols-[1fr_480px]">
+    <main className="grid min-h-screen bg-slate-100 text-slate-950 lg:grid-cols-[minmax(0,1fr)_480px]">
       <section className="hidden min-h-screen flex-col justify-between bg-slate-950 p-10 text-white lg:flex">
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-white text-slate-950">
@@ -71,11 +72,11 @@ export default async function LoginPage({
           </div>
         </div>
 
-        <p className="text-xs text-slate-500">Northstar Recruiting demo tenant</p>
+        <p className="text-xs text-slate-500">TalentOS workspace access</p>
       </section>
 
-      <section className="flex min-h-screen items-center justify-center px-4 py-10">
-        <div className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="flex min-h-screen min-w-0 items-center justify-center overflow-hidden px-4 py-10">
+        <div className="w-full max-w-[22rem] rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:max-w-md sm:p-6">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-950 text-white">
               <LockKeyhole className="h-5 w-5" aria-hidden="true" />
@@ -99,8 +100,8 @@ export default async function LoginPage({
               <input
                 autoComplete="email"
                 className={inputClass}
-                defaultValue="erik@example.com"
                 name="email"
+                placeholder="you@company.com"
                 required
                 type="email"
               />
@@ -110,14 +111,14 @@ export default async function LoginPage({
               <input
                 autoComplete="current-password"
                 className={inputClass}
-                defaultValue="talentos-demo-2026"
                 name="password"
+                placeholder="Your password"
                 required
                 type="password"
               />
             </label>
             <button
-              className="mt-2 inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+              className="mt-2 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800"
               type="submit"
             >
               <ShieldCheck className="h-4 w-4" aria-hidden="true" />
@@ -125,9 +126,12 @@ export default async function LoginPage({
             </button>
           </form>
 
-          <div className="mt-5 rounded-lg bg-slate-50 p-3 text-sm">
-            <p className="font-semibold text-slate-950">Demo owner</p>
-            <p className="mt-1 text-slate-600">erik@example.com / talentos-demo-2026</p>
+          <div className="mt-5 grid gap-2 rounded-lg bg-slate-50 p-3 text-sm">
+            <p className="font-semibold text-slate-950">New company?</p>
+            <p className="text-slate-600">Create a workspace and start as the owner/recruiter.</p>
+            <Link className="font-semibold text-slate-950 hover:text-slate-600" href="/signup">
+              Create workspace
+            </Link>
           </div>
         </div>
       </section>

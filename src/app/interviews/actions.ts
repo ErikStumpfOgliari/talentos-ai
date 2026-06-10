@@ -1,5 +1,6 @@
 "use server";
 
+import { randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
@@ -8,10 +9,17 @@ import {
   InterviewStatus,
   InterviewType,
   PipelineCategory,
+  Prisma,
 } from "@/generated/prisma/client";
+import { buildAvailabilitySettings, clamp, normalizeWorkingDays } from "@/lib/availability";
 import { queueAutomationEmails } from "@/lib/email-automation";
 import { recruitingRoles, requireRole } from "@/lib/auth";
-import { createGoogleCalendarEvent, deleteGoogleCalendarEvent, disconnectGoogleCalendarConnection } from "@/lib/google-calendar";
+import {
+  createGoogleCalendarEvent,
+  deleteGoogleCalendarEvent,
+  disconnectGoogleCalendarConnection,
+  updateGoogleCalendarEvent,
+} from "@/lib/google-calendar";
 import { prisma } from "@/lib/prisma";
 
 function readString(formData: FormData, key: string) {
@@ -25,7 +33,13 @@ function readOptionalString(formData: FormData, key: string) {
 }
 
 function readNumber(formData: FormData, key: string) {
-  const value = Number(readString(formData, key));
+  const rawValue = readString(formData, key);
+
+  if (!rawValue) {
+    return null;
+  }
+
+  const value = Number(rawValue);
   return Number.isFinite(value) ? value : null;
 }
 
@@ -37,6 +51,10 @@ function addMinutes(date: Date, minutes: number) {
   return new Date(date.getTime() + minutes * 60000);
 }
 
+function addDays(date: Date, days: number) {
+  return new Date(date.getTime() + days * 86400000);
+}
+
 function parseDateTime(value: string) {
   const date = new Date(value);
 
@@ -45,6 +63,16 @@ function parseDateTime(value: string) {
   }
 
   return date;
+}
+
+function redirectWithCalendarStatus(calendarStatus: string | null) {
+  redirect(`/interviews?updated=1${calendarStatus ? `&calendar=${calendarStatus}` : ""}`);
+}
+
+function readWorkingDays(formData: FormData) {
+  const values = formData.getAll("workingDays").map((value) => (typeof value === "string" ? value : ""));
+
+  return values.length > 0 ? normalizeWorkingDays(values) : null;
 }
 
 export async function createInterview(formData: FormData) {
@@ -114,6 +142,7 @@ export async function createInterview(formData: FormData) {
       organizationId: organization.id,
       organizerId,
       startsAt: interview.startsAt,
+      status: InterviewStatus.SCHEDULED,
       timezone: interview.timezone,
       title,
     });
@@ -211,12 +240,176 @@ export async function createInterview(formData: FormData) {
     });
   }
 
-  revalidatePath("/");
+  revalidatePath("/dashboard");
   revalidatePath("/interviews");
   revalidatePath("/candidates");
   revalidatePath("/email-automation");
 
   redirect(`/interviews?created=1&calendar=${calendarStatus}`);
+}
+
+export async function createSchedulingLink(formData: FormData) {
+  const session = await requireRole(recruitingRoles);
+  const organization = session.organization;
+  const applicationId = readString(formData, "applicationId");
+  const title = readString(formData, "title") || "Interview";
+  const type = readEnum(InterviewType, readString(formData, "type"), InterviewType.PHONE_SCREEN);
+  const organizerId = readOptionalString(formData, "organizerId") ?? session.user.id;
+  const meetingUrl = readOptionalString(formData, "meetingUrl");
+
+  if (!applicationId) {
+    throw new Error("Application is required to create a scheduling link.");
+  }
+
+  const application = await prisma.application.findFirst({
+    where: {
+      id: applicationId,
+      organizationId: organization.id,
+    },
+    include: {
+      candidate: true,
+      job: true,
+    },
+  });
+
+  if (!application) {
+    throw new Error("Application not found for this organization.");
+  }
+
+  const organizerMembership = await prisma.membership.findFirst({
+    where: {
+      organizationId: organization.id,
+      userId: organizerId,
+      status: "ACTIVE",
+    },
+  });
+
+  if (!organizerMembership) {
+    throw new Error("Organizer must be an active member of this organization.");
+  }
+
+  const organizerAvailability = await prisma.userAvailability.findUnique({
+    where: {
+      organizationId_userId: {
+        organizationId: organization.id,
+        userId: organizerId,
+      },
+    },
+  });
+  const defaults = buildAvailabilitySettings(organizerAvailability, organization.timezone);
+  const workdayStartHour = clamp(readNumber(formData, "workdayStartHour") ?? defaults.workdayStartHour, 0, 23);
+  const workdayEndHour = clamp(readNumber(formData, "workdayEndHour") ?? defaults.workdayEndHour, workdayStartHour + 1, 24);
+  const durationMinutes = clamp(readNumber(formData, "durationMinutes") ?? defaults.defaultDurationMinutes, 15, 240);
+  const timezone = readOptionalString(formData, "timezone") ?? defaults.timezone;
+  const maxDaysAhead = clamp(readNumber(formData, "maxDaysAhead") ?? defaults.maxDaysAhead, 1, 30);
+  const slotIntervalMinutes = clamp(readNumber(formData, "slotIntervalMinutes") ?? defaults.slotIntervalMinutes, 15, 120);
+  const workingDays = readWorkingDays(formData) ?? defaults.workingDays;
+  const bufferBeforeMinutes = clamp(readNumber(formData, "bufferBeforeMinutes") ?? defaults.bufferBeforeMinutes, 0, 240);
+  const bufferAfterMinutes = clamp(readNumber(formData, "bufferAfterMinutes") ?? defaults.bufferAfterMinutes, 0, 240);
+
+  const schedulingLink = await prisma.schedulingLink.create({
+    data: {
+      applicationId: application.id,
+      bufferAfterMinutes,
+      bufferBeforeMinutes,
+      durationMinutes,
+      expiresAt: addDays(new Date(), maxDaysAhead + 2),
+      maxDaysAhead,
+      meetingUrl,
+      organizationId: organization.id,
+      organizerId,
+      slotIntervalMinutes,
+      timezone,
+      title,
+      token: randomBytes(24).toString("base64url"),
+      type,
+      workingDays,
+      workdayEndHour,
+      workdayStartHour,
+    },
+  });
+
+  await prisma.auditEvent.create({
+    data: {
+      organizationId: organization.id,
+      actorId: session.user.id,
+      jobId: application.jobId,
+      candidateId: application.candidateId,
+      applicationId: application.id,
+      action: "scheduling_link.created",
+      entityType: "scheduling_link",
+      entityId: schedulingLink.id,
+      metadata: {
+        durationMinutes,
+        bufferAfterMinutes,
+        bufferBeforeMinutes,
+        maxDaysAhead,
+        organizerId,
+        token: schedulingLink.token,
+        workingDays,
+        workdayEndHour,
+        workdayStartHour,
+      },
+    },
+  });
+
+  revalidatePath("/interviews");
+  redirect("/interviews?scheduling=created");
+}
+
+export async function updateMyAvailability(formData: FormData) {
+  const session = await requireRole(recruitingRoles);
+  const organization = session.organization;
+  const workingDays = readWorkingDays(formData) ?? [];
+  const workdayStartHour = clamp(readNumber(formData, "workdayStartHour") ?? 9, 0, 23);
+  const workdayEndHour = clamp(readNumber(formData, "workdayEndHour") ?? 17, workdayStartHour + 1, 24);
+  const settings = buildAvailabilitySettings(
+    {
+      bufferAfterMinutes: readNumber(formData, "bufferAfterMinutes"),
+      bufferBeforeMinutes: readNumber(formData, "bufferBeforeMinutes"),
+      defaultDurationMinutes: readNumber(formData, "defaultDurationMinutes"),
+      maxDaysAhead: readNumber(formData, "maxDaysAhead"),
+      slotIntervalMinutes: readNumber(formData, "slotIntervalMinutes"),
+      timezone: readOptionalString(formData, "timezone") ?? organization.timezone,
+      workdayEndHour,
+      workdayStartHour,
+      workingDays,
+    },
+    organization.timezone,
+  );
+
+  if (workingDays.length === 0) {
+    throw new Error("Select at least one available day.");
+  }
+
+  const availability = await prisma.userAvailability.upsert({
+    where: {
+      organizationId_userId: {
+        organizationId: organization.id,
+        userId: session.user.id,
+      },
+    },
+    update: settings,
+    create: {
+      ...settings,
+      organizationId: organization.id,
+      userId: session.user.id,
+    },
+  });
+
+  await prisma.auditEvent.create({
+    data: {
+      organizationId: organization.id,
+      actorId: session.user.id,
+      action: "availability.updated",
+      entityType: "user_availability",
+      entityId: availability.id,
+      metadata: settings,
+    },
+  });
+
+  revalidatePath("/interviews");
+  redirect("/interviews?availability=updated");
 }
 
 export async function disconnectGoogleCalendar(formData: FormData) {
@@ -359,8 +552,212 @@ export async function updateInterviewStatus(formData: FormData) {
     },
   });
 
-  revalidatePath("/");
+  revalidatePath("/dashboard");
   revalidatePath("/interviews");
 
   redirect(`/interviews?updated=1${calendarStatus ? `&calendar=${calendarStatus}` : ""}`);
+}
+
+export async function updateInterviewDetails(formData: FormData) {
+  const session = await requireRole(recruitingRoles);
+  const organization = session.organization;
+  const interviewId = readString(formData, "interviewId");
+  const title = readString(formData, "title");
+  const startsAt = parseDateTime(readString(formData, "startsAt"));
+  const durationMinutes = Math.max(15, readNumber(formData, "durationMinutes") ?? 45);
+  const type = readEnum(InterviewType, readString(formData, "type"), InterviewType.PHONE_SCREEN);
+  const status = readEnum(InterviewStatus, readString(formData, "status"), InterviewStatus.SCHEDULED);
+  const organizerId = readOptionalString(formData, "organizerId");
+  const timezone = readOptionalString(formData, "timezone") ?? organization.timezone;
+  const meetingUrl = readOptionalString(formData, "meetingUrl");
+
+  if (!interviewId || !title) {
+    throw new Error("Interview id and title are required.");
+  }
+
+  const interview = await prisma.interview.findFirst({
+    where: {
+      id: interviewId,
+      organizationId: organization.id,
+    },
+    include: {
+      application: {
+        include: {
+          candidate: true,
+          job: true,
+        },
+      },
+    },
+  });
+
+  if (!interview) {
+    throw new Error("Interview not found for this organization.");
+  }
+
+  const endsAt = addMinutes(startsAt, durationMinutes);
+  let calendarStatus: string | null = null;
+  const interviewUpdate: Prisma.InterviewUpdateInput = {
+    endsAt,
+    meetingUrl,
+    organizer: organizerId
+      ? {
+          connect: {
+            id: organizerId,
+          },
+        }
+      : {
+          disconnect: true,
+        },
+    startsAt,
+    status,
+    timezone,
+    title,
+    type,
+  };
+
+  if (status === InterviewStatus.CANCELLED && interview.calendarEventId && interview.calendarSyncStatus === CalendarSyncStatus.SYNCED) {
+    try {
+      const deletion = await deleteGoogleCalendarEvent({
+        calendarEventId: interview.calendarEventId,
+        organizationId: organization.id,
+        organizerId: interview.organizerId,
+      });
+
+      calendarStatus = deletion.reason === "already_removed" ? "already_removed" : "cancelled";
+      interviewUpdate.calendarSyncedAt = new Date();
+      interviewUpdate.calendarSyncError = null;
+      interviewUpdate.calendarSyncStatus = CalendarSyncStatus.CANCELLED;
+
+      await prisma.auditEvent.create({
+        data: {
+          organizationId: organization.id,
+          actorId: session.user.id,
+          jobId: interview.jobId,
+          candidateId: interview.candidateId,
+          applicationId: interview.applicationId,
+          action: "calendar.google_cancelled",
+          entityType: "interview",
+          entityId: interview.id,
+          metadata: {
+            calendarEventId: interview.calendarEventId,
+            reason: deletion.reason,
+            source: "interview_update",
+          },
+        },
+      });
+    } catch (error) {
+      calendarStatus = "cancel_failed";
+      interviewUpdate.calendarSyncError = error instanceof Error ? error.message : "Unknown Google Calendar cancellation error.";
+      interviewUpdate.calendarSyncStatus = CalendarSyncStatus.FAILED;
+
+      await prisma.auditEvent.create({
+        data: {
+          organizationId: organization.id,
+          actorId: session.user.id,
+          jobId: interview.jobId,
+          candidateId: interview.candidateId,
+          applicationId: interview.applicationId,
+          action: "calendar.google_cancel_failed",
+          entityType: "interview",
+          entityId: interview.id,
+          metadata: {
+            calendarEventId: interview.calendarEventId,
+            error: error instanceof Error ? error.message : "Unknown Google Calendar cancellation error.",
+            source: "interview_update",
+          },
+        },
+      });
+    }
+  } else if (status !== InterviewStatus.CANCELLED) {
+    try {
+      const calendarEventInput = {
+        application: interview.application,
+        endsAt,
+        interviewId: interview.id,
+        meetingUrl,
+        organizationId: organization.id,
+        organizerId,
+        startsAt,
+        status,
+        timezone,
+        title,
+      };
+      const calendarEvent =
+        interview.calendarEventId && interview.calendarSyncStatus === CalendarSyncStatus.SYNCED
+          ? await updateGoogleCalendarEvent({
+              ...calendarEventInput,
+              calendarEventId: interview.calendarEventId,
+            })
+          : await createGoogleCalendarEvent(calendarEventInput);
+
+      if (calendarEvent.skipped) {
+        calendarStatus = calendarEvent.reason ?? "skipped";
+      } else {
+        calendarStatus = interview.calendarEventId && interview.calendarSyncStatus === CalendarSyncStatus.SYNCED ? "updated" : "synced";
+        interviewUpdate.calendarEventId = calendarEvent.eventId;
+        interviewUpdate.calendarEventUrl = calendarEvent.eventUrl;
+        interviewUpdate.calendarProvider = "google";
+        interviewUpdate.calendarSyncedAt = new Date();
+        interviewUpdate.calendarSyncError = null;
+        interviewUpdate.calendarSyncStatus = CalendarSyncStatus.SYNCED;
+        interviewUpdate.meetingUrl = calendarEvent.meetingUrl;
+      }
+    } catch (error) {
+      calendarStatus = "update_failed";
+      interviewUpdate.calendarSyncError = error instanceof Error ? error.message : "Unknown Google Calendar update error.";
+      interviewUpdate.calendarSyncStatus = CalendarSyncStatus.FAILED;
+
+      await prisma.auditEvent.create({
+        data: {
+          organizationId: organization.id,
+          actorId: session.user.id,
+          jobId: interview.jobId,
+          candidateId: interview.candidateId,
+          applicationId: interview.applicationId,
+          action: "calendar.google_update_failed",
+          entityType: "interview",
+          entityId: interview.id,
+          metadata: {
+            calendarEventId: interview.calendarEventId,
+            error: error instanceof Error ? error.message : "Unknown Google Calendar update error.",
+          },
+        },
+      });
+    }
+  }
+
+  await prisma.interview.update({
+    where: {
+      id: interview.id,
+    },
+    data: interviewUpdate,
+  });
+
+  await prisma.auditEvent.create({
+    data: {
+      organizationId: organization.id,
+      actorId: session.user.id,
+      jobId: interview.jobId,
+      candidateId: interview.candidateId,
+      applicationId: interview.applicationId,
+      action: "interview.updated",
+      entityType: "interview",
+      entityId: interview.id,
+      metadata: {
+        calendarStatus,
+        durationMinutes,
+        organizerId,
+        status,
+        startsAt: startsAt.toISOString(),
+        title,
+        type,
+      },
+    },
+  });
+
+  revalidatePath("/dashboard");
+  revalidatePath("/interviews");
+  revalidatePath("/candidates");
+
+  redirectWithCalendarStatus(calendarStatus);
 }

@@ -1,6 +1,5 @@
 import Link from "next/link";
 import {
-  ArrowLeft,
   BadgeCheck,
   Clock3,
   Mail,
@@ -19,15 +18,58 @@ import {
   sendQueuedEmail,
   toggleAutomationRule,
 } from "@/app/email-automation/actions";
+import { WorkspacePageShell } from "@/components/workspace-page-shell";
 import { automationRoles, requireRole } from "@/lib/auth";
 import { getEmailAutomationPageData } from "@/lib/email-automation-data";
 
 export const dynamic = "force-dynamic";
 
 const inputClass =
-  "h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400";
+  "h-10 w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400";
 const textareaClass =
-  "min-h-24 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm leading-6 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400";
+  "min-h-24 w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm leading-6 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400";
+
+function CreateTemplateForm() {
+  return (
+    <form action={createEmailTemplate} className="grid gap-3">
+      <Field label="Name">
+        <input className={inputClass} name="name" placeholder="Interview confirmation" required />
+      </Field>
+      <Field label="Trigger">
+        <select className={inputClass} name="trigger" defaultValue="INTERVIEW_SCHEDULED">
+          <option value="MANUAL">Manual</option>
+          <option value="APPLICATION_RECEIVED">Application received</option>
+          <option value="MOVED_TO_STAGE">Moved to stage</option>
+          <option value="INTERVIEW_SCHEDULED">Interview scheduled</option>
+          <option value="OFFER_CREATED">Offer created</option>
+          <option value="REJECTION_SENT">Rejection sent</option>
+        </select>
+      </Field>
+      <Field label="Subject">
+        <input className={inputClass} name="subject" placeholder="Next step for {{jobTitle}}" required />
+      </Field>
+      <Field label="Body">
+        <textarea
+          className={textareaClass}
+          name="body"
+          placeholder="Hi {{candidateName}}, your interview for {{jobTitle}} is scheduled for {{interviewTime}}."
+          required
+        />
+      </Field>
+      <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+        <input className="h-4 w-4 rounded border-slate-300" defaultChecked name="active" type="checkbox" />
+        Active
+      </label>
+      <button
+        className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:scale-[1.03] hover:bg-slate-800 active:scale-[0.98]"
+        type="submit"
+      >
+        <MailPlus className="h-4 w-4" aria-hidden="true" />
+        Save template
+      </button>
+    </form>
+  );
+}
 
 function Field({
   children,
@@ -109,50 +151,32 @@ export default async function EmailAutomationPage({
   searchParams?: Promise<{ failed?: string; queued?: string; rejected?: string; rule?: string; sent?: string; template?: string }>;
 }) {
   const params = await searchParams;
-  await requireRole(automationRoles);
-  const data = await getEmailAutomationPageData();
+  const session = await requireRole(automationRoles);
+  const data = await getEmailAutomationPageData(session.organization.id);
   const notice = getNotice(params);
   const rejectionTemplates = data.templates.filter((template) => template.trigger === "Rejection Sent");
 
   return (
-    <main className="min-h-screen bg-slate-100 text-slate-950">
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-4 md:flex-row md:items-center md:justify-between lg:px-6">
-          <div className="min-w-0">
-            <Link className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition hover:text-slate-950" href="/">
-              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-              Dashboard
-            </Link>
-            <div className="mt-3 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-950 text-white">
-                <Mail className="h-5 w-5" aria-hidden="true" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase text-slate-500">{data.organizationName}</p>
-                <h1 className="text-2xl font-semibold text-slate-950">Email Automation</h1>
-              </div>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Link
-              className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-              href="/interviews"
-            >
-              <Clock3 className="h-4 w-4" aria-hidden="true" />
-              Interviews
-            </Link>
-            <a
-              className="inline-flex h-10 items-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-              href="#new-template"
-            >
-              <MailPlus className="h-4 w-4" aria-hidden="true" />
-              Template
-            </a>
-          </div>
-        </div>
-      </header>
-
-      <div className="mx-auto grid max-w-7xl gap-5 px-4 py-5 lg:grid-cols-[1fr_390px] lg:px-6">
+    <WorkspacePageShell
+      actions={
+        <Link
+          className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:scale-[1.03] hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98]"
+          href="/interviews"
+        >
+          <Clock3 className="h-4 w-4" aria-hidden="true" />
+          Interviews
+        </Link>
+      }
+      icon={<Mail className="h-5 w-5" aria-hidden="true" />}
+      organizationName={data.organizationName}
+      rightPanel={<CreateTemplateForm />}
+      rightPanelButtonIcon={<MailPlus className="h-4 w-4" aria-hidden="true" />}
+      rightPanelButtonLabel="Template"
+      rightPanelDescription="Create reusable candidate communication."
+      rightPanelTitle="Create template"
+      title="Email Automation"
+    >
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
         <section className="space-y-5">
           {notice ? (
             <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
@@ -192,7 +216,7 @@ export default async function EmailAutomationPage({
             <div className="grid gap-3">
               {data.messages.map((message) => (
                 <article className="rounded-lg border border-slate-200 p-4" key={message.id}>
-                  <div className="grid gap-4 xl:grid-cols-[1fr_220px]">
+                  <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_220px]">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <h2 className="text-base font-semibold text-slate-950">{message.subject}</h2>
@@ -356,49 +380,6 @@ export default async function EmailAutomationPage({
                 {data.stats.webhookConfigured ? "Webhooks verified" : "Webhook secret missing"}
               </span>
             </div>
-          </section>
-
-          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm" id="new-template">
-            <div className="mb-4 flex items-center gap-2">
-              <MailPlus className="h-4 w-4 text-sky-700" aria-hidden="true" />
-              <p className="text-sm font-semibold text-slate-950">Create template</p>
-            </div>
-            <form action={createEmailTemplate} className="grid gap-3">
-              <Field label="Name">
-                <input className={inputClass} name="name" placeholder="Interview confirmation" required />
-              </Field>
-              <Field label="Trigger">
-                <select className={inputClass} name="trigger" defaultValue="INTERVIEW_SCHEDULED">
-                  <option value="MANUAL">Manual</option>
-                  <option value="MOVED_TO_STAGE">Moved to stage</option>
-                  <option value="INTERVIEW_SCHEDULED">Interview scheduled</option>
-                  <option value="OFFER_CREATED">Offer created</option>
-                  <option value="REJECTION_SENT">Rejection sent</option>
-                </select>
-              </Field>
-              <Field label="Subject">
-                <input className={inputClass} name="subject" placeholder="Next step for {{jobTitle}}" required />
-              </Field>
-              <Field label="Body">
-                <textarea
-                  className={textareaClass}
-                  name="body"
-                  placeholder="Hi {{candidateName}}, your interview for {{jobTitle}} is scheduled for {{interviewTime}}."
-                  required
-                />
-              </Field>
-              <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-                <input className="h-4 w-4 rounded border-slate-300" defaultChecked name="active" type="checkbox" />
-                Active
-              </label>
-              <button
-                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-                type="submit"
-              >
-                <MailPlus className="h-4 w-4" aria-hidden="true" />
-                Save template
-              </button>
-            </form>
           </section>
 
           <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
@@ -566,6 +547,6 @@ export default async function EmailAutomationPage({
           </section>
         </aside>
       </div>
-    </main>
+    </WorkspacePageShell>
   );
 }

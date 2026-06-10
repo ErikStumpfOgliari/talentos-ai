@@ -100,12 +100,10 @@ function formatDate(date?: Date | null) {
   }).format(date);
 }
 
-export async function getEmailAutomationPageData(): Promise<EmailAutomationPageData> {
+export async function getEmailAutomationPageData(organizationId?: string): Promise<EmailAutomationPageData> {
   const providerStatus = getEmailProviderStatus();
   const organization = await prisma.organization.findUnique({
-    where: {
-      slug: defaultOrganizationSlug,
-    },
+    where: organizationId ? { id: organizationId } : { slug: defaultOrganizationSlug },
     include: {
       applications: {
         where: {

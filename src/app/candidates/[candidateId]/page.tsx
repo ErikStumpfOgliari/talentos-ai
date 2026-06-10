@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
-  ArrowLeft,
   BadgeCheck,
   BriefcaseBusiness,
   CalendarDays,
@@ -27,15 +26,16 @@ import {
   attachCandidateResume,
   updateCandidateProfile,
 } from "@/app/candidates/actions";
+import { WorkspacePageShell } from "@/components/workspace-page-shell";
 import { recruitingRoles, requireRole } from "@/lib/auth";
 import { getCandidateDetailData } from "@/lib/candidate-detail-data";
 
 export const dynamic = "force-dynamic";
 
 const inputClass =
-  "h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400";
+  "h-10 w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400";
 const textareaClass =
-  "min-h-28 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm leading-6 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400";
+  "min-h-28 w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm leading-6 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400";
 
 function getScoreTone(score: number) {
   if (score >= 90) {
@@ -77,7 +77,7 @@ function Field({
   label: string;
 }) {
   return (
-    <label className="grid gap-1.5">
+    <label className="grid min-w-0 gap-1.5">
       <span className="text-xs font-semibold uppercase text-slate-500">{label}</span>
       {children}
     </label>
@@ -96,12 +96,12 @@ function StatCard({
   value: string | number;
 }) {
   return (
-    <article className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+    <article className="min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm font-medium text-slate-500">{label}</p>
+        <p className="min-w-0 truncate text-sm font-medium text-slate-500">{label}</p>
         <Icon className={`h-5 w-5 ${tone}`} aria-hidden={true} />
       </div>
-      <p className="mt-3 text-2xl font-semibold text-slate-950">{value}</p>
+      <p className="mt-3 break-words text-2xl font-semibold text-slate-950">{value}</p>
     </article>
   );
 }
@@ -126,69 +126,52 @@ export default async function CandidateDetailPage({
   }
 
   return (
-    <main className="min-h-screen bg-slate-100 text-slate-950">
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 lg:px-6">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div className="min-w-0">
-              <Link className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition hover:text-slate-950" href="/candidates">
-                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-                Candidates
-              </Link>
-              <div className="mt-3 flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-950 text-white">
-                  <UserRound className="h-5 w-5" aria-hidden="true" />
-                </div>
-                <div className="min-w-0">
-                  <p className="truncate text-xs font-semibold uppercase text-slate-500">{data.organizationName}</p>
-                  <h1 className="truncate text-2xl font-semibold text-slate-950">{data.candidate.name}</h1>
-                </div>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Link
-                className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-                href="/jobs"
-              >
-                <BriefcaseBusiness className="h-4 w-4" aria-hidden="true" />
-                Jobs
-              </Link>
-              <Link
-                className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-                href="/interviews"
-              >
-                <CalendarDays className="h-4 w-4" aria-hidden="true" />
-                Interviews
-              </Link>
-              <Link
-                className="inline-flex h-10 items-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-                href="/email-automation"
-              >
-                <Mail className="h-4 w-4" aria-hidden="true" />
-                Emails
-              </Link>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
-            <span className="rounded-full bg-slate-100 px-2 py-1 font-semibold text-slate-700">{data.candidate.source}</span>
-            <span className="inline-flex items-center gap-1.5">
-              <Mail className="h-3.5 w-3.5" aria-hidden="true" />
-              {data.candidate.email}
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <Phone className="h-3.5 w-3.5" aria-hidden="true" />
-              {data.candidate.phone}
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
-              {data.candidate.location}
-            </span>
-          </div>
+    <WorkspacePageShell
+      actions={
+        <>
+          <Link
+            className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:scale-[1.03] hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98]"
+            href="/jobs"
+          >
+            <BriefcaseBusiness className="h-4 w-4" aria-hidden="true" />
+            Jobs
+          </Link>
+          <Link
+            className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:scale-[1.03] hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98]"
+            href="/interviews"
+          >
+            <CalendarDays className="h-4 w-4" aria-hidden="true" />
+            Interviews
+          </Link>
+          <Link
+            className="inline-flex h-10 items-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:scale-[1.03] hover:bg-slate-800 active:scale-[0.98]"
+            href="/email-automation"
+          >
+            <Mail className="h-4 w-4" aria-hidden="true" />
+            Emails
+          </Link>
+        </>
+      }
+      icon={<UserRound className="h-5 w-5" aria-hidden="true" />}
+      organizationName={data.organizationName}
+      title={data.candidate.name}
+    >
+      <div className="grid gap-5">
+        <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
+          <span className="rounded-full bg-slate-100 px-2 py-1 font-semibold text-slate-700">{data.candidate.source}</span>
+          <span className="inline-flex min-w-0 max-w-full items-center gap-1.5 break-all">
+            <Mail className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            {data.candidate.email}
+          </span>
+          <span className="inline-flex min-w-0 max-w-full items-center gap-1.5 break-all">
+            <Phone className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            {data.candidate.phone}
+          </span>
+          <span className="inline-flex min-w-0 max-w-full items-center gap-1.5 break-words">
+            <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            {data.candidate.location}
+          </span>
         </div>
-      </header>
-
-      <div className="mx-auto grid max-w-7xl gap-5 px-4 py-5 lg:px-6">
         <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
           <StatCard icon={BriefcaseBusiness} label="Applications" tone="text-sky-700" value={data.stats.applications} />
           <StatCard icon={Sparkles} label="Avg match" tone="text-violet-700" value={`${data.stats.avgScore}%`} />
@@ -200,9 +183,10 @@ export default async function CandidateDetailPage({
         {query?.note || query?.profile || query?.resume ? (
           <div
             className={`rounded-lg border px-4 py-3 text-sm font-semibold ${
-              query?.resume === "email-conflict" || query?.resume === "missing" || query?.resume === "too-large"
+              query?.resume === "email-conflict" || query?.resume === "missing" || query?.resume === "parse-failed" || query?.resume === "too-large"
                 ? "border-rose-200 bg-rose-50 text-rose-800"
                 : query?.resume === "needs-review" ||
+                  query?.resume === "openai-not-configured" ||
                   query?.resume === "no-parsed-data" ||
                   query?.resume === "no-selection" ||
                   query?.resume === "review-ready"
@@ -220,6 +204,10 @@ export default async function CandidateDetailPage({
               ? "Resume is too large. Upload a file under 10 MB."
               : query?.resume === "email-conflict"
               ? "Parsed email already belongs to another candidate."
+              : query?.resume === "openai-not-configured"
+              ? "Resume attached for review. Configure OPENAI_API_KEY to enable full AI parsing for PDFs."
+              : query?.resume === "parse-failed"
+              ? "OpenAI parsing failed. The resume was saved; check the parser model, billing, or retry."
               : query?.resume === "no-selection"
               ? "Select at least one extracted field to apply."
               : query?.resume === "no-parsed-data"
@@ -232,20 +220,20 @@ export default async function CandidateDetailPage({
           </div>
         ) : null}
 
-        <section className="grid gap-5 xl:grid-cols-[1fr_390px]">
-          <div className="space-y-5">
-            <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,390px)]">
+          <div className="min-w-0 space-y-5">
+            <section className="min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
               <div className="mb-4 flex items-center gap-2">
                 <BadgeCheck className="h-4 w-4 text-emerald-700" aria-hidden="true" />
                 <p className="text-sm font-semibold text-slate-950">Candidate profile</p>
               </div>
-              <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
+              <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,280px)]">
                 <div>
-                  <p className="text-base font-semibold text-slate-950">{data.candidate.currentTitle}</p>
-                  <p className="mt-3 text-sm leading-6 text-slate-600">{data.candidate.summary}</p>
+                  <p className="break-words text-base font-semibold text-slate-950">{data.candidate.currentTitle}</p>
+                  <p className="mt-3 break-words text-sm leading-6 text-slate-600">{data.candidate.summary}</p>
                   <div className="mt-4 flex flex-wrap gap-1.5">
                     {data.skills.map((skill) => (
-                      <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600" key={skill}>
+                      <span className="dashboard-chip rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600" key={skill}>
                         {skill}
                       </span>
                     ))}
@@ -263,24 +251,24 @@ export default async function CandidateDetailPage({
                   ].map(([label, value]) => (
                     <div className="rounded-lg bg-slate-50 px-3 py-2" key={label}>
                       <p className="text-xs font-semibold uppercase text-slate-500">{label}</p>
-                      <p className="mt-1 text-sm font-semibold text-slate-950">{value}</p>
+                      <p className="mt-1 break-words text-sm font-semibold text-slate-950">{value}</p>
                     </div>
                   ))}
                 </div>
               </div>
             </section>
 
-            <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <section className="min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
               <div className="mb-4 flex items-center gap-2">
                 <BriefcaseBusiness className="h-4 w-4 text-sky-700" aria-hidden="true" />
                 <p className="text-sm font-semibold text-slate-950">Role history and match explanations</p>
               </div>
               <div className="grid gap-3">
                 {data.applications.map((application) => (
-                  <article className="rounded-lg border border-slate-200 p-4" key={application.id}>
+                  <article className="min-w-0 overflow-hidden rounded-lg border border-slate-200 p-4" key={application.id}>
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                       <div className="min-w-0">
-                        <Link className="text-base font-semibold text-slate-950 transition hover:text-slate-600" href={`/jobs/${application.jobId}`}>
+                        <Link className="break-words text-base font-semibold text-slate-950 transition hover:text-slate-600" href={`/jobs/${application.jobId}`}>
                           {application.jobTitle}
                         </Link>
                         <div className="mt-2 flex flex-wrap gap-2 text-xs">
@@ -302,7 +290,7 @@ export default async function CandidateDetailPage({
                           {(application.strengths.length ? application.strengths : ["No strengths saved yet."]).map((item) => (
                             <li className="flex gap-2" key={item}>
                               <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" aria-hidden="true" />
-                              <span>{item}</span>
+                              <span className="min-w-0 break-words">{item}</span>
                             </li>
                           ))}
                         </ul>
@@ -313,7 +301,7 @@ export default async function CandidateDetailPage({
                           {(application.gaps.length ? application.gaps : ["No gaps saved yet."]).map((item) => (
                             <li className="flex gap-2" key={item}>
                               <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />
-                              <span>{item}</span>
+                              <span className="min-w-0 break-words">{item}</span>
                             </li>
                           ))}
                         </ul>
@@ -332,14 +320,14 @@ export default async function CandidateDetailPage({
               </div>
             </section>
 
-            <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <section className="min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
               <div className="mb-4 flex items-center gap-2">
                 <FileText className="h-4 w-4 text-violet-700" aria-hidden="true" />
                 <p className="text-sm font-semibold text-slate-950">Parsed resumes</p>
               </div>
               <div className="grid gap-3">
                 {data.resumes.map((resume) => (
-                  <article className="rounded-lg border border-slate-200 p-4" key={resume.id}>
+                  <article className="min-w-0 overflow-hidden rounded-lg border border-slate-200 p-4" key={resume.id}>
                     <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-slate-950">{resume.fileName}</p>
@@ -362,10 +350,10 @@ export default async function CandidateDetailPage({
                         </span>
                       </div>
                     </div>
-                    <p className="mt-3 text-sm leading-6 text-slate-600">{resume.parsedSummary}</p>
+                    <p className="mt-3 break-words text-sm leading-6 text-slate-600">{resume.parsedSummary}</p>
                     <div className="mt-3 rounded-lg bg-slate-50 p-3">
                       <p className="text-xs font-semibold uppercase text-slate-500">Raw preview</p>
-                      <p className="mt-2 text-sm leading-6 text-slate-600">{resume.rawPreview}</p>
+                      <p className="mt-2 break-words text-sm leading-6 text-slate-600">{resume.rawPreview}</p>
                     </div>
                     {resume.review?.canApply ? (
                       <form action={applyResumeParsedData} className="mt-4 rounded-lg border border-violet-100 bg-violet-50/70 p-3">
@@ -378,12 +366,12 @@ export default async function CandidateDetailPage({
                         {resume.review.fields.length > 0 ? (
                           <div className="grid gap-2">
                             {resume.review.fields.map((field) => (
-                              <label className="grid gap-2 rounded-lg border border-white bg-white p-3 shadow-sm" key={field.key}>
-                                <span className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+                              <label className="grid min-w-0 gap-2 rounded-lg border border-white bg-white p-3 shadow-sm" key={field.key}>
+                                <span className="flex min-w-0 items-center gap-2 text-sm font-semibold text-slate-900">
                                   <input className="h-4 w-4 rounded border-slate-300" defaultChecked name="fields" type="checkbox" value={field.key} />
-                                  {field.label}
+                                  <span className="min-w-0 break-words">{field.label}</span>
                                 </span>
-                                <span className="grid gap-2 text-xs text-slate-500 md:grid-cols-2">
+                                <span className="grid min-w-0 gap-2 text-xs text-slate-500 md:grid-cols-2">
                                   <span className="rounded-md bg-slate-50 px-2 py-1 break-words">
                                     Current: <span className="font-semibold text-slate-700">{field.currentValue}</span>
                                   </span>
@@ -397,8 +385,8 @@ export default async function CandidateDetailPage({
                         ) : null}
                         <div className="mt-3 grid gap-2">
                           {resume.review.skills.length > 0 ? (
-                            <label className="rounded-lg border border-white bg-white p-3 shadow-sm">
-                              <span className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+                            <label className="min-w-0 rounded-lg border border-white bg-white p-3 shadow-sm">
+                              <span className="flex min-w-0 items-center gap-2 text-sm font-semibold text-slate-900">
                                 <input className="h-4 w-4 rounded border-slate-300" defaultChecked name="fields" type="checkbox" value="skills" />
                                 Replace skills
                               </span>
@@ -412,15 +400,15 @@ export default async function CandidateDetailPage({
                             </label>
                           ) : null}
                           {resume.review.educationCount > 0 ? (
-                            <label className="flex items-center gap-2 rounded-lg border border-white bg-white p-3 text-sm font-semibold text-slate-900 shadow-sm">
+                            <label className="flex min-w-0 items-center gap-2 rounded-lg border border-white bg-white p-3 text-sm font-semibold text-slate-900 shadow-sm">
                               <input className="h-4 w-4 rounded border-slate-300" defaultChecked name="fields" type="checkbox" value="education" />
-                              Replace education ({resume.review.educationCount})
+                              <span className="min-w-0 break-words">Replace education ({resume.review.educationCount})</span>
                             </label>
                           ) : null}
                           {resume.review.experienceCount > 0 ? (
-                            <label className="flex items-center gap-2 rounded-lg border border-white bg-white p-3 text-sm font-semibold text-slate-900 shadow-sm">
+                            <label className="flex min-w-0 items-center gap-2 rounded-lg border border-white bg-white p-3 text-sm font-semibold text-slate-900 shadow-sm">
                               <input className="h-4 w-4 rounded border-slate-300" defaultChecked name="fields" type="checkbox" value="experience" />
-                              Replace experience ({resume.review.experienceCount})
+                              <span className="min-w-0 break-words">Replace experience ({resume.review.experienceCount})</span>
                             </label>
                           ) : null}
                         </div>
@@ -442,15 +430,15 @@ export default async function CandidateDetailPage({
               </div>
             </section>
 
-            <section className="grid gap-5 xl:grid-cols-2">
-              <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <section className="grid min-w-0 gap-5 xl:grid-cols-2">
+              <div className="min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
                 <div className="mb-4 flex items-center gap-2">
                   <CalendarDays className="h-4 w-4 text-sky-700" aria-hidden="true" />
                   <p className="text-sm font-semibold text-slate-950">Interviews</p>
                 </div>
                 <div className="space-y-2">
                   {data.interviews.map((interview) => (
-                    <article className="rounded-lg border border-slate-200 p-3" key={interview.id}>
+                    <article className="min-w-0 overflow-hidden rounded-lg border border-slate-200 p-3" key={interview.id}>
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <p className="truncate text-sm font-semibold text-slate-950">{interview.title}</p>
@@ -460,7 +448,7 @@ export default async function CandidateDetailPage({
                           {interview.status}
                         </span>
                       </div>
-                      <p className="mt-2 text-xs text-slate-500">{interview.startsAt} - {interview.organizer}</p>
+                      <p className="mt-2 break-words text-xs text-slate-500">{interview.startsAt} - {interview.organizer}</p>
                       {interview.meetingUrl ? (
                         <a className="mt-2 inline-flex text-xs font-semibold text-slate-700 hover:text-slate-950" href={interview.meetingUrl} rel="noreferrer" target="_blank">
                           Meeting link
@@ -474,14 +462,14 @@ export default async function CandidateDetailPage({
                 </div>
               </div>
 
-              <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
                 <div className="mb-4 flex items-center gap-2">
                   <Mail className="h-4 w-4 text-emerald-700" aria-hidden="true" />
                   <p className="text-sm font-semibold text-slate-950">Email history</p>
                 </div>
                 <div className="space-y-2">
                   {data.emails.map((email) => (
-                    <article className="rounded-lg border border-slate-200 p-3" key={email.id}>
+                    <article className="min-w-0 overflow-hidden rounded-lg border border-slate-200 p-3" key={email.id}>
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <p className="truncate text-sm font-semibold text-slate-950">{email.subject}</p>
@@ -491,8 +479,8 @@ export default async function CandidateDetailPage({
                           {email.status}
                         </span>
                       </div>
-                      <p className="mt-2 text-sm leading-6 text-slate-600">{email.bodyPreview}</p>
-                      <p className="mt-2 text-xs text-slate-500">{email.trigger} - {email.sentAt}</p>
+                      <p className="mt-2 break-words text-sm leading-6 text-slate-600">{email.bodyPreview}</p>
+                      <p className="mt-2 break-words text-xs text-slate-500">{email.trigger} - {email.sentAt}</p>
                     </article>
                   ))}
                   {data.emails.length === 0 ? (
@@ -503,8 +491,8 @@ export default async function CandidateDetailPage({
             </section>
           </div>
 
-          <aside className="space-y-5">
-            <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <aside className="min-w-0 space-y-5">
+            <section className="min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
               <div className="mb-4 flex items-center gap-2">
                 <Save className="h-4 w-4 text-emerald-700" aria-hidden="true" />
                 <p className="text-sm font-semibold text-slate-950">Edit profile</p>
@@ -514,7 +502,7 @@ export default async function CandidateDetailPage({
                 <Field label="Name">
                   <input className={inputClass} defaultValue={data.candidate.editable.name} name="name" required />
                 </Field>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-3 sm:grid-cols-2">
                   <Field label="Email">
                     <input className={inputClass} defaultValue={data.candidate.editable.email} name="email" type="email" />
                   </Field>
@@ -522,7 +510,7 @@ export default async function CandidateDetailPage({
                     <input className={inputClass} defaultValue={data.candidate.editable.phone} name="phone" />
                   </Field>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-3 sm:grid-cols-2">
                   <Field label="Title">
                     <input className={inputClass} defaultValue={data.candidate.editable.currentTitle} name="currentTitle" />
                   </Field>
@@ -530,7 +518,7 @@ export default async function CandidateDetailPage({
                     <input className={inputClass} defaultValue={data.candidate.editable.location} name="location" />
                   </Field>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-3 sm:grid-cols-2">
                   <Field label="Source">
                     <select className={inputClass} defaultValue={data.candidate.editable.source} name="source">
                       <option value="MANUAL">Manual</option>
@@ -553,7 +541,7 @@ export default async function CandidateDetailPage({
                     />
                   </Field>
                 </div>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid gap-3 sm:grid-cols-3">
                   <Field label="Currency">
                     <input className={inputClass} defaultValue={data.candidate.editable.currency} maxLength={3} name="currency" />
                   </Field>
@@ -586,7 +574,7 @@ export default async function CandidateDetailPage({
               </form>
             </section>
 
-            <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <section className="min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
               <div className="mb-4 flex items-center gap-2">
                 <RefreshCcw className="h-4 w-4 text-violet-700" aria-hidden="true" />
                 <p className="text-sm font-semibold text-slate-950">Attach resume</p>
@@ -596,7 +584,7 @@ export default async function CandidateDetailPage({
                 <Field label="Resume file">
                   <input
                     accept=".pdf,.txt,.md,text/plain,application/pdf"
-                    className="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-3 py-3 text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-slate-950 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white"
+                    className="w-full min-w-0 overflow-hidden rounded-lg border border-dashed border-slate-300 bg-slate-50 px-3 py-3 text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-slate-950 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white"
                     name="resumeFile"
                     type="file"
                   />
@@ -605,7 +593,7 @@ export default async function CandidateDetailPage({
                   <textarea
                     className={textareaClass}
                     name="resumeText"
-                    placeholder="Paste resume text here when uploading a text-free PDF locally or when you want a quick reprocess."
+                    placeholder="Optional. Text PDFs are parsed locally; paste text here for scanned or image-only PDFs."
                   />
                 </Field>
                 <button
@@ -618,7 +606,7 @@ export default async function CandidateDetailPage({
               </form>
             </section>
 
-            <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <section className="min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
               <div className="mb-4 flex items-center gap-2">
                 <MessageSquarePlus className="h-4 w-4 text-sky-700" aria-hidden="true" />
                 <p className="text-sm font-semibold text-slate-950">Add note</p>
@@ -654,14 +642,14 @@ export default async function CandidateDetailPage({
               </form>
             </section>
 
-            <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <section className="min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
               <div className="mb-4 flex items-center gap-2">
                 <Users className="h-4 w-4 text-violet-700" aria-hidden="true" />
                 <p className="text-sm font-semibold text-slate-950">Notes</p>
               </div>
               <div className="space-y-2">
                 {data.notes.map((note) => (
-                  <article className="rounded-lg border border-slate-200 p-3" key={note.id}>
+                  <article className="min-w-0 overflow-hidden rounded-lg border border-slate-200 p-3" key={note.id}>
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-slate-950">{note.context}</p>
@@ -671,7 +659,7 @@ export default async function CandidateDetailPage({
                         {note.visibility}
                       </span>
                     </div>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">{note.body}</p>
+                    <p className="mt-2 break-words text-sm leading-6 text-slate-600">{note.body}</p>
                   </article>
                 ))}
                 {data.notes.length === 0 ? (
@@ -680,22 +668,22 @@ export default async function CandidateDetailPage({
               </div>
             </section>
 
-            <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <section className="min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
               <div className="mb-4 flex items-center gap-2">
                 <Clock3 className="h-4 w-4 text-amber-700" aria-hidden="true" />
                 <p className="text-sm font-semibold text-slate-950">Experience and education</p>
               </div>
               <div className="space-y-3">
                 {data.experience.map((experience) => (
-                  <article className="rounded-lg border border-slate-200 p-3" key={experience.id}>
-                    <p className="text-sm font-semibold text-slate-950">{experience.title}</p>
-                    <p className="mt-1 text-xs text-slate-500">{experience.company} - {experience.period}</p>
-                    <p className="mt-2 text-sm leading-6 text-slate-600">{experience.description}</p>
+                  <article className="min-w-0 overflow-hidden rounded-lg border border-slate-200 p-3" key={experience.id}>
+                    <p className="break-words text-sm font-semibold text-slate-950">{experience.title}</p>
+                    <p className="mt-1 break-words text-xs text-slate-500">{experience.company} - {experience.period}</p>
+                    <p className="mt-2 break-words text-sm leading-6 text-slate-600">{experience.description}</p>
                   </article>
                 ))}
                 {data.education.map((education) => (
-                  <article className="rounded-lg border border-slate-200 p-3" key={education.id}>
-                    <p className="text-sm font-semibold text-slate-950">{education.label}</p>
+                  <article className="min-w-0 overflow-hidden rounded-lg border border-slate-200 p-3" key={education.id}>
+                    <p className="break-words text-sm font-semibold text-slate-950">{education.label}</p>
                   </article>
                 ))}
                 {data.experience.length === 0 && data.education.length === 0 ? (
@@ -706,6 +694,6 @@ export default async function CandidateDetailPage({
           </aside>
         </section>
       </div>
-    </main>
+    </WorkspacePageShell>
   );
 }

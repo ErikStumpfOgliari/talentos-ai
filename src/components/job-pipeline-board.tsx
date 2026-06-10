@@ -173,7 +173,7 @@ function PipelineColumn({
 
   return (
     <section
-      className={`flex min-h-[560px] min-w-[280px] flex-1 flex-col rounded-lg border border-slate-200 bg-slate-50 p-3 transition ${
+      className={`flex min-h-[420px] min-w-0 flex-col rounded-lg border border-slate-200 bg-slate-50 p-3 transition ${
         isOver ? "border-slate-400 bg-white" : ""
       }`}
       ref={setNodeRef}
@@ -271,7 +271,7 @@ export function JobPipelineBoard({
   }
 
   return (
-    <section className="grid gap-5 2xl:grid-cols-[1fr_360px]">
+    <section className="grid gap-5 2xl:grid-cols-[minmax(0,1fr)_360px]">
       <div className="min-w-0 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
         <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="min-w-0">
@@ -301,7 +301,7 @@ export function JobPipelineBoard({
             onDragEnd={handleDragEnd}
             sensors={sensors}
           >
-            <div className="flex gap-3 overflow-x-auto pb-1">
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
               {pipelineStages.map((stage) => (
                 <PipelineColumn
                   candidateIds={pipeline[stage.id] ?? []}

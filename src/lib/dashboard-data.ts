@@ -1,35 +1,27 @@
-import {
-  candidates as demoCandidates,
-  emailTemplates as demoEmailTemplates,
-  initialPipeline as demoInitialPipeline,
-  interviews as demoInterviews,
-  jobs as demoJobs,
-  pipelineStages as demoPipelineStages,
-} from "@/lib/demo-data";
 import type { Candidate, DashboardData, EmailTemplate, Interview, Job, PipelineStage } from "@/lib/types";
 import { getAnalyticsData } from "@/lib/analytics-data";
 
-export const demoDashboardData: DashboardData = {
-  pipelineStages: demoPipelineStages,
-  candidates: demoCandidates,
-  initialPipeline: demoInitialPipeline,
-  jobs: demoJobs,
-  interviews: demoInterviews,
-  emailTemplates: demoEmailTemplates,
+export const emptyDashboardData: DashboardData = {
+  pipelineStages: [],
+  candidates: [],
+  initialPipeline: {},
+  jobs: [],
+  interviews: [],
+  emailTemplates: [],
   analytics: {
     metrics: [
-      { label: "Open roles", value: "3", detail: "3 total requisitions", tone: "text-sky-700" },
-      { label: "Candidates", value: "5", detail: "5 active applications", tone: "text-emerald-700" },
-      { label: "Avg. match score", value: "87%", detail: "5 scored applications", tone: "text-violet-700" },
-      { label: "Pipeline time", value: "21d", detail: "Average active pipeline age", tone: "text-amber-700" },
+      { label: "Open roles", value: "0", detail: "0 total requisitions", tone: "text-sky-700" },
+      { label: "Candidates", value: "0", detail: "0 active applications", tone: "text-emerald-700" },
+      { label: "Avg. match score", value: "0%", detail: "0 scored applications", tone: "text-violet-700" },
+      { label: "Pipeline time", value: "0d", detail: "Average active pipeline age", tone: "text-amber-700" },
     ],
     rates: [
-      { label: "Screen rate", value: 60, color: "bg-sky-500" },
-      { label: "Interview rate", value: 40, color: "bg-violet-500" },
-      { label: "Offer rate", value: 20, color: "bg-emerald-500" },
+      { label: "Screen rate", value: 0, color: "bg-sky-500" },
+      { label: "Interview rate", value: 0, color: "bg-violet-500" },
+      { label: "Offer rate", value: 0, color: "bg-emerald-500" },
     ],
     resumeParser: [
-      { label: "Parsed", value: 5, color: "text-emerald-700" },
+      { label: "Parsed", value: 0, color: "text-emerald-700" },
       { label: "Needs review", value: 0, color: "text-amber-700" },
       { label: "Failed extraction", value: 0, color: "text-rose-700" },
     ],
@@ -139,16 +131,18 @@ function formatInterviewTime(startsAt: Date) {
   }).format(startsAt);
 }
 
-export async function getDashboardData(): Promise<DashboardData> {
+export async function getDashboardData(organizationId?: string): Promise<DashboardData> {
   if (!process.env.DATABASE_URL) {
-    return demoDashboardData;
+    return emptyDashboardData;
   }
 
   try {
     const { prisma } = await import("@/lib/prisma");
 
     const organization = await prisma.organization.findUnique({
-      where: { slug: process.env.DEFAULT_ORGANIZATION_SLUG ?? "northstar-recruiting" },
+      where: organizationId
+        ? { id: organizationId }
+        : { slug: process.env.DEFAULT_ORGANIZATION_SLUG ?? "northstar-recruiting" },
       include: {
         candidates: {
           include: {
@@ -194,10 +188,10 @@ export async function getDashboardData(): Promise<DashboardData> {
     });
 
     if (!organization) {
-      return demoDashboardData;
+      return emptyDashboardData;
     }
 
-    const analytics = await getAnalyticsData();
+    const analytics = await getAnalyticsData(organization.id);
 
     const activeJob = await prisma.job.findFirst({
       where: {
@@ -245,13 +239,13 @@ export async function getDashboardData(): Promise<DashboardData> {
         id: stage.id,
         title: stage.name,
         accent: stageAccent[stage.category] ?? "bg-slate-500",
-      })) ?? demoPipelineStages;
+      })) ?? [];
 
     const initialPipeline =
       activeJob?.pipelineStages.reduce<Record<string, string[]>>((pipeline, stage) => {
         pipeline[stage.id] = stage.applications.map((application) => application.candidateId);
         return pipeline;
-      }, {}) ?? demoInitialPipeline;
+      }, {}) ?? {};
 
     const scoreByCandidate = new Map<string, number>();
     activeJob?.pipelineStages.forEach((stage) => {
@@ -300,6 +294,6 @@ export async function getDashboardData(): Promise<DashboardData> {
       analytics: analytics.dashboard,
     };
   } catch {
-    return demoDashboardData;
+    return emptyDashboardData;
   }
 }

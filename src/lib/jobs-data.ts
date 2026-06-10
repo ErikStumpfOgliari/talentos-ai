@@ -69,11 +69,9 @@ function formatDate(date: Date) {
   }).format(date);
 }
 
-export async function getJobsPageData(): Promise<JobsPageData> {
+export async function getJobsPageData(organizationId?: string): Promise<JobsPageData> {
   const organization = await prisma.organization.findUnique({
-    where: {
-      slug: defaultOrganizationSlug,
-    },
+    where: organizationId ? { id: organizationId } : { slug: defaultOrganizationSlug },
     include: {
       jobs: {
         include: {

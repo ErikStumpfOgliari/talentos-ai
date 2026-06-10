@@ -7,14 +7,21 @@ import {
   NoteVisibility,
   ParserStatus,
 } from "@/generated/prisma/client";
+import { isLocalAIProviderMode } from "@/lib/ai-provider";
 import { recruitingRoles, requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
   canUseOpenAIResumeParser,
+  extractTextFromPdfBuffer,
+  hasUsefulLocalResumeParse,
   parseResumeLocally,
   parseResumeWithOpenAI,
   type ParsedResume,
 } from "@/lib/resume-parser";
+import {
+  applyParsedResumeDataToCandidate,
+  readResumeReviewSelectedFields,
+} from "@/lib/resume-review";
 import { saveResumeFile } from "@/lib/resume-storage";
 
 function readString(formData: FormData, key: string) {
@@ -41,89 +48,6 @@ function readLines(formData: FormData, key: string) {
 
 function readEnum<T extends Record<string, string>>(enumObject: T, value: string, fallback: T[keyof T]) {
   return Object.values(enumObject).includes(value) ? (value as T[keyof T]) : fallback;
-}
-
-function readSelectedFields(formData: FormData) {
-  return new Set(formData.getAll("fields").filter((value): value is string => typeof value === "string"));
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
-}
-
-function readParsedText(value: unknown) {
-  return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
-}
-
-function readParsedNumber(value: unknown) {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return value;
-  }
-
-  if (typeof value === "string") {
-    const numberValue = Number(value);
-    return Number.isFinite(numberValue) ? numberValue : null;
-  }
-
-  return null;
-}
-
-function readParsedStringArray(value: unknown) {
-  return Array.isArray(value)
-    ? [...new Set(value.filter((item): item is string => typeof item === "string").map((item) => item.trim()).filter(Boolean))]
-    : [];
-}
-
-function readParsedResumeData(value: unknown): ParsedResume | null {
-  if (!isRecord(value)) {
-    return null;
-  }
-
-  const name = readParsedText(value.name);
-  const summary = readParsedText(value.summary);
-
-  if (!name && !summary) {
-    return null;
-  }
-
-  const education = Array.isArray(value.education)
-    ? value.education
-        .filter(isRecord)
-        .map((item) => ({
-          institution: readParsedText(item.institution),
-          degree: readParsedText(item.degree),
-          field: readParsedText(item.field),
-        }))
-        .filter((item): item is ParsedResume["education"][number] => Boolean(item.institution))
-    : [];
-  const experience = Array.isArray(value.experience)
-    ? value.experience
-        .filter(isRecord)
-        .map((item) => ({
-          company: readParsedText(item.company),
-          title: readParsedText(item.title),
-          location: readParsedText(item.location),
-          description: readParsedText(item.description),
-          current: item.current === true,
-        }))
-        .filter((item): item is ParsedResume["experience"][number] => Boolean(item.company && item.title))
-    : [];
-
-  return {
-    name: name ?? "",
-    email: readParsedText(value.email),
-    phone: readParsedText(value.phone),
-    location: readParsedText(value.location),
-    currentTitle: readParsedText(value.currentTitle),
-    summary: summary ?? "",
-    yearsExperience: readParsedNumber(value.yearsExperience),
-    availability: readParsedText(value.availability),
-    salaryExpectation: readParsedNumber(value.salaryExpectation),
-    currency: readParsedText(value.currency),
-    skills: readParsedStringArray(value.skills),
-    education,
-    experience,
-  };
 }
 
 function normalizeFileName(name: string) {
@@ -238,7 +162,7 @@ async function createResumeSnapshot({
 }
 
 async function revalidateCandidatePaths(candidateId: string) {
-  revalidatePath("/");
+  revalidatePath("/dashboard");
   revalidatePath("/candidates");
   revalidatePath(`/candidates/${candidateId}`);
   revalidatePath("/matching");
@@ -398,7 +322,7 @@ export async function createCandidate(formData: FormData) {
     source,
   });
 
-  revalidatePath("/");
+  revalidatePath("/dashboard");
   revalidatePath("/candidates");
   revalidatePath("/jobs");
 }
@@ -585,6 +509,7 @@ export async function parseResumeUpload(formData: FormData) {
 
   let parsed: ParsedResume | null = null;
   let rawText = pastedResumeText;
+  let localExtractionError: string | null = null;
   let parserStatus: ParserStatus = ParserStatus.NEEDS_REVIEW;
   let parsedData: unknown = null;
   let storedResumeBytes: Buffer | null = null;
@@ -596,6 +521,14 @@ export async function parseResumeUpload(formData: FormData) {
 
       if (isText) {
         rawText = rawText ?? bytes.toString("utf8");
+      }
+
+      if (isPdf && !rawText) {
+        try {
+          rawText = await extractTextFromPdfBuffer(bytes);
+        } catch (error) {
+          localExtractionError = error instanceof Error ? error.message : "Local PDF text extraction failed.";
+        }
       }
 
       if (canUseOpenAIResumeParser() && (isPdf || rawText)) {
@@ -635,21 +568,30 @@ export async function parseResumeUpload(formData: FormData) {
 
   if (!parsed && rawText) {
     parsed = parseResumeLocally(rawText, fileName);
+    const usefulLocalParse = hasUsefulLocalResumeParse(parsed);
     parsedData = {
       ...parsed,
-      source: canUseOpenAIResumeParser() ? "local-fallback-after-ai-failure" : "local-fallback-no-api-key",
+      source: canUseOpenAIResumeParser() ? "local-fallback-after-ai-failure" : "smart-local-parser",
+      ...(localExtractionError ? { localExtractionError } : {}),
     };
-    parserStatus = canUseOpenAIResumeParser() ? parserStatus : ParserStatus.NEEDS_REVIEW;
+    parserStatus = usefulLocalParse ? ParserStatus.PARSED : canUseOpenAIResumeParser() ? parserStatus : ParserStatus.NEEDS_REVIEW;
   }
 
   if (!parsed) {
+    const openAIConfigured = canUseOpenAIResumeParser();
+    const parsingFailed = parserStatus === ParserStatus.FAILED;
+
     parsed = {
       name: getFallbackName(fileName),
       email: null,
       phone: null,
       location: null,
       currentTitle: null,
-      summary: "Resume uploaded and waiting for OpenAI parsing. Add OPENAI_API_KEY to enable AI extraction.",
+      summary: parsingFailed
+        ? "Resume uploaded, but OpenAI parsing failed. Review the file manually or retry parsing."
+        : openAIConfigured
+        ? "Resume uploaded for manual review. No structured data was extracted automatically."
+        : "Resume uploaded and waiting for OpenAI parsing. Add OPENAI_API_KEY to enable AI extraction.",
       yearsExperience: null,
       availability: null,
       salaryExpectation: null,
@@ -658,11 +600,19 @@ export async function parseResumeUpload(formData: FormData) {
       education: [],
       experience: [],
     };
-    parsedData = {
-      source: "pending-openai-parser",
-      message: "OPENAI_API_KEY is required to parse PDF content.",
-    };
-    parserStatus = ParserStatus.NEEDS_REVIEW;
+
+    if (!parsingFailed) {
+      parsedData = {
+        source: openAIConfigured ? "manual-review-no-structured-data" : "pending-openai-parser",
+        message: openAIConfigured
+          ? "OpenAI did not return structured resume data. Review manually or retry parsing."
+          : localExtractionError
+          ? "Local PDF text extraction failed. Paste resume text for manual fallback parsing."
+          : "Local PDF parser could not extract structured resume data.",
+        ...(localExtractionError ? { localExtractionError } : {}),
+      };
+      parserStatus = ParserStatus.NEEDS_REVIEW;
+    }
   }
 
   const candidate = await upsertParsedCandidate({
@@ -703,11 +653,21 @@ export async function parseResumeUpload(formData: FormData) {
     source,
   });
 
-  revalidatePath("/");
+  revalidatePath("/dashboard");
   revalidatePath("/candidates");
   revalidatePath("/jobs");
 
-  redirect(`/candidates?resume=${parserStatus === ParserStatus.PARSED ? "parsed" : "needs-review"}`);
+  redirect(
+    `/candidates?resume=${
+      parserStatus === ParserStatus.PARSED
+        ? "parsed"
+        : parserStatus === ParserStatus.FAILED
+        ? "parse-failed"
+        : canUseOpenAIResumeParser() || isLocalAIProviderMode()
+        ? "needs-review"
+        : "openai-not-configured"
+    }`,
+  );
 }
 
 export async function attachCandidateResume(formData: FormData) {
@@ -747,6 +707,7 @@ export async function attachCandidateResume(formData: FormData) {
 
   let parsed: ParsedResume | null = null;
   let rawText = pastedResumeText;
+  let localExtractionError: string | null = null;
   let parserStatus: ParserStatus = ParserStatus.NEEDS_REVIEW;
   let parsedData: unknown = null;
   let storedResumeBytes: Buffer | null = null;
@@ -758,6 +719,14 @@ export async function attachCandidateResume(formData: FormData) {
 
       if (isText) {
         rawText = rawText ?? bytes.toString("utf8");
+      }
+
+      if (isPdf && !rawText) {
+        try {
+          rawText = await extractTextFromPdfBuffer(bytes);
+        } catch (error) {
+          localExtractionError = error instanceof Error ? error.message : "Local PDF text extraction failed.";
+        }
       }
 
       if (canUseOpenAIResumeParser() && (isPdf || rawText)) {
@@ -797,19 +766,30 @@ export async function attachCandidateResume(formData: FormData) {
 
   if (!parsed && rawText) {
     parsed = parseResumeLocally(rawText, fileName);
+    const usefulLocalParse = hasUsefulLocalResumeParse(parsed);
     parsedData = {
       ...parsed,
-      source: canUseOpenAIResumeParser() ? "local-fallback-after-ai-failure" : "local-fallback-no-api-key",
+      source: canUseOpenAIResumeParser() ? "local-fallback-after-ai-failure" : "smart-local-parser",
+      ...(localExtractionError ? { localExtractionError } : {}),
     };
-    parserStatus = canUseOpenAIResumeParser() ? parserStatus : ParserStatus.NEEDS_REVIEW;
+    parserStatus = usefulLocalParse ? ParserStatus.PARSED : canUseOpenAIResumeParser() ? parserStatus : ParserStatus.NEEDS_REVIEW;
   }
 
   if (!parsed) {
-    parsedData = {
-      source: "pending-openai-parser",
-      message: "OPENAI_API_KEY is required to parse PDF content.",
-    };
-    parserStatus = ParserStatus.NEEDS_REVIEW;
+    const openAIConfigured = canUseOpenAIResumeParser();
+
+    if (parserStatus !== ParserStatus.FAILED) {
+      parsedData = {
+        source: openAIConfigured ? "manual-review-no-structured-data" : "pending-openai-parser",
+        message: openAIConfigured
+          ? "OpenAI did not return structured resume data. Review manually or retry parsing."
+          : localExtractionError
+          ? "Local PDF text extraction failed. Paste resume text for manual fallback parsing."
+          : "Local PDF parser could not extract structured resume data.",
+        ...(localExtractionError ? { localExtractionError } : {}),
+      };
+      parserStatus = ParserStatus.NEEDS_REVIEW;
+    }
   }
 
   storedResumeBytes = storedResumeBytes ?? (rawText ? Buffer.from(rawText, "utf8") : null);
@@ -857,7 +837,17 @@ export async function attachCandidateResume(formData: FormData) {
 
   await revalidateCandidatePaths(candidate.id);
 
-  redirect(`/candidates/${candidate.id}?resume=${parsed ? "review-ready" : "needs-review"}`);
+  redirect(
+    `/candidates/${candidate.id}?resume=${
+      parsed
+        ? "review-ready"
+        : parserStatus === ParserStatus.FAILED
+        ? "parse-failed"
+        : canUseOpenAIResumeParser() || isLocalAIProviderMode()
+        ? "needs-review"
+        : "openai-not-configured"
+    }`,
+  );
 }
 
 export async function applyResumeParsedData(formData: FormData) {
@@ -865,169 +855,31 @@ export async function applyResumeParsedData(formData: FormData) {
   const organization = session.organization;
   const candidateId = readString(formData, "candidateId");
   const resumeId = readString(formData, "resumeId");
-  const selectedFields = readSelectedFields(formData);
+  const selectedFields = readResumeReviewSelectedFields(formData);
 
   if (!candidateId || !resumeId) {
     throw new Error("Candidate and resume are required.");
   }
 
-  if (selectedFields.size === 0) {
+  const result = await applyParsedResumeDataToCandidate({
+    actorId: session.user.id,
+    candidateId,
+    organizationId: organization.id,
+    resumeId,
+    selectedFields,
+  });
+
+  if (result.status === "no-selection") {
     redirect(`/candidates/${candidateId}?resume=no-selection`);
   }
 
-  const resume = await prisma.resumeDocument.findFirst({
-    where: {
-      id: resumeId,
-      candidateId,
-      organizationId: organization.id,
-    },
-    include: {
-      candidate: true,
-    },
-  });
-
-  if (!resume) {
-    throw new Error("Resume not found for this candidate.");
-  }
-
-  const parsed = readParsedResumeData(resume.parsedData);
-
-  if (!parsed) {
+  if (result.status === "no-parsed-data") {
     redirect(`/candidates/${candidateId}?resume=no-parsed-data`);
   }
 
-  if (selectedFields.has("email") && parsed.email) {
-    const existingCandidate = await prisma.candidate.findUnique({
-      where: {
-        organizationId_email: {
-          organizationId: organization.id,
-          email: parsed.email,
-        },
-      },
-      select: {
-        id: true,
-      },
-    });
-
-    if (existingCandidate && existingCandidate.id !== candidateId) {
-      redirect(`/candidates/${candidateId}?resume=email-conflict`);
-    }
+  if (result.status === "email-conflict") {
+    redirect(`/candidates/${candidateId}?resume=email-conflict`);
   }
-
-  const candidateData: {
-    availability?: string | null;
-    currency?: string;
-    currentTitle?: string | null;
-    email?: string | null;
-    location?: string | null;
-    name?: string;
-    phone?: string | null;
-    salaryExpectation?: number | null;
-    summary?: string | null;
-    yearsExperience?: number | null;
-  } = {};
-
-  if (selectedFields.has("name") && parsed.name) {
-    candidateData.name = parsed.name;
-  }
-
-  if (selectedFields.has("email")) {
-    candidateData.email = parsed.email;
-  }
-
-  if (selectedFields.has("phone")) {
-    candidateData.phone = parsed.phone;
-  }
-
-  if (selectedFields.has("location")) {
-    candidateData.location = parsed.location;
-  }
-
-  if (selectedFields.has("currentTitle")) {
-    candidateData.currentTitle = parsed.currentTitle;
-  }
-
-  if (selectedFields.has("yearsExperience")) {
-    candidateData.yearsExperience = parsed.yearsExperience ? Math.round(parsed.yearsExperience) : null;
-  }
-
-  if (selectedFields.has("availability")) {
-    candidateData.availability = parsed.availability;
-  }
-
-  if (selectedFields.has("salaryExpectation")) {
-    candidateData.salaryExpectation = parsed.salaryExpectation ? Math.round(parsed.salaryExpectation) : null;
-  }
-
-  if (selectedFields.has("currency") && parsed.currency) {
-    candidateData.currency = parsed.currency;
-  }
-
-  if (selectedFields.has("summary")) {
-    candidateData.summary = parsed.summary || null;
-  }
-
-  if (Object.keys(candidateData).length > 0) {
-    await prisma.candidate.update({
-      where: {
-        id: candidateId,
-      },
-      data: candidateData,
-    });
-  }
-
-  if (selectedFields.has("skills") && parsed.skills.length > 0) {
-    await replaceCandidateSkills(organization.id, candidateId, parsed.skills);
-  }
-
-  if (selectedFields.has("education") && parsed.education.length > 0) {
-    await prisma.candidateEducation.deleteMany({
-      where: {
-        candidateId,
-      },
-    });
-    await prisma.candidateEducation.createMany({
-      data: parsed.education.map((education) => ({
-        candidateId,
-        institution: education.institution,
-        degree: education.degree,
-        field: education.field,
-      })),
-    });
-  }
-
-  if (selectedFields.has("experience") && parsed.experience.length > 0) {
-    await prisma.candidateExperience.deleteMany({
-      where: {
-        candidateId,
-      },
-    });
-    await prisma.candidateExperience.createMany({
-      data: parsed.experience.map((experience) => ({
-        candidateId,
-        company: experience.company,
-        title: experience.title,
-        location: experience.location,
-        description: experience.description,
-        current: experience.current,
-      })),
-    });
-  }
-
-  await prisma.auditEvent.create({
-    data: {
-      organizationId: organization.id,
-      actorId: session.user.id,
-      candidateId,
-      action: "candidate.resume_review_applied",
-      entityType: "resume_document",
-      entityId: resume.id,
-      metadata: {
-        fields: Array.from(selectedFields),
-        fileName: resume.fileName,
-      },
-    },
-  });
 
   await revalidateCandidatePaths(candidateId);
   redirect(`/candidates/${candidateId}?resume=applied`);

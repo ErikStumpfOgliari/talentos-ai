@@ -81,7 +81,7 @@ export async function createJob(formData: FormData) {
     },
   });
 
-  revalidatePath("/");
+  revalidatePath("/dashboard");
   revalidatePath("/jobs");
 }
 
@@ -107,7 +107,7 @@ export async function updateJobStatus(formData: FormData) {
     },
   });
 
-  revalidatePath("/");
+  revalidatePath("/dashboard");
   revalidatePath("/jobs");
   revalidatePath(`/jobs/${jobId}`);
 }
@@ -132,7 +132,7 @@ export async function archiveJob(formData: FormData) {
     },
   });
 
-  revalidatePath("/");
+  revalidatePath("/dashboard");
   revalidatePath("/jobs");
   revalidatePath(`/jobs/${jobId}`);
 }

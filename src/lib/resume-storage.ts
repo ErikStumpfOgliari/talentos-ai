@@ -31,6 +31,31 @@ type ReadResumeFileResult = {
 const LOCAL_STORAGE_PREFIX = "local:";
 const S3_STORAGE_PREFIX = "s3:";
 
+export function getResumeStorageStatus() {
+  const bucket = process.env.RESUME_STORAGE_S3_BUCKET?.trim();
+  const accessKeyId = process.env.RESUME_STORAGE_S3_ACCESS_KEY_ID?.trim();
+  const secretAccessKey = process.env.RESUME_STORAGE_S3_SECRET_ACCESS_KEY?.trim();
+  const s3Configured = Boolean(bucket && accessKeyId && secretAccessKey);
+
+  if (s3Configured) {
+    return {
+      configured: true,
+      detail: `S3-compatible bucket ${bucket} is configured for production resume files.`,
+      label: "S3-compatible storage",
+      provider: "s3" as const,
+      status: "S3 ready",
+    };
+  }
+
+  return {
+    configured: true,
+    detail: "Local development storage is active under storage/resumes.",
+    label: "Local resume storage",
+    provider: "local" as const,
+    status: "Local storage",
+  };
+}
+
 function getLocalStorageRoot() {
   return join(process.cwd(), "storage", "resumes");
 }

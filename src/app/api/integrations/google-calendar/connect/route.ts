@@ -15,7 +15,7 @@ export async function GET(request: Request) {
   }
 
   if (!(recruitingRoles as readonly string[]).includes(session.membership.role)) {
-    return NextResponse.redirect(new URL("/", request.url));
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
   const state = randomBytes(24).toString("base64url");

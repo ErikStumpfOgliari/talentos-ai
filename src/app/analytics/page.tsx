@@ -1,7 +1,6 @@
 import Link from "next/link";
 import {
   Activity,
-  ArrowLeft,
   BarChart3,
   BriefcaseBusiness,
   Clock3,
@@ -12,6 +11,7 @@ import {
   TrendingUp,
   Users,
 } from "lucide-react";
+import { WorkspacePageShell } from "@/components/workspace-page-shell";
 import { analyticsRoles, requireRole } from "@/lib/auth";
 import { getAnalyticsData } from "@/lib/analytics-data";
 
@@ -57,49 +57,35 @@ function ProgressBar({
 }
 
 export default async function AnalyticsPage() {
-  await requireRole(analyticsRoles);
-  const data = await getAnalyticsData();
+  const session = await requireRole(analyticsRoles);
+  const data = await getAnalyticsData(session.organization.id);
   const maxFunnelCount = Math.max(...data.funnel.map((stage) => stage.count), 1);
 
   return (
-    <main className="min-h-screen bg-slate-100 text-slate-950">
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-4 md:flex-row md:items-center md:justify-between lg:px-6">
-          <div className="min-w-0">
-            <Link className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition hover:text-slate-950" href="/">
-              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-              Dashboard
-            </Link>
-            <div className="mt-3 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-950 text-white">
-                <Activity className="h-5 w-5" aria-hidden="true" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase text-slate-500">{data.organizationName}</p>
-                <h1 className="text-2xl font-semibold text-slate-950">Hiring Analytics</h1>
-              </div>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Link
-              className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-              href="/matching"
-            >
-              <Gauge className="h-4 w-4" aria-hidden="true" />
-              Matching
-            </Link>
-            <Link
-              className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-              href="/jobs"
-            >
-              <BriefcaseBusiness className="h-4 w-4" aria-hidden="true" />
-              Jobs
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      <div className="mx-auto grid max-w-7xl gap-5 px-4 py-5 lg:px-6">
+    <WorkspacePageShell
+      actions={
+        <>
+          <Link
+            className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:scale-[1.03] hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98]"
+            href="/matching"
+          >
+            <Gauge className="h-4 w-4" aria-hidden="true" />
+            Matching
+          </Link>
+          <Link
+            className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:scale-[1.03] hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98]"
+            href="/jobs"
+          >
+            <BriefcaseBusiness className="h-4 w-4" aria-hidden="true" />
+            Jobs
+          </Link>
+        </>
+      }
+      icon={<Activity className="h-5 w-5" aria-hidden="true" />}
+      organizationName={data.organizationName}
+      title="Hiring Analytics"
+    >
+      <div className="grid gap-5">
         <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
             detail={`${data.summary.activeApplications} active applications`}
@@ -131,7 +117,7 @@ export default async function AnalyticsPage() {
           />
         </section>
 
-        <section className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
+        <section className="grid gap-5 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
           <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
             <div className="mb-4 flex items-center gap-2">
               <Filter className="h-4 w-4 text-sky-700" aria-hidden="true" />
@@ -161,8 +147,39 @@ export default async function AnalyticsPage() {
               <Target className="h-4 w-4 text-emerald-700" aria-hidden="true" />
               <p className="text-sm font-semibold text-slate-950">Role performance</p>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[820px] border-collapse text-left text-sm">
+            <div className="grid gap-3 2xl:hidden">
+              {data.jobPerformance.map((job) => (
+                <article className="rounded-lg border border-slate-200 bg-slate-50 p-3" key={job.id}>
+                  <div className="min-w-0">
+                    <p className="font-semibold text-slate-950">{job.title}</p>
+                    <p className="mt-0.5 text-xs text-slate-500">{job.department} - {job.status}</p>
+                  </div>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                    {[
+                      { label: "Apps", value: job.applications },
+                      { label: "Interviews", value: job.interviews },
+                      { label: "Offers", value: job.offers },
+                      { label: "Pipeline", value: `${job.avgPipelineDays}d` },
+                      { label: "Hire rate", value: `${job.conversionRate}%` },
+                    ].map((metric) => (
+                      <div className="rounded-md bg-white px-3 py-2" key={metric.label}>
+                        <p className="text-xs font-semibold uppercase text-slate-500">{metric.label}</p>
+                        <p className="mt-1 text-sm font-semibold text-slate-950">{metric.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-3 rounded-md bg-white px-3 py-2">
+                    <div className="mb-2 flex items-center justify-between gap-3">
+                      <p className="text-xs font-semibold uppercase text-slate-500">Avg score</p>
+                      <p className="text-sm font-semibold text-slate-950">{job.avgScore}%</p>
+                    </div>
+                    <ProgressBar color="bg-violet-500" value={job.avgScore} />
+                  </div>
+                </article>
+              ))}
+            </div>
+            <div className="hidden 2xl:block">
+              <table className="w-full table-fixed border-collapse text-left text-sm">
                 <thead>
                   <tr className="border-b border-slate-200 text-xs uppercase text-slate-500">
                     <th className="py-2 pr-3 font-semibold">Role</th>
@@ -202,7 +219,7 @@ export default async function AnalyticsPage() {
           </div>
         </section>
 
-        <section className="grid gap-5 xl:grid-cols-[1fr_0.8fr]">
+        <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)]">
           <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
             <div className="mb-4 flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-violet-700" aria-hidden="true" />
@@ -271,6 +288,6 @@ export default async function AnalyticsPage() {
           </div>
         </section>
       </div>
-    </main>
+    </WorkspacePageShell>
   );
 }

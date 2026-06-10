@@ -85,11 +85,9 @@ function mapJob(job: {
   };
 }
 
-export async function getMatchingPageData(jobId?: string): Promise<MatchingPageData> {
+export async function getMatchingPageData(jobId?: string, organizationId?: string): Promise<MatchingPageData> {
   const organization = await prisma.organization.findUnique({
-    where: {
-      slug: defaultOrganizationSlug,
-    },
+    where: organizationId ? { id: organizationId } : { slug: defaultOrganizationSlug },
     include: {
       jobs: {
         where: {

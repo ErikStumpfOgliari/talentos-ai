@@ -7,7 +7,12 @@ function isPublicPath(pathname: string) {
   return (
     pathname === "/login" ||
     pathname === "/logout" ||
+    pathname === "/" ||
+    pathname === "/signup" ||
+    pathname === "/candidate-status" ||
     pathname.startsWith("/api") ||
+    pathname.startsWith("/careers") ||
+    pathname.startsWith("/schedule") ||
     pathname.startsWith("/_next") ||
     PUBLIC_FILE.test(pathname)
   );

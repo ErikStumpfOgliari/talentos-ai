@@ -54,6 +54,10 @@ function emailTriggerForAutomation(trigger: AutomationTrigger) {
     return EmailTrigger.REJECTION_SENT;
   }
 
+  if (trigger === AutomationTrigger.CANDIDATE_CREATED) {
+    return EmailTrigger.APPLICATION_RECEIVED;
+  }
+
   return EmailTrigger.MANUAL;
 }
 

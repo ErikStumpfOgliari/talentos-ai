@@ -1,6 +1,5 @@
 import Link from "next/link";
 import {
-  ArrowLeft,
   BadgeCheck,
   BriefcaseBusiness,
   CalendarDays,
@@ -11,16 +10,27 @@ import {
   LinkIcon,
   Plus,
   Users,
-  Video,
 } from "lucide-react";
-import { createInterview, disconnectGoogleCalendar, updateInterviewStatus } from "@/app/interviews/actions";
+import {
+  createInterview,
+  createSchedulingLink,
+  disconnectGoogleCalendar,
+  updateInterviewDetails,
+  updateMyAvailability,
+} from "@/app/interviews/actions";
+import { WorkspacePageShell } from "@/components/workspace-page-shell";
 import { recruitingRoles, requireRole } from "@/lib/auth";
-import { getInterviewsPageData } from "@/lib/interviews-data";
+import { WEEKDAY_OPTIONS } from "@/lib/availability";
+import {
+  getInterviewsPageData,
+  type InterviewsPageApplication,
+  type InterviewsPageOrganizer,
+} from "@/lib/interviews-data";
 
 export const dynamic = "force-dynamic";
 
 const inputClass =
-  "h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400";
+  "h-10 w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400";
 
 function getStatusTone(status: string) {
   if (status === "Scheduled") {
@@ -69,8 +79,97 @@ function Field({
   );
 }
 
+function FieldGroup({
+  children,
+  label,
+}: {
+  children: React.ReactNode;
+  label: string;
+}) {
+  return (
+    <div className="grid gap-1.5">
+      <span className="text-xs font-semibold uppercase text-slate-500">{label}</span>
+      {children}
+    </div>
+  );
+}
+
+function ScheduleInterviewForm({
+  applications,
+  organizers,
+  timezone,
+}: {
+  applications: InterviewsPageApplication[];
+  organizers: InterviewsPageOrganizer[];
+  timezone: string;
+}) {
+  return (
+    <form action={createInterview} className="grid gap-3">
+      <Field label="Application">
+        <select className={inputClass} name="applicationId" required>
+          <option value="">Select candidate and role</option>
+          {applications.map((application) => (
+            <option key={application.id} value={application.id}>
+              {application.label} ({application.matchScore}%)
+            </option>
+          ))}
+        </select>
+      </Field>
+      <Field label="Title">
+        <input className={inputClass} name="title" placeholder="Technical screen" required />
+      </Field>
+      <div className="grid gap-3">
+        <Field label="Type">
+          <select className={inputClass} name="type" defaultValue="PHONE_SCREEN">
+            <option value="PHONE_SCREEN">Phone screen</option>
+            <option value="TECHNICAL">Technical</option>
+            <option value="HIRING_MANAGER">Hiring manager</option>
+            <option value="ONSITE">Onsite</option>
+            <option value="FINAL">Final</option>
+          </select>
+        </Field>
+        <Field label="Duration">
+          <select className={inputClass} name="durationMinutes" defaultValue="45">
+            <option value="30">30 min</option>
+            <option value="45">45 min</option>
+            <option value="60">60 min</option>
+            <option value="90">90 min</option>
+          </select>
+        </Field>
+      </div>
+      <Field label="Starts at">
+        <input className={inputClass} name="startsAt" required type="datetime-local" />
+      </Field>
+      <Field label="Organizer">
+        <select className={inputClass} name="organizerId" defaultValue="">
+          <option value="">Unassigned</option>
+          {organizers.map((organizer) => (
+            <option key={organizer.id} value={organizer.id}>
+              {organizer.name}
+            </option>
+          ))}
+        </select>
+      </Field>
+      <Field label="Timezone">
+        <input className={inputClass} name="timezone" defaultValue={timezone} />
+      </Field>
+      <Field label="Meeting URL">
+        <input className={inputClass} name="meetingUrl" placeholder="Leave empty for Google Meet" type="url" />
+      </Field>
+      <button
+        className="mt-1 inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:scale-[1.03] hover:bg-slate-800 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-slate-400"
+        disabled={applications.length === 0}
+        type="submit"
+      >
+        <CalendarDays className="h-4 w-4" aria-hidden="true" />
+        Schedule interview
+      </button>
+    </form>
+  );
+}
+
 function getCalendarNoticeTone(calendar: string) {
-  if (calendar === "synced" || calendar === "connected") {
+  if (calendar === "synced" || calendar === "connected" || calendar === "updated") {
     return "border-emerald-200 bg-emerald-50 text-emerald-800";
   }
 
@@ -78,7 +177,13 @@ function getCalendarNoticeTone(calendar: string) {
     return "border-sky-200 bg-sky-50 text-sky-800";
   }
 
-  if (calendar === "failed" || calendar === "missing-config" || calendar === "state-mismatch" || calendar === "cancel_failed") {
+  if (
+    calendar === "failed" ||
+    calendar === "missing-config" ||
+    calendar === "state-mismatch" ||
+    calendar === "cancel_failed" ||
+    calendar === "update_failed"
+  ) {
     return "border-rose-200 bg-rose-50 text-rose-800";
   }
 
@@ -96,6 +201,10 @@ function getCalendarNoticeMessage(calendar: string) {
 
   if (calendar === "synced") {
     return "Interview synced to Google Calendar.";
+  }
+
+  if (calendar === "updated") {
+    return "Google Calendar event updated.";
   }
 
   if (calendar === "cancelled") {
@@ -124,6 +233,10 @@ function getCalendarNoticeMessage(calendar: string) {
 
   if (calendar === "cancel_failed") {
     return "Interview status updated, but Google Calendar cancellation failed.";
+  }
+
+  if (calendar === "update_failed") {
+    return "Interview updated, but Google Calendar sync failed.";
   }
 
   if (calendar === "failed") {
@@ -161,7 +274,7 @@ function getCalendarBadge(status: string) {
 export default async function InterviewsPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ calendar?: string; created?: string; updated?: string }>;
+  searchParams?: Promise<{ availability?: string; calendar?: string; created?: string; scheduling?: string; updated?: string }>;
 }) {
   const params = await searchParams;
   const session = await requireRole(recruitingRoles);
@@ -172,44 +285,26 @@ export default async function InterviewsPage({
   const calendarNotice = params?.calendar ? getCalendarNoticeMessage(params.calendar) : null;
 
   return (
-    <main className="min-h-screen bg-slate-100 text-slate-950">
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-4 md:flex-row md:items-center md:justify-between lg:px-6">
-          <div className="min-w-0">
-            <Link className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition hover:text-slate-950" href="/">
-              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-              Dashboard
-            </Link>
-            <div className="mt-3 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-950 text-white">
-                <CalendarDays className="h-5 w-5" aria-hidden="true" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase text-slate-500">{data.organizationName}</p>
-                <h1 className="text-2xl font-semibold text-slate-950">Interviews</h1>
-              </div>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Link
-              className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-              href="/matching"
-            >
-              <Gauge className="h-4 w-4" aria-hidden="true" />
-              Matching
-            </Link>
-            <a
-              className="inline-flex h-10 items-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-              href="#schedule"
-            >
-              <Plus className="h-4 w-4" aria-hidden="true" />
-              Schedule
-            </a>
-          </div>
-        </div>
-      </header>
-
-      <div className="mx-auto grid max-w-7xl gap-5 px-4 py-5 lg:grid-cols-[1fr_390px] lg:px-6">
+    <WorkspacePageShell
+      actions={
+        <Link
+          className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:scale-[1.03] hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98]"
+          href="/matching"
+        >
+          <Gauge className="h-4 w-4" aria-hidden="true" />
+          Matching
+        </Link>
+      }
+      icon={<CalendarDays className="h-5 w-5" aria-hidden="true" />}
+      organizationName={data.organizationName}
+      rightPanel={<ScheduleInterviewForm applications={data.applications} organizers={data.organizers} timezone={data.timezone} />}
+      rightPanelButtonIcon={<Plus className="h-4 w-4" aria-hidden="true" />}
+      rightPanelButtonLabel="Schedule"
+      rightPanelDescription="Create a calendar event from an application."
+      rightPanelTitle="Schedule interview"
+      title="Interviews"
+    >
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
         <section className="space-y-5">
           {params?.created ? (
             <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
@@ -219,6 +314,16 @@ export default async function InterviewsPage({
           {params?.updated ? (
             <div className="rounded-lg border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-semibold text-sky-800">
               Interview status updated.
+            </div>
+          ) : null}
+          {params?.scheduling === "created" ? (
+            <div className="rounded-lg border border-violet-200 bg-violet-50 px-4 py-3 text-sm font-semibold text-violet-800">
+              Self-scheduling link created.
+            </div>
+          ) : null}
+          {params?.availability === "updated" ? (
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
+              Availability settings updated.
             </div>
           ) : null}
           {params?.calendar && calendarNotice ? (
@@ -258,7 +363,7 @@ export default async function InterviewsPage({
             <div className="grid gap-3">
               {data.interviews.map((interview) => (
                 <article className="rounded-lg border border-slate-200 p-4" key={interview.id}>
-                  <div className="grid gap-4 xl:grid-cols-[1fr_280px]">
+                  <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_280px]">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <h2 className="text-base font-semibold text-slate-950">{interview.title}</h2>
@@ -298,6 +403,72 @@ export default async function InterviewsPage({
                           </span>
                         ) : null}
                       </div>
+                      <details className="mt-4 rounded-lg bg-slate-50 p-3">
+                        <summary className="cursor-pointer text-sm font-semibold text-slate-700">Edit interview</summary>
+                        <form action={updateInterviewDetails} className="mt-3 grid gap-3">
+                          <input name="interviewId" type="hidden" value={interview.id} />
+                          <div className="grid gap-3 md:grid-cols-2">
+                            <Field label="Title">
+                              <input className={inputClass} defaultValue={interview.title} name="title" required />
+                            </Field>
+                            <Field label="Starts at">
+                              <input className={inputClass} defaultValue={interview.startsAtInput} name="startsAt" required type="datetime-local" />
+                            </Field>
+                          </div>
+                          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                            <Field label="Type">
+                              <select className={inputClass} defaultValue={interview.typeValue} name="type">
+                                <option value="PHONE_SCREEN">Phone screen</option>
+                                <option value="TECHNICAL">Technical</option>
+                                <option value="HIRING_MANAGER">Hiring manager</option>
+                                <option value="ONSITE">Onsite</option>
+                                <option value="FINAL">Final</option>
+                              </select>
+                            </Field>
+                            <Field label="Status">
+                              <select className={inputClass} defaultValue={interview.statusValue} name="status">
+                                <option value="SCHEDULED">Scheduled</option>
+                                <option value="COMPLETED">Completed</option>
+                                <option value="CANCELLED">Cancelled</option>
+                                <option value="NO_SHOW">No show</option>
+                              </select>
+                            </Field>
+                            <Field label="Duration">
+                              <input className={inputClass} defaultValue={interview.durationMinutes} min={15} name="durationMinutes" step={15} type="number" />
+                            </Field>
+                            <Field label="Timezone">
+                              <input className={inputClass} defaultValue={interview.timezone} name="timezone" />
+                            </Field>
+                          </div>
+                          <div className="grid gap-3 md:grid-cols-2">
+                            <Field label="Organizer">
+                              <select className={inputClass} defaultValue={interview.organizerId ?? ""} name="organizerId">
+                                <option value="">Unassigned</option>
+                                {data.organizers.map((organizer) => (
+                                  <option key={organizer.id} value={organizer.id}>
+                                    {organizer.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </Field>
+                            <Field label="Meeting URL">
+                              <input
+                                className={inputClass}
+                                defaultValue={interview.meetingUrl ?? ""}
+                                name="meetingUrl"
+                                placeholder="Leave empty for Google Meet"
+                                type="url"
+                              />
+                            </Field>
+                          </div>
+                          <button
+                            className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                            type="submit"
+                          >
+                            Update interview
+                          </button>
+                        </form>
+                      </details>
                     </div>
 
                     <div className="grid content-start gap-3">
@@ -338,21 +509,6 @@ export default async function InterviewsPage({
                           <p className="mt-1 text-sm font-semibold text-slate-950">{interview.calendarSyncedAt}</p>
                         </div>
                       ) : null}
-                      <form action={updateInterviewStatus} className="grid grid-cols-[1fr_auto] gap-2">
-                        <input name="interviewId" type="hidden" value={interview.id} />
-                        <select className={inputClass} defaultValue={interview.status.toUpperCase().replace("-", "_").replace(" ", "_")} name="status">
-                          <option value="SCHEDULED">Scheduled</option>
-                          <option value="COMPLETED">Completed</option>
-                          <option value="CANCELLED">Cancelled</option>
-                          <option value="NO_SHOW">No show</option>
-                        </select>
-                        <button
-                          className="h-10 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-                          type="submit"
-                        >
-                          Save
-                        </button>
-                      </form>
                     </div>
                   </div>
                 </article>
@@ -411,28 +567,111 @@ export default async function InterviewsPage({
             </div>
           </section>
 
-          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm" id="schedule">
+          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
             <div className="mb-4 flex items-center gap-2">
-              <Video className="h-4 w-4 text-sky-700" aria-hidden="true" />
-              <p className="text-sm font-semibold text-slate-950">Schedule interview</p>
+              <Clock3 className="h-4 w-4 text-emerald-700" aria-hidden="true" />
+              <p className="text-sm font-semibold text-slate-950">Your availability</p>
             </div>
-            <form action={createInterview} className="grid gap-3">
+            <form action={updateMyAvailability} className="grid gap-3">
+              <FieldGroup label="Available days">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {WEEKDAY_OPTIONS.map((day) => (
+                    <label
+                      className="flex h-10 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-2 text-sm font-semibold text-slate-700"
+                      key={day.value}
+                    >
+                      <input
+                        className="h-4 w-4 accent-slate-950"
+                        defaultChecked={data.availability.workingDays.includes(day.value)}
+                        name="workingDays"
+                        type="checkbox"
+                        value={day.value}
+                      />
+                      {day.label}
+                    </label>
+                  ))}
+                </div>
+              </FieldGroup>
+              <div className="grid gap-3">
+                <Field label="Timezone">
+                  <input className={inputClass} defaultValue={data.availability.timezone} name="timezone" />
+                </Field>
+                <Field label="Default duration">
+                  <select className={inputClass} defaultValue={data.availability.defaultDurationMinutes} name="defaultDurationMinutes">
+                    <option value="30">30 min</option>
+                    <option value="45">45 min</option>
+                    <option value="60">60 min</option>
+                    <option value="90">90 min</option>
+                  </select>
+                </Field>
+              </div>
+              <div className="grid gap-3">
+                <Field label="From">
+                  <input className={inputClass} defaultValue={data.availability.workdayStartHour} max={23} min={0} name="workdayStartHour" type="number" />
+                </Field>
+                <Field label="To">
+                  <input className={inputClass} defaultValue={data.availability.workdayEndHour} max={24} min={1} name="workdayEndHour" type="number" />
+                </Field>
+                <Field label="Days">
+                  <input className={inputClass} defaultValue={data.availability.maxDaysAhead} max={30} min={1} name="maxDaysAhead" type="number" />
+                </Field>
+              </div>
+              <div className="grid gap-3">
+                <Field label="Interval">
+                  <select className={inputClass} defaultValue={data.availability.slotIntervalMinutes} name="slotIntervalMinutes">
+                    <option value="15">15 min</option>
+                    <option value="30">30 min</option>
+                    <option value="60">60 min</option>
+                  </select>
+                </Field>
+                <Field label="Buffer before">
+                  <select className={inputClass} defaultValue={data.availability.bufferBeforeMinutes} name="bufferBeforeMinutes">
+                    <option value="0">0 min</option>
+                    <option value="15">15 min</option>
+                    <option value="30">30 min</option>
+                    <option value="60">60 min</option>
+                  </select>
+                </Field>
+                <Field label="Buffer after">
+                  <select className={inputClass} defaultValue={data.availability.bufferAfterMinutes} name="bufferAfterMinutes">
+                    <option value="0">0 min</option>
+                    <option value="15">15 min</option>
+                    <option value="30">30 min</option>
+                    <option value="60">60 min</option>
+                  </select>
+                </Field>
+              </div>
+              <button
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                type="submit"
+              >
+                Save availability
+              </button>
+            </form>
+          </section>
+
+          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="mb-4 flex items-center gap-2">
+              <Clock3 className="h-4 w-4 text-violet-700" aria-hidden="true" />
+              <p className="text-sm font-semibold text-slate-950">Self-scheduling</p>
+            </div>
+            <form action={createSchedulingLink} className="grid gap-3">
               <Field label="Application">
                 <select className={inputClass} name="applicationId" required>
                   <option value="">Select candidate and role</option>
                   {data.applications.map((application) => (
                     <option key={application.id} value={application.id}>
-                      {application.label} ({application.matchScore}%)
+                      {application.label}
                     </option>
                   ))}
                 </select>
               </Field>
               <Field label="Title">
-                <input className={inputClass} name="title" placeholder="Technical screen" required />
+                <input className={inputClass} defaultValue="Recruiter screen" name="title" required />
               </Field>
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-3">
                 <Field label="Type">
-                  <select className={inputClass} name="type" defaultValue="PHONE_SCREEN">
+                  <select className={inputClass} defaultValue="PHONE_SCREEN" name="type">
                     <option value="PHONE_SCREEN">Phone screen</option>
                     <option value="TECHNICAL">Technical</option>
                     <option value="HIRING_MANAGER">Hiring manager</option>
@@ -441,7 +680,8 @@ export default async function InterviewsPage({
                   </select>
                 </Field>
                 <Field label="Duration">
-                  <select className={inputClass} name="durationMinutes" defaultValue="45">
+                  <select className={inputClass} defaultValue="" name="durationMinutes">
+                    <option value="">Default ({data.availability.defaultDurationMinutes} min)</option>
                     <option value="30">30 min</option>
                     <option value="45">45 min</option>
                     <option value="60">60 min</option>
@@ -449,34 +689,105 @@ export default async function InterviewsPage({
                   </select>
                 </Field>
               </div>
-              <Field label="Starts at">
-                <input className={inputClass} name="startsAt" required type="datetime-local" />
-              </Field>
               <Field label="Organizer">
-                <select className={inputClass} name="organizerId" defaultValue="">
-                  <option value="">Unassigned</option>
+                <select className={inputClass} name="organizerId" defaultValue={session.user.id}>
                   {data.organizers.map((organizer) => (
                     <option key={organizer.id} value={organizer.id}>
-                      {organizer.name}
+                      {organizer.name} - {organizer.availabilityLabel}
                     </option>
                   ))}
                 </select>
               </Field>
-              <Field label="Timezone">
-                <input className={inputClass} name="timezone" defaultValue={data.timezone} />
-              </Field>
+              <div className="grid gap-3">
+                <Field label="Days">
+                  <input className={inputClass} max={30} min={1} name="maxDaysAhead" placeholder={`${data.availability.maxDaysAhead}`} type="number" />
+                </Field>
+                <Field label="From">
+                  <input className={inputClass} max={23} min={0} name="workdayStartHour" placeholder={`${data.availability.workdayStartHour}`} type="number" />
+                </Field>
+                <Field label="To">
+                  <input className={inputClass} max={24} min={1} name="workdayEndHour" placeholder={`${data.availability.workdayEndHour}`} type="number" />
+                </Field>
+              </div>
+              <div className="grid gap-3">
+                <Field label="Interval">
+                  <select className={inputClass} defaultValue="" name="slotIntervalMinutes">
+                    <option value="">Default ({data.availability.slotIntervalMinutes} min)</option>
+                    <option value="15">15 min</option>
+                    <option value="30">30 min</option>
+                    <option value="60">60 min</option>
+                  </select>
+                </Field>
+                <Field label="Timezone">
+                  <input className={inputClass} name="timezone" placeholder={data.availability.timezone} />
+                </Field>
+              </div>
+              <FieldGroup label="Days override">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {WEEKDAY_OPTIONS.map((day) => (
+                    <label
+                      className="flex h-9 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-700"
+                      key={day.value}
+                    >
+                      <input className="h-3.5 w-3.5 accent-slate-950" name="workingDays" type="checkbox" value={day.value} />
+                      {day.label}
+                    </label>
+                  ))}
+                </div>
+              </FieldGroup>
+              <div className="grid gap-3">
+                <Field label="Buffer before">
+                  <select className={inputClass} defaultValue="" name="bufferBeforeMinutes">
+                    <option value="">Default ({data.availability.bufferBeforeMinutes} min)</option>
+                    <option value="0">0 min</option>
+                    <option value="15">15 min</option>
+                    <option value="30">30 min</option>
+                    <option value="60">60 min</option>
+                  </select>
+                </Field>
+                <Field label="Buffer after">
+                  <select className={inputClass} defaultValue="" name="bufferAfterMinutes">
+                    <option value="">Default ({data.availability.bufferAfterMinutes} min)</option>
+                    <option value="0">0 min</option>
+                    <option value="15">15 min</option>
+                    <option value="30">30 min</option>
+                    <option value="60">60 min</option>
+                  </select>
+                </Field>
+              </div>
               <Field label="Meeting URL">
                 <input className={inputClass} name="meetingUrl" placeholder="Leave empty for Google Meet" type="url" />
               </Field>
               <button
-                className="mt-1 inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
                 disabled={data.applications.length === 0}
                 type="submit"
               >
-                <CalendarDays className="h-4 w-4" aria-hidden="true" />
-                Schedule interview
+                Create scheduling link
               </button>
             </form>
+
+            {data.schedulingLinks.length > 0 ? (
+              <div className="mt-4 grid gap-3 border-t border-slate-200 pt-4">
+                {data.schedulingLinks.map((link) => (
+                  <div className="rounded-lg bg-slate-50 p-3 text-sm" key={link.id}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold text-slate-950">{link.candidate}</p>
+                        <p className="mt-1 truncate text-xs text-slate-500">{link.jobTitle}</p>
+                      </div>
+                      <Link className="shrink-0 text-xs font-semibold text-slate-700 hover:text-slate-950" href={link.url}>
+                        Open
+                      </Link>
+                    </div>
+                    <p className="mt-2 break-all rounded-md bg-white px-2 py-1 text-xs text-slate-500">{link.url}</p>
+                    <p className="mt-2 text-xs text-slate-500">
+                      {link.durationMinutes} min with {link.organizer} - {link.windowLabel} - {link.bufferLabel}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : null}
           </section>
 
           <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
@@ -519,6 +830,6 @@ export default async function InterviewsPage({
           </section>
         </aside>
       </div>
-    </main>
+    </WorkspacePageShell>
   );
 }

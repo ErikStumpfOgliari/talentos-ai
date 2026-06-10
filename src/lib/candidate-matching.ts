@@ -1,6 +1,11 @@
 import { createHash } from "node:crypto";
 import OpenAI from "openai";
-import { EmbeddingEntity, type Prisma } from "@/generated/prisma/client";
+import {
+  ApplicationStatus,
+  EmbeddingEntity,
+  type Prisma,
+} from "@/generated/prisma/client";
+import { canUseOpenAIProvider } from "@/lib/ai-provider";
 import { prisma } from "@/lib/prisma";
 
 const embeddingModel = process.env.OPENAI_EMBEDDING_MODEL ?? "text-embedding-3-small";
@@ -111,6 +116,17 @@ export type CandidateMatchExplanation = {
 export type CandidateMatchResult = {
   score: number;
   explanation: CandidateMatchExplanation;
+};
+
+export type CandidateMatchRecalculationResult = {
+  applicationsUpdated: number;
+  scores: {
+    applicationId: string;
+    jobId: string;
+    jobTitle: string;
+    previousScore: number | null;
+    score: number;
+  }[];
 };
 
 function normalizeText(value: string) {
@@ -431,7 +447,7 @@ function buildLocalMatch(job: JobForMatching, candidate: CandidateForMatching, m
 }
 
 function canUseOpenAIEmbeddings() {
-  return Boolean(process.env.OPENAI_API_KEY?.trim());
+  return canUseOpenAIProvider();
 }
 
 function contentHash(content: string) {
@@ -549,4 +565,78 @@ export async function scoreCandidateForJob(job: JobForMatching, candidate: Candi
   } catch {
     return buildLocalMatch(job, candidate, "local-fallback");
   }
+}
+
+export async function recalculateCandidateApplicationMatches({
+  candidateId,
+  organizationId,
+}: {
+  candidateId: string;
+  organizationId: string;
+}): Promise<CandidateMatchRecalculationResult> {
+  const candidate = await prisma.candidate.findFirst({
+    where: {
+      id: candidateId,
+      organizationId,
+    },
+    include: {
+      applications: {
+        where: {
+          status: ApplicationStatus.ACTIVE,
+        },
+        include: {
+          job: true,
+        },
+      },
+      education: true,
+      experience: true,
+      resumes: {
+        orderBy: {
+          createdAt: "desc",
+        },
+        take: 2,
+      },
+      skills: {
+        include: {
+          skill: true,
+        },
+        orderBy: {
+          createdAt: "asc",
+        },
+      },
+    },
+  });
+
+  if (!candidate) {
+    throw new Error("Candidate not found for this organization.");
+  }
+
+  const scores: CandidateMatchRecalculationResult["scores"] = [];
+
+  for (const application of candidate.applications) {
+    const match = await scoreCandidateForJob(application.job, candidate);
+
+    await prisma.application.update({
+      where: {
+        id: application.id,
+      },
+      data: {
+        matchExplanation: match.explanation,
+        matchScore: match.score,
+      },
+    });
+
+    scores.push({
+      applicationId: application.id,
+      jobId: application.jobId,
+      jobTitle: application.job.title,
+      previousScore: application.matchScore,
+      score: match.score,
+    });
+  }
+
+  return {
+    applicationsUpdated: scores.length,
+    scores,
+  };
 }

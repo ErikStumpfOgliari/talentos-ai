@@ -220,7 +220,7 @@ export async function movePipelineCandidate(input: MovePipelineCandidateInput) {
     },
   });
 
-  revalidatePath("/");
+  revalidatePath("/dashboard");
   revalidatePath("/analytics");
   revalidatePath("/candidates");
   revalidatePath("/email-automation");

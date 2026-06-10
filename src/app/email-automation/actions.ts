@@ -33,7 +33,7 @@ function readEnum<T extends Record<string, string>>(enumObject: T, value: string
 }
 
 function revalidateEmailAutomation() {
-  revalidatePath("/");
+  revalidatePath("/dashboard");
   revalidatePath("/email-automation");
   revalidatePath("/interviews");
   revalidatePath("/candidates");

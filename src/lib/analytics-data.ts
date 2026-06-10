@@ -185,11 +185,9 @@ function getApplicationCategory(application: {
   return (application.stage?.category as PipelineCategory | undefined) ?? "APPLIED";
 }
 
-export async function getAnalyticsData(): Promise<AnalyticsPageData> {
+export async function getAnalyticsData(organizationId?: string): Promise<AnalyticsPageData> {
   const organization = await prisma.organization.findUnique({
-    where: {
-      slug: defaultOrganizationSlug,
-    },
+    where: organizationId ? { id: organizationId } : { slug: defaultOrganizationSlug },
     include: {
       applications: {
         include: {

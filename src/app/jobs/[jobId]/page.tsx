@@ -2,13 +2,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   Activity,
-  ArrowLeft,
   BarChart3,
   BriefcaseBusiness,
   CalendarDays,
   CheckCircle2,
   Clock3,
   Gauge,
+  Globe2,
   Mail,
   MapPin,
   Settings,
@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { updateJobStatus } from "@/app/jobs/actions";
 import { JobPipelineBoard } from "@/components/job-pipeline-board";
+import { WorkspacePageShell } from "@/components/workspace-page-shell";
 import { recruitingRoles, requireRole } from "@/lib/auth";
 import { getJobDetailData } from "@/lib/job-detail-data";
 
@@ -88,66 +89,56 @@ export default async function JobDetailPage({
   }
 
   return (
-    <main className="min-h-screen bg-slate-100 text-slate-950">
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 lg:px-6">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div className="min-w-0">
-              <Link className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition hover:text-slate-950" href="/jobs">
-                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-                Jobs
-              </Link>
-              <div className="mt-3 flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-950 text-white">
-                  <BriefcaseBusiness className="h-5 w-5" aria-hidden="true" />
-                </div>
-                <div className="min-w-0">
-                  <p className="truncate text-xs font-semibold uppercase text-slate-500">{data.organizationName}</p>
-                  <h1 className="truncate text-2xl font-semibold text-slate-950">{data.job.title}</h1>
-                </div>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Link
-                className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-                href={`/matching?jobId=${data.job.id}`}
-              >
-                <Gauge className="h-4 w-4" aria-hidden="true" />
-                Matching
-              </Link>
-              <Link
-                className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-                href="/interviews"
-              >
-                <CalendarDays className="h-4 w-4" aria-hidden="true" />
-                Interviews
-              </Link>
-              <Link
-                className="inline-flex h-10 items-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-                href="/candidates"
-              >
-                <Users className="h-4 w-4" aria-hidden="true" />
-                Candidates
-              </Link>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-            <span className={`rounded-full px-2 py-1 font-semibold ring-1 ${getStatusTone(data.job.status)}`}>
-              {data.job.status}
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
-              {data.job.location}
-            </span>
-            <span>{data.job.workMode}</span>
-            <span>{data.job.employmentType}</span>
-            <span>{data.job.salaryRange}</span>
-          </div>
+    <WorkspacePageShell
+      actions={
+        <>
+          <Link
+            className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:scale-[1.03] hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98]"
+            href={`/matching?jobId=${data.job.id}`}
+          >
+            <Gauge className="h-4 w-4" aria-hidden="true" />
+            Matching
+          </Link>
+          <Link
+            className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:scale-[1.03] hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98]"
+            href={`/careers/${data.job.id}`}
+          >
+            <Globe2 className="h-4 w-4" aria-hidden="true" />
+            Careers page
+          </Link>
+          <Link
+            className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:scale-[1.03] hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98]"
+            href="/interviews"
+          >
+            <CalendarDays className="h-4 w-4" aria-hidden="true" />
+            Interviews
+          </Link>
+          <Link
+            className="inline-flex h-10 items-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:scale-[1.03] hover:bg-slate-800 active:scale-[0.98]"
+            href="/candidates"
+          >
+            <Users className="h-4 w-4" aria-hidden="true" />
+            Candidates
+          </Link>
+        </>
+      }
+      icon={<BriefcaseBusiness className="h-5 w-5" aria-hidden="true" />}
+      organizationName={data.organizationName}
+      title={data.job.title}
+    >
+      <div className="grid gap-5">
+        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+          <span className={`rounded-full px-2 py-1 font-semibold ring-1 ${getStatusTone(data.job.status)}`}>
+            {data.job.status}
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
+            {data.job.location}
+          </span>
+          <span>{data.job.workMode}</span>
+          <span>{data.job.employmentType}</span>
+          <span>{data.job.salaryRange}</span>
         </div>
-      </header>
-
-      <div className="mx-auto grid max-w-7xl gap-5 px-4 py-5 lg:px-6">
         <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
           <StatCard icon={Users} label="Candidates" tone="text-emerald-700" value={data.stats.candidates} />
           <StatCard icon={Sparkles} label="Avg match" tone="text-violet-700" value={`${data.stats.avgScore}%`} />
@@ -270,6 +261,6 @@ export default async function JobDetailPage({
           </section>
         </section>
       </div>
-    </main>
+    </WorkspacePageShell>
   );
 }

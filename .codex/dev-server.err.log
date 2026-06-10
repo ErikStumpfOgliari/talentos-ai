@@ -1,0 +1,52 @@
+⚠ Fast Refresh had to perform a full reload when ./src/components/app-navigation-menu.tsx changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+⚠ Fast Refresh had to perform a full reload when ./src/components/app-navigation-menu.tsx changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+[browser] Uncaught Error: ./src/app/matching/page.tsx:397:7
+Expected corresponding JSX closing tag for <MatchingWorkspaceShell>
+  395 |         </aside>
+  396 |       </div>
+> 397 |     </main>
+      |       ^^^^
+  398 |   );
+  399 | }
+  400 |
+
+Parsing ecmascript source code failed
+
+
+    at <unknown> (Error: ./src/app/matching/page.tsx:397:7)
+    at <unknown> (Error: (./src/app/matching/page.tsx:397:7)
+⚠ Fast Refresh had to perform a full reload when ./src/lib/site-language.ts changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+[browser] Uncaught Error: Element type is invalid: expected a string (for built-in components) or a class/function (for composite components) but got: undefined. You likely forgot to export your component from the file it's defined in, or you might have mixed up default and named imports.
+
+Check the render method of `MatchingWorkspaceShell`.
+    at createFiberFromTypeAndProps (file://C:/Users/Erik/Documents/AI Recruitment CRM (ATS SaaS) — Full Stack AI Developer Needed/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:3167:32)
+    at createFiberFromElement (file://C:/Users/Erik/Documents/AI Recruitment CRM (ATS SaaS) — Full Stack AI Developer Needed/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:3178:16)
+    at reconcileChildFibersImpl (file://C:/Users/Erik/Documents/AI Recruitment CRM (ATS SaaS) — Full Stack AI Developer Needed/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:4206:421)
+    at <unknown> (file://C:/Users/Erik/Documents/AI Recruitment CRM (ATS SaaS) — Full Stack AI Developer Needed/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:4261:39)
+    at reconcileChildren (file://C:/Users/Erik/Documents/AI Recruitment CRM (ATS SaaS) — Full Stack AI Developer Needed/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:5898:51)
+    at beginWork (file://C:/Users/Erik/Documents/AI Recruitment CRM (ATS SaaS) — Full Stack AI Developer Needed/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:6758:1573)
+    at runWithFiberInDEV (file://C:/Users/Erik/Documents/AI Recruitment CRM (ATS SaaS) — Full Stack AI Developer Needed/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:965:74)
+    at performUnitOfWork (file://C:/Users/Erik/Documents/AI Recruitment CRM (ATS SaaS) — Full Stack AI Developer Needed/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:9555:97)
+    at workLoopSync (file://C:/Users/Erik/Documents/AI Recruitment CRM (ATS SaaS) — Full Stack AI Developer Needed/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:9449:40)
+    at renderRootSync (file://C:/Users/Erik/Documents/AI Recruitment CRM (ATS SaaS) — Full Stack AI Developer Needed/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:9433:13)
+    at performWorkOnRoot (file://C:/Users/Erik/Documents/AI Recruitment CRM (ATS SaaS) — Full Stack AI Developer Needed/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:9098:47)
+    at performWorkOnRootViaSchedulerTask (file://C:/Users/Erik/Documents/AI Recruitment CRM (ATS SaaS) — Full Stack AI Developer Needed/.next/dev/static/chunks/node_modules_next_dist_compiled_react-dom_058-ah~._.js:10255:9)
+    at MessagePort.performWorkUntilDeadline (file://C:/Users/Erik/Documents/AI Recruitment CRM (ATS SaaS) — Full Stack AI Developer Needed/.next/dev/static/chunks/node_modules_next_dist_compiled_0rpq4pf._.js:2647:64)
+    at MatchingWorkspaceShell (file://C:/Users/Erik/Documents/AI Recruitment CRM (ATS SaaS) — Full Stack AI Developer Needed/.next/dev/static/chunks/_0e~x9bw._.js:636:237)
+    at MatchingPage (src\app\matching\page.tsx:164:5)
+  162 |
+  163 |   return (
+> 164 |     <MatchingWorkspaceShell organizationName={data.organizationName} newJobPanel={<NewJob...
+      |     ^
+  165 |       <div className="grid min-w-0 gap-5 2xl:grid-cols-[minmax(0,1fr)_340px]">
+  166 |         <section className="space-y-5">
+  167 |           {params?.ranked ? (
+⚠ Server is approaching the used memory threshold, restarting...
+[browser] Failed to fetch RSC payload for http://127.0.0.1:3000/logout. Falling back to browser navigation. TypeError: Failed to fetch
+    at createFetch (file://C:/Users/Erik/Documents/AI Recruitment CRM (ATS SaaS) — Full Stack AI Developer Needed/.next/dev/static/chunks/node_modules_next_dist_client_0fhqo1d._.js:8107:21)
+    at async fetchServerResponse (file://C:/Users/Erik/Documents/AI Recruitment CRM (ATS SaaS) — Full Stack AI Developer Needed/.next/dev/static/chunks/node_modules_next_dist_client_0fhqo1d._.js:7951:21)
+    at async navigateToUnknownRoute (file://C:/Users/Erik/Documents/AI Recruitment CRM (ATS SaaS) — Full Stack AI Developer Needed/.next/dev/static/chunks/node_modules_next_dist_client_0fhqo1d._.js:10121:20) (file://C:/Users/Erik/Documents/AI Recruitment CRM (ATS SaaS)
+[browser] Failed to fetch RSC payload for http://127.0.0.1:3000/logout. Falling back to browser navigation. TypeError: Failed to fetch
+    at createFetch (file://C:/Users/Erik/Documents/AI Recruitment CRM (ATS SaaS) — Full Stack AI Developer Needed/.next/dev/static/chunks/node_modules_next_dist_client_0fhqo1d._.js:8107:21)
+    at async fetchServerResponse (file://C:/Users/Erik/Documents/AI Recruitment CRM (ATS SaaS) — Full Stack AI Developer Needed/.next/dev/static/chunks/node_modules_next_dist_client_0fhqo1d._.js:7951:21)
+    at async navigateToUnknownRoute (file://C:/Users/Erik/Documents/AI Recruitment CRM (ATS SaaS) — Full Stack AI Developer Needed/.next/dev/static/chunks/node_modules_next_dist_client_0fhqo1d._.js:10121:20) (file://C:/Users/Erik/Documents/AI Recruitment CRM (ATS SaaS)

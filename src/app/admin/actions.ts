@@ -25,13 +25,35 @@ function readEnum<T extends Record<string, string>>(enumObject: T, value: string
   return Object.values(enumObject).includes(value) ? (value as T[keyof T]) : fallback;
 }
 
+function readWorkspaceRole(formData: FormData) {
+  const role = readEnum(MembershipRole, readString(formData, "role"), MembershipRole.RECRUITER);
+
+  switch (role) {
+    case MembershipRole.OWNER:
+    case MembershipRole.ADMIN:
+    case MembershipRole.RECRUITER:
+      return role;
+    default:
+      return MembershipRole.RECRUITER;
+  }
+}
+
 function normalizeEmail(value: string) {
   return value.trim().toLowerCase();
 }
 
+function getSafeRedirect(value: string | null, fallback: string) {
+  if (!value || !value.startsWith("/") || value.startsWith("//")) {
+    return fallback;
+  }
+
+  return value;
+}
+
 function revalidateAdmin() {
-  revalidatePath("/");
+  revalidatePath("/dashboard");
   revalidatePath("/admin");
+  revalidatePath("/settings");
   revalidatePath("/jobs");
   revalidatePath("/interviews");
   revalidatePath("/email-automation");
@@ -81,6 +103,7 @@ export async function updateOrganizationSettings(formData: FormData) {
   const name = readString(formData, "name");
   const timezone = readString(formData, "timezone");
   const plan = readEnum(Plan, readString(formData, "plan"), Plan.PRO);
+  const redirectTo = getSafeRedirect(readOptionalString(formData, "redirectTo"), "/admin?settings=1");
 
   if (!name || !timezone) {
     throw new Error("Organization name and timezone are required.");
@@ -113,7 +136,7 @@ export async function updateOrganizationSettings(formData: FormData) {
   });
 
   revalidateAdmin();
-  redirect("/admin?settings=1");
+  redirect(redirectTo);
 }
 
 export async function upsertWorkspaceMember(formData: FormData) {
@@ -122,7 +145,7 @@ export async function upsertWorkspaceMember(formData: FormData) {
   const name = readString(formData, "name");
   const email = normalizeEmail(readString(formData, "email"));
   const password = readString(formData, "password");
-  const role = readEnum(MembershipRole, readString(formData, "role"), MembershipRole.RECRUITER);
+  const role = readWorkspaceRole(formData);
   const status = readEnum(MembershipStatus, readString(formData, "status"), MembershipStatus.INVITED);
 
   if (!name || !email) {
@@ -194,7 +217,7 @@ export async function updateWorkspaceMember(formData: FormData) {
   const session = await requireRole(adminRoles);
   const organization = session.organization;
   const membershipId = readString(formData, "membershipId");
-  const role = readEnum(MembershipRole, readString(formData, "role"), MembershipRole.RECRUITER);
+  const role = readWorkspaceRole(formData);
   const status = readEnum(MembershipStatus, readString(formData, "status"), MembershipStatus.ACTIVE);
 
   if (!membershipId) {

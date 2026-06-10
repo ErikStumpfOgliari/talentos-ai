@@ -123,6 +123,7 @@ enum EmailStatus {
 
 enum EmailTrigger {
   MANUAL
+  APPLICATION_RECEIVED
   MOVED_TO_STAGE
   INTERVIEW_SCHEDULED
   OFFER_CREATED
@@ -165,6 +166,8 @@ model Organization {
   memberships     Membership[]
   pipelineStages  PipelineStage[]
   resumes         ResumeDocument[]
+  schedulingLinks SchedulingLink[]
+  availabilitySettings UserAvailability[]
   skills          Skill[]
   candidateSkills CandidateSkill[]
 
@@ -187,8 +190,34 @@ model User {
   createdJobs         Job[]           @relation("JobCreatedBy")
   memberships         Membership[]
   organizedInterviews Interview[]     @relation("InterviewOrganizer")
+  organizedSchedulingLinks SchedulingLink[] @relation("SchedulingLinkOrganizer")
+  availabilitySettings UserAvailability[] @relation("UserAvailabilityOwner")
+  reviewedResumes     ResumeDocument[] @relation("ResumeReviewer")
   sentEmails          EmailMessage[]  @relation("EmailSender")
   managedJobs         Job[]           @relation("JobHiringManager")
+}
+
+model UserAvailability {
+  id                     String   @id @default(cuid())
+  organizationId         String
+  userId                 String
+  timezone               String   @default("America/Sao_Paulo")
+  workingDays            Int[]    @default([1, 2, 3, 4, 5])
+  workdayStartHour       Int      @default(9)
+  workdayEndHour         Int      @default(17)
+  slotIntervalMinutes    Int      @default(30)
+  defaultDurationMinutes Int      @default(45)
+  bufferBeforeMinutes    Int      @default(0)
+  bufferAfterMinutes     Int      @default(15)
+  maxDaysAhead           Int      @default(10)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation("UserAvailabilityOwner", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([userId])
 }
 
 model Membership {
@@ -352,14 +381,19 @@ model ResumeDocument {
   rawText        String?
   parsedData     Json?
   parsedAt       DateTime?
+  reviewedAt     DateTime?
+  reviewedById   String?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
   candidate    Candidate    @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  reviewedBy   User?        @relation("ResumeReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
 
   @@index([organizationId, parserStatus])
+  @@index([organizationId, reviewedAt])
   @@index([candidateId])
+  @@index([reviewedById])
 }
 
 model PipelineStage {
@@ -383,6 +417,7 @@ model PipelineStage {
 
 model Application {
   id               String            @id @default(cuid())
+  publicToken      String?           @unique
   organizationId   String
   jobId            String
   candidateId      String
@@ -403,6 +438,7 @@ model Application {
   candidate     Candidate       @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   emailMessages EmailMessage[]
   interviews    Interview[]
+  schedulingLinks SchedulingLink[]
   job           Job             @relation(fields: [jobId], references: [id], onDelete: Cascade)
   notes         CandidateNote[]
   organization  Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -461,9 +497,46 @@ model Interview {
   job          Job          @relation(fields: [jobId], references: [id], onDelete: Cascade)
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   organizer    User?        @relation("InterviewOrganizer", fields: [organizerId], references: [id], onDelete: SetNull)
+  schedulingLinks SchedulingLink[]
 
   @@index([organizationId, startsAt])
   @@index([candidateId])
+}
+
+model SchedulingLink {
+  id                  String        @id @default(cuid())
+  organizationId      String
+  applicationId       String
+  organizerId         String?
+  interviewId         String?
+  token               String        @unique
+  title               String
+  type                InterviewType @default(PHONE_SCREEN)
+  durationMinutes     Int           @default(45)
+  timezone            String        @default("America/Sao_Paulo")
+  meetingUrl          String?
+  maxDaysAhead        Int           @default(10)
+  slotIntervalMinutes Int           @default(30)
+  workingDays         Int[]         @default([1, 2, 3, 4, 5])
+  workdayStartHour    Int           @default(9)
+  workdayEndHour      Int           @default(17)
+  bufferBeforeMinutes Int           @default(0)
+  bufferAfterMinutes  Int           @default(15)
+  active              Boolean       @default(true)
+  expiresAt           DateTime?
+  bookedAt            DateTime?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  application  Application  @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  interview    Interview?   @relation(fields: [interviewId], references: [id], onDelete: SetNull)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizer    User?        @relation("SchedulingLinkOrganizer", fields: [organizerId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, active])
+  @@index([applicationId])
+  @@index([organizerId])
+  @@index([token])
 }
 
 model CalendarConnection {

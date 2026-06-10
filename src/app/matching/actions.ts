@@ -95,7 +95,7 @@ export async function rankCandidatesForJob(formData: FormData) {
     });
   }
 
-  revalidatePath("/");
+  revalidatePath("/dashboard");
   revalidatePath("/jobs");
   revalidatePath("/candidates");
   revalidatePath("/matching");

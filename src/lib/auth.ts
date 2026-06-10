@@ -21,7 +21,6 @@ export const recruitingRoles = [
   MembershipRole.OWNER,
   MembershipRole.ADMIN,
   MembershipRole.RECRUITER,
-  MembershipRole.HIRING_MANAGER,
 ] as const;
 export const automationRoles = [
   MembershipRole.OWNER,
@@ -32,8 +31,6 @@ export const analyticsRoles = [
   MembershipRole.OWNER,
   MembershipRole.ADMIN,
   MembershipRole.RECRUITER,
-  MembershipRole.HIRING_MANAGER,
-  MembershipRole.VIEWER,
 ] as const;
 
 export type AuthSession = {
@@ -78,9 +75,15 @@ export async function getCurrentSession(): Promise<AuthSession | null> {
       memberships: {
         where: {
           status: MembershipStatus.ACTIVE,
-          organization: {
-            slug: defaultOrganizationSlug,
-          },
+          ...(payload.organizationId
+            ? {
+                organizationId: payload.organizationId,
+              }
+            : {
+                organization: {
+                  slug: defaultOrganizationSlug,
+                },
+              }),
         },
         select: {
           id: true,
@@ -123,10 +126,10 @@ export async function getCurrentSession(): Promise<AuthSession | null> {
   };
 }
 
-export async function setSessionCookie(userId: string) {
+export async function setSessionCookie(userId: string, organizationId?: string) {
   const cookieStore = await cookies();
 
-  cookieStore.set(SESSION_COOKIE_NAME, createSessionToken(userId), {
+  cookieStore.set(SESSION_COOKIE_NAME, createSessionToken(userId, organizationId), {
     httpOnly: true,
     maxAge: SESSION_MAX_AGE_SECONDS,
     path: "/",
@@ -161,7 +164,7 @@ export async function requireRole(allowedRoles: readonly MembershipRole[]) {
   const session = await requireSession();
 
   if (!allowedRoles.includes(session.membership.role)) {
-    redirect("/");
+    redirect("/dashboard");
   }
 
   return session;
