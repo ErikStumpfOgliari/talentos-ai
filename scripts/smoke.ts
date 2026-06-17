@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { MembershipRole, MembershipStatus } from "../src/generated/prisma/client";
 import { createSessionToken } from "../src/lib/session-token";
 import { SESSION_COOKIE_NAME } from "../src/lib/auth-constants";
 import { defaultOrganizationSlug } from "../src/lib/organization";
@@ -22,8 +23,8 @@ type SmokeResult = {
 
 const appUrl = (process.env.SMOKE_APP_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://127.0.0.1:3000").replace(/\/$/, "");
 
-function formatCookie(userId: string) {
-  return `${SESSION_COOKIE_NAME}=${createSessionToken(userId)}`;
+function formatCookie(userId: string, organizationId?: string) {
+  return `${SESSION_COOKIE_NAME}=${createSessionToken(userId, organizationId)}`;
 }
 
 async function fetchText(path: string, cookie?: string) {
@@ -43,69 +44,86 @@ async function fetchText(path: string, cookie?: string) {
 }
 
 async function getSmokeFixtures() {
-  const organization = await prisma.organization.findUnique({
-    where: {
-      slug: defaultOrganizationSlug,
+  const adminMembershipWhere = {
+    role: {
+      in: [MembershipRole.OWNER, MembershipRole.ADMIN],
     },
-    include: {
-      applications: {
-        where: {
-          publicToken: {
-            not: null,
-          },
+    status: MembershipStatus.ACTIVE,
+  };
+  const organizationInclude = {
+    applications: {
+      where: {
+        publicToken: {
+          not: null,
         },
-        orderBy: {
-          createdAt: "desc",
-        },
-        select: {
-          publicToken: true,
-        },
-        take: 1,
       },
-      jobs: {
-        where: {
-          status: "ACTIVE",
-        },
-        orderBy: {
-          publishedAt: "desc",
-        },
-        select: {
-          id: true,
-        },
-        take: 1,
+      orderBy: {
+        createdAt: "desc" as const,
       },
-      memberships: {
-        where: {
-          role: {
-            in: ["OWNER", "ADMIN"],
-          },
-          status: "ACTIVE",
-        },
-        orderBy: {
-          createdAt: "asc",
-        },
-        select: {
-          userId: true,
-        },
-        take: 1,
+      select: {
+        publicToken: true,
       },
-      schedulingLinks: {
-        where: {
-          active: true,
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-        select: {
-          token: true,
-        },
-        take: 1,
-      },
+      take: 1,
     },
-  });
+    jobs: {
+      where: {
+        status: "ACTIVE" as const,
+      },
+      orderBy: {
+        publishedAt: "desc" as const,
+      },
+      select: {
+        id: true,
+      },
+      take: 1,
+    },
+    memberships: {
+      where: adminMembershipWhere,
+      orderBy: {
+        createdAt: "asc" as const,
+      },
+      select: {
+        userId: true,
+      },
+      take: 1,
+    },
+    schedulingLinks: {
+      where: {
+        active: true,
+      },
+      orderBy: {
+        createdAt: "desc" as const,
+      },
+      select: {
+        token: true,
+      },
+      take: 1,
+    },
+  };
+  const organization =
+    (await prisma.organization.findFirst({
+      where: {
+        slug: defaultOrganizationSlug,
+        memberships: {
+          some: adminMembershipWhere,
+        },
+      },
+      include: organizationInclude,
+    })) ??
+    (await prisma.organization.findFirst({
+      where: {
+        memberships: {
+          some: adminMembershipWhere,
+        },
+      },
+      orderBy: {
+        createdAt: "asc",
+      },
+      include: organizationInclude,
+    }));
 
   if (!organization) {
-    throw new Error(`Organization "${defaultOrganizationSlug}" was not found.`);
+    throw new Error("No organization with an active owner/admin membership was found.");
   }
 
   const adminUserId = organization.memberships[0]?.userId;
@@ -115,7 +133,7 @@ async function getSmokeFixtures() {
   }
 
   return {
-    adminCookie: formatCookie(adminUserId),
+    adminCookie: formatCookie(adminUserId, organization.id),
     applicationToken: organization.applications[0]?.publicToken ?? null,
     jobId: organization.jobs[0]?.id ?? null,
     schedulingToken: organization.schedulingLinks[0]?.token ?? null,

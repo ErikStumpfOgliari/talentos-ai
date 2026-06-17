@@ -10,7 +10,6 @@ import {
   SESSION_COOKIE_NAME,
   SESSION_MAX_AGE_SECONDS,
 } from "@/lib/auth-constants";
-import { defaultOrganizationSlug } from "@/lib/organization";
 import { prisma } from "@/lib/prisma";
 import {
   createSessionToken,
@@ -239,19 +238,14 @@ export async function getCurrentSession(): Promise<AuthSession | null> {
       memberships: {
         where: {
           status: MembershipStatus.ACTIVE,
-          ...(persistedSession.organizationId
-            ? {
-                organizationId: persistedSession.organizationId,
-              }
-            : {
-                organization: {
-                  slug: defaultOrganizationSlug,
-                },
-              }),
+        },
+        orderBy: {
+          createdAt: "asc",
         },
         select: {
           id: true,
           role: true,
+          organizationId: true,
           status: true,
           organization: {
             select: {
@@ -268,7 +262,9 @@ export async function getCurrentSession(): Promise<AuthSession | null> {
     },
   });
 
-  const membership = user?.memberships[0];
+  const membership =
+    user?.memberships.find((item) => item.organizationId === persistedSession.organizationId) ??
+    user?.memberships[0];
 
   if (!user || !membership) {
     return null;

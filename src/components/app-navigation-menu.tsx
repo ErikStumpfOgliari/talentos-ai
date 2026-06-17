@@ -86,6 +86,7 @@ function NavigationLinks({ copy, onNavigate }: { copy?: NavigationCopy; onNaviga
             href={item.href}
             key={item.href}
             onClick={onNavigate}
+            prefetch={false}
           >
             <ItemIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span className="truncate" data-i18n-key={item.i18nKey}>
