@@ -121,14 +121,15 @@ function NavigationFooter({
           </p>
         </div>
       ) : null}
-      <Link
-        className="flex h-10 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-        href="/logout"
-        onClick={onNavigate}
-      >
-        <LogOut className="h-4 w-4" aria-hidden="true" />
-        <span data-i18n-key="nav.signOut">{getCopy(copy, "nav.signOut", "Sign out")}</span>
-      </Link>
+      <form action="/logout" method="post" onSubmit={onNavigate}>
+        <button
+          className="flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+          type="submit"
+        >
+          <LogOut className="h-4 w-4" aria-hidden="true" />
+          <span data-i18n-key="nav.signOut">{getCopy(copy, "nav.signOut", "Sign out")}</span>
+        </button>
+      </form>
     </div>
   );
 }
