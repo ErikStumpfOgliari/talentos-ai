@@ -7,6 +7,7 @@ import {
   Plan,
 } from "@/generated/prisma/client";
 import {
+  getSharedCookieDomain,
   SESSION_COOKIE_NAME,
   SESSION_MAX_AGE_SECONDS,
 } from "@/lib/auth-constants";
@@ -72,6 +73,52 @@ type AuthSessionDelegate = {
 
 function getAuthSessionDelegate() {
   return (prisma as unknown as { authSession?: AuthSessionDelegate }).authSession;
+}
+
+async function getRequestCookieDomain() {
+  const headerStore = await headers();
+  return getSharedCookieDomain(headerStore.get("x-forwarded-host") ?? headerStore.get("host"));
+}
+
+async function expireSessionCookies(cookieStore: Awaited<ReturnType<typeof cookies>>) {
+  const domain = await getRequestCookieDomain();
+  const expiredOptions = {
+    expires: new Date(0),
+    httpOnly: true,
+    maxAge: 0,
+    path: "/",
+    sameSite: "lax" as const,
+    secure: process.env.NODE_ENV === "production",
+  };
+
+  cookieStore.set(SESSION_COOKIE_NAME, "", expiredOptions);
+
+  if (domain) {
+    cookieStore.set(SESSION_COOKIE_NAME, "", {
+      ...expiredOptions,
+      domain,
+    });
+  }
+}
+
+async function writeSessionCookie(
+  cookieStore: Awaited<ReturnType<typeof cookies>>,
+  sessionToken: string,
+  expires: Date,
+) {
+  const domain = await getRequestCookieDomain();
+
+  await expireSessionCookies(cookieStore);
+
+  cookieStore.set(SESSION_COOKIE_NAME, sessionToken, {
+    ...(domain ? { domain } : {}),
+    expires,
+    httpOnly: true,
+    maxAge: SESSION_MAX_AGE_SECONDS,
+    path: "/",
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+  });
 }
 
 function hashNullable(value?: string | null) {
@@ -208,82 +255,89 @@ async function validatePersistedSession({
 
 export async function getCurrentSession(): Promise<AuthSession | null> {
   const cookieStore = await cookies();
-  const sessionToken = cookieStore.get(SESSION_COOKIE_NAME)?.value;
-  const payload = verifySessionToken(sessionToken);
+  const sessionTokens = cookieStore
+    .getAll(SESSION_COOKIE_NAME)
+    .map((cookie) => cookie.value)
+    .filter(Boolean);
 
-  if (!payload) {
-    return null;
-  }
+  for (const sessionToken of sessionTokens) {
+    const payload = verifySessionToken(sessionToken);
 
-  const persistedSession = await validatePersistedSession({
-    organizationId: payload.organizationId,
-    sessionId: payload.sessionId,
-    token: sessionToken ?? "",
-    userId: payload.userId,
-  });
+    if (!payload) {
+      continue;
+    }
 
-  if (!persistedSession) {
-    return null;
-  }
+    const persistedSession = await validatePersistedSession({
+      organizationId: payload.organizationId,
+      sessionId: payload.sessionId,
+      token: sessionToken,
+      userId: payload.userId,
+    });
 
-  const user = await prisma.user.findUnique({
-    where: {
-      id: payload.userId,
-    },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      imageUrl: true,
-      memberships: {
-        where: {
-          status: MembershipStatus.ACTIVE,
-        },
-        orderBy: {
-          createdAt: "asc",
-        },
-        select: {
-          id: true,
-          role: true,
-          organizationId: true,
-          status: true,
-          organization: {
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-              plan: true,
-              timezone: true,
+    if (!persistedSession) {
+      continue;
+    }
+
+    const user = await prisma.user.findUnique({
+      where: {
+        id: payload.userId,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        imageUrl: true,
+        memberships: {
+          where: {
+            status: MembershipStatus.ACTIVE,
+          },
+          orderBy: {
+            createdAt: "asc",
+          },
+          select: {
+            id: true,
+            role: true,
+            organizationId: true,
+            status: true,
+            organization: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                plan: true,
+                timezone: true,
+              },
             },
           },
         },
-        take: 1,
       },
-    },
-  });
+    });
 
-  const membership =
-    user?.memberships.find((item) => item.organizationId === persistedSession.organizationId) ??
-    user?.memberships[0];
+    const membership =
+      user?.memberships.find((item) => item.organizationId === persistedSession.organizationId) ??
+      user?.memberships[0];
 
-  if (!user || !membership) {
-    return null;
+    if (!user || !membership) {
+      continue;
+    }
+
+    return {
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        imageUrl: user.imageUrl,
+      },
+      membership: {
+        id: membership.id,
+        role: membership.role,
+        status: membership.status,
+      },
+      organization: membership.organization,
+    };
   }
 
-  return {
-    user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      imageUrl: user.imageUrl,
-    },
-    membership: {
-      id: membership.id,
-      role: membership.role,
-      status: membership.status,
-    },
-    organization: membership.organization,
-  };
+  return null;
 }
 
 export async function setSessionCookie(userId: string, organizationId?: string) {
@@ -311,14 +365,7 @@ export async function setSessionCookie(userId: string, organizationId?: string) 
         },
       });
 
-      cookieStore.set(SESSION_COOKIE_NAME, sessionToken, {
-        expires,
-        httpOnly: true,
-        maxAge: SESSION_MAX_AGE_SECONDS,
-        path: "/",
-        sameSite: "lax",
-        secure: process.env.NODE_ENV === "production",
-      });
+      await writeSessionCookie(cookieStore, sessionToken, expires);
       return;
     } catch (error) {
       if (process.env.NODE_ENV === "production") {
@@ -329,14 +376,7 @@ export async function setSessionCookie(userId: string, organizationId?: string) 
 
   const sessionToken = createSessionToken(userId, organizationId);
 
-  cookieStore.set(SESSION_COOKIE_NAME, sessionToken, {
-    expires,
-    httpOnly: true,
-    maxAge: SESSION_MAX_AGE_SECONDS,
-    path: "/",
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-  });
+  await writeSessionCookie(cookieStore, sessionToken, expires);
 }
 
 export async function revokeSessionToken(token?: string | null) {
@@ -371,14 +411,7 @@ export async function clearSessionCookie() {
 
   await revokeSessionToken(sessionToken);
 
-  cookieStore.set(SESSION_COOKIE_NAME, "", {
-    expires: new Date(0),
-    httpOnly: true,
-    maxAge: 0,
-    path: "/",
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-  });
+  await expireSessionCookies(cookieStore);
 }
 
 export async function requireSession() {
