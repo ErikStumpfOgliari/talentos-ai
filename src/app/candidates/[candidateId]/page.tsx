@@ -23,9 +23,11 @@ import {
   addCandidateNote,
   applyResumeParsedData,
   attachCandidateResume,
+  deleteCandidate,
   updateCandidateProfile,
 } from "@/app/candidates/actions";
 import { CandidateResumeAttachmentForm } from "@/components/candidate-resume-attachment-form";
+import { DeleteCandidateForm } from "@/components/delete-candidate-form";
 import { WorkspacePageShell } from "@/components/workspace-page-shell";
 import { recruitingRoles, requireRole } from "@/lib/auth";
 import { getCandidateDetailData } from "@/lib/candidate-detail-data";
@@ -577,6 +579,16 @@ export default async function CandidateDetailPage({
                 <p className="text-sm font-semibold text-slate-950">Attach resume</p>
               </div>
               <CandidateResumeAttachmentForm action={attachCandidateResume} candidateId={data.candidate.id} />
+            </section>
+
+            <section className="min-w-0 overflow-hidden rounded-lg border border-rose-200 bg-rose-50/60 p-4 shadow-sm">
+              <div className="mb-4">
+                <p className="text-sm font-semibold text-rose-950">Danger zone</p>
+                <p className="mt-1 text-xs leading-5 text-rose-700">
+                  Remove this candidate and all related recruiting records from this workspace.
+                </p>
+              </div>
+              <DeleteCandidateForm action={deleteCandidate} candidateId={data.candidate.id} candidateName={data.candidate.name} />
             </section>
 
             <section className="min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white p-4 shadow-sm">

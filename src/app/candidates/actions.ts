@@ -815,6 +815,60 @@ export async function applyResumeParsedData(formData: FormData) {
   redirect(`/candidates/${candidateId}?resume=applied`);
 }
 
+export async function deleteCandidate(formData: FormData) {
+  const session = await requireRole(recruitingRoles);
+  const organization = session.organization;
+  const candidateId = readString(formData, "candidateId");
+
+  if (!candidateId) {
+    throw new Error("Candidate id is required.");
+  }
+
+  const candidate = await prisma.candidate.findFirst({
+    where: {
+      id: candidateId,
+      organizationId: organization.id,
+    },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+    },
+  });
+
+  if (!candidate) {
+    redirect("/candidates?candidate=missing");
+  }
+
+  await prisma.auditEvent.create({
+    data: {
+      organizationId: organization.id,
+      actorId: session.user.id,
+      candidateId: candidate.id,
+      action: "candidate.deleted",
+      entityType: "candidate",
+      entityId: candidate.id,
+      metadata: {
+        email: candidate.email,
+        name: candidate.name,
+      },
+    },
+  });
+
+  await prisma.candidate.delete({
+    where: {
+      id: candidate.id,
+    },
+  });
+
+  revalidatePath("/dashboard");
+  revalidatePath("/candidates");
+  revalidatePath("/matching");
+  revalidatePath("/applications");
+  revalidatePath("/analytics");
+  redirect("/candidates?candidate=deleted");
+}
+
 export async function addCandidateNote(formData: FormData) {
   const session = await requireRole(recruitingRoles);
   const organization = session.organization;

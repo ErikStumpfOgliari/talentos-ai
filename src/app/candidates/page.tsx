@@ -165,7 +165,7 @@ function getResumeMessage(status?: string) {
   if (status === "needs-review") {
     return {
       tone: "border-amber-200 bg-amber-50 text-amber-800",
-      message: "Resume saved for review. The local reader did not find enough structured data, so you can complete it from the profile.",
+      message: "Resume saved. The local reader did not find enough readable text, so open the profile and add resume text if the PDF is scanned or image-only.",
     };
   }
 
@@ -193,15 +193,34 @@ function getResumeMessage(status?: string) {
   return null;
 }
 
+function getCandidateMessage(status?: string) {
+  if (status === "deleted") {
+    return {
+      tone: "border-emerald-200 bg-emerald-50 text-emerald-800",
+      message: "Candidate deleted from this workspace.",
+    };
+  }
+
+  if (status === "missing") {
+    return {
+      tone: "border-rose-200 bg-rose-50 text-rose-800",
+      message: "Candidate was not found in this workspace.",
+    };
+  }
+
+  return null;
+}
+
 export default async function CandidatesPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ resume?: string }>;
+  searchParams?: Promise<{ candidate?: string; resume?: string }>;
 }) {
   const params = await searchParams;
   const session = await requireRole(recruitingRoles);
   const data = await getCandidatesPageData(session.organization.id);
   const resumeMessage = getResumeMessage(params?.resume);
+  const candidateMessage = getCandidateMessage(params?.candidate);
 
   return (
     <WorkspacePageShell
@@ -228,6 +247,11 @@ export default async function CandidatesPage({
           {resumeMessage ? (
             <div className={`rounded-lg border px-4 py-3 text-sm font-semibold ${resumeMessage.tone}`}>
               {resumeMessage.message}
+            </div>
+          ) : null}
+          {candidateMessage ? (
+            <div className={`rounded-lg border px-4 py-3 text-sm font-semibold ${candidateMessage.tone}`}>
+              {candidateMessage.message}
             </div>
           ) : null}
 

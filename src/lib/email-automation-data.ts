@@ -132,6 +132,25 @@ export async function getEmailAutomationPageData(organizationId?: string): Promi
         },
       },
       emailMessages: {
+        where: {
+          OR: [
+            {
+              applicationId: {
+                not: null,
+              },
+            },
+            {
+              candidateId: {
+                not: null,
+              },
+            },
+            {
+              templateId: {
+                not: null,
+              },
+            },
+          ],
+        },
         include: {
           application: {
             include: {

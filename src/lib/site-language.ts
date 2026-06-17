@@ -937,6 +937,13 @@ export const ENGLISH_TO_PORTUGUESE: Record<string, string> = {
   "Candidate profile signals": "Sinais do perfil do candidato",
   "Local review": "Revisao local",
   "Uploads, local parsing, and recruiter review all write into the same candidate records.": "Uploads, analise local e revisao do recrutador gravam nos mesmos registros de candidato.",
+  "Resume saved. The local reader did not find enough readable text, so open the profile and add resume text if the PDF is scanned or image-only.": "Curriculo salvo. A leitura local nao encontrou texto legivel suficiente, entao abra o perfil e adicione o texto do curriculo se o PDF for escaneado ou somente imagem.",
+  "Candidate deleted from this workspace.": "Candidato excluido deste workspace.",
+  "Candidate was not found in this workspace.": "Candidato nao encontrado neste workspace.",
+  "Danger zone": "Zona de risco",
+  "Remove this candidate and all related recruiting records from this workspace.": "Remova este candidato e todos os registros de recrutamento relacionados deste workspace.",
+  "Delete candidate": "Excluir candidato",
+  "Deleting candidate": "Excluindo candidato",
 };
 
 const PORTUGUESE_PATTERNS: Array<[RegExp, (match: RegExpMatchArray) => string]> = [
