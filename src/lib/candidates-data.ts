@@ -90,6 +90,18 @@ function formatEducation(
   return [firstEducation.degree, firstEducation.field, firstEducation.institution].filter(Boolean).join(", ");
 }
 
+function formatCandidateSummary(summary?: string | null) {
+  if (!summary) {
+    return "No profile summary yet.";
+  }
+
+  if (/OPENAI_API_KEY|OpenAI parsing|waiting for OpenAI/i.test(summary)) {
+    return "Resume saved for local review. Add readable resume text if this PDF is scanned or image-only.";
+  }
+
+  return summary;
+}
+
 export async function getCandidatesPageData(organizationId?: string): Promise<CandidatesPageData> {
   const organization = await prisma.organization.findUnique({
     where: organizationId ? { id: organizationId } : { slug: defaultOrganizationSlug },
@@ -170,7 +182,7 @@ export async function getCandidatesPageData(organizationId?: string): Promise<Ca
       location: candidate.location ?? "Remote",
       source: formatEnum(candidate.source),
       currentTitle: candidate.currentTitle ?? "Candidate",
-      summary: candidate.summary ?? "No profile summary yet.",
+      summary: formatCandidateSummary(candidate.summary),
       yearsExperience: candidate.yearsExperience ? `${candidate.yearsExperience} years` : "Not provided",
       availability: candidate.availability ?? "Unknown",
       salaryExpectation: formatSalary(candidate.salaryExpectation, candidate.currency),

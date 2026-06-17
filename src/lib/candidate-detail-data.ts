@@ -309,6 +309,30 @@ function addReviewField({
   });
 }
 
+function formatCandidateSummary(summary?: string | null) {
+  if (!summary) {
+    return "No profile summary yet.";
+  }
+
+  if (/OPENAI_API_KEY|OpenAI parsing|waiting for OpenAI/i.test(summary)) {
+    return "Resume saved for local review. Add readable resume text if this PDF is scanned or image-only.";
+  }
+
+  return summary;
+}
+
+function formatEditableCandidateSummary(summary?: string | null) {
+  if (!summary) {
+    return "";
+  }
+
+  if (/OPENAI_API_KEY|OpenAI parsing|waiting for OpenAI/i.test(summary)) {
+    return "Resume saved for local review. Add readable resume text if this PDF is scanned or image-only.";
+  }
+
+  return summary;
+}
+
 function buildResumeReview({
   candidate,
   currentSkills,
@@ -561,7 +585,7 @@ export async function getCandidateDetailData({
       location: candidate.location ?? "Remote",
       source: formatEnum(candidate.source),
       currentTitle: candidate.currentTitle ?? "Candidate",
-      summary: candidate.summary ?? "No profile summary yet.",
+      summary: formatCandidateSummary(candidate.summary),
       yearsExperience: candidate.yearsExperience ? `${candidate.yearsExperience} years` : "Not provided",
       availability: candidate.availability ?? "Unknown",
       salaryExpectation: formatSalary(candidate.salaryExpectation, candidate.currency),
@@ -576,7 +600,7 @@ export async function getCandidateDetailData({
         phone: candidate.phone ?? "",
         salaryExpectation: candidate.salaryExpectation,
         source: candidate.source,
-        summary: candidate.summary ?? "",
+        summary: formatEditableCandidateSummary(candidate.summary),
         yearsExperience: candidate.yearsExperience,
       },
     },

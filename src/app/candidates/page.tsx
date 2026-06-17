@@ -158,28 +158,21 @@ function getResumeMessage(status?: string) {
   if (status === "parsed") {
     return {
       tone: "border-emerald-200 bg-emerald-50 text-emerald-800",
-      message: "Resume parsed and saved to the candidate CRM.",
+      message: "Resume reviewed locally and saved to the candidate CRM.",
     };
   }
 
   if (status === "needs-review") {
     return {
       tone: "border-amber-200 bg-amber-50 text-amber-800",
-      message: "Resume saved for review. No structured data was extracted automatically.",
-    };
-  }
-
-  if (status === "openai-not-configured") {
-    return {
-      tone: "border-amber-200 bg-amber-50 text-amber-800",
-      message: "Resume saved for review. Configure OPENAI_API_KEY to enable full AI parsing for PDFs.",
+      message: "Resume saved for review. The local reader did not find enough structured data, so you can complete it from the profile.",
     };
   }
 
   if (status === "parse-failed") {
     return {
       tone: "border-rose-200 bg-rose-50 text-rose-800",
-      message: "OpenAI parsing failed. The resume was saved; check the parser model, billing, or retry.",
+      message: "Resume review could not be completed automatically. The file was saved for manual review.",
     };
   }
 
@@ -384,8 +377,8 @@ export default async function CandidatesPage({
                 <p className="mt-1 text-slate-600">Candidate, skills, education, resume document, and applications persist separately.</p>
               </div>
               <div className="rounded-lg bg-slate-50 p-3">
-                <p className="text-xs font-semibold uppercase text-slate-500">Next unlock</p>
-                <p className="mt-1 text-slate-600">Real upload plus OpenAI parsing can write into the same tables.</p>
+                <p className="text-xs font-semibold uppercase text-slate-500">Local review</p>
+                <p className="mt-1 text-slate-600">Uploads, local parsing, and recruiter review all write into the same candidate records.</p>
               </div>
             </div>
           </section>

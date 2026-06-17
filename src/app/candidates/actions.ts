@@ -7,15 +7,12 @@ import {
   NoteVisibility,
   ParserStatus,
 } from "@/generated/prisma/client";
-import { isLocalAIProviderMode } from "@/lib/ai-provider";
 import { recruitingRoles, requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
-  canUseOpenAIResumeParser,
   extractTextFromPdfBuffer,
   hasUsefulLocalResumeParse,
   parseResumeLocally,
-  parseResumeWithOpenAI,
   type ParsedResume,
 } from "@/lib/resume-parser";
 import {
@@ -408,7 +405,143 @@ function inferMimeType(fileName: string, uploadedType: string) {
 }
 
 function getFallbackName(fileName: string) {
-  return `Pending parse - ${fileName.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ")}`;
+  return `Review pending - ${fileName.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ")}`;
+}
+
+function buildManualReviewResume(fileName: string, detail?: string | null): ParsedResume {
+  return {
+    name: getFallbackName(fileName),
+    email: null,
+    phone: null,
+    location: null,
+    currentTitle: null,
+    summary:
+      detail ??
+      "Resume saved for recruiter review. If this PDF is scanned or image-only, paste the resume text to run the local review.",
+    yearsExperience: null,
+    availability: null,
+    salaryExpectation: null,
+    currency: "USD",
+    skills: [],
+    education: [],
+    experience: [],
+  };
+}
+
+async function buildLocalResumeReview({
+  fileName,
+  isPdf,
+  isText,
+  mimeType,
+  pastedResumeText,
+  resumeFile,
+}: {
+  fileName: string;
+  isPdf: boolean;
+  isText: boolean;
+  mimeType: string;
+  pastedResumeText: string | null;
+  resumeFile: File | null;
+}) {
+  let rawText = pastedResumeText;
+  let storedResumeBytes: Buffer | null = null;
+  let localExtractionError: string | null = null;
+
+  if (resumeFile) {
+    storedResumeBytes = Buffer.from(await resumeFile.arrayBuffer());
+
+    if (isText) {
+      rawText = rawText ?? storedResumeBytes.toString("utf8");
+    }
+
+    if (isPdf && !rawText) {
+      try {
+        rawText = await extractTextFromPdfBuffer(storedResumeBytes);
+      } catch (error) {
+        localExtractionError = error instanceof Error ? error.message : "Local PDF text extraction failed.";
+      }
+    }
+  }
+
+  if (rawText) {
+    const parsed = parseResumeLocally(rawText, fileName);
+    const usefulLocalParse = hasUsefulLocalResumeParse(parsed);
+
+    return {
+      localExtractionError,
+      parsed,
+      parsedData: {
+        ...parsed,
+        engine: "local-resume-review",
+        source: usefulLocalParse ? "smart-local-parser" : "local-parser-low-confidence",
+        ...(localExtractionError ? { localExtractionError } : {}),
+      },
+      parserStatus: usefulLocalParse ? ParserStatus.PARSED : ParserStatus.NEEDS_REVIEW,
+      rawText,
+      storedResumeBytes,
+    };
+  }
+
+  const parsed = buildManualReviewResume(
+    fileName,
+    localExtractionError
+      ? "Resume saved for recruiter review. The local PDF reader could not extract text from this file."
+      : "Resume saved for recruiter review. No readable text was found in the uploaded file.",
+  );
+
+  return {
+    localExtractionError,
+    parsed,
+    parsedData: {
+      fileName,
+      message: parsed.summary,
+      mimeType,
+      source: "local-review-needs-readable-text",
+      ...(localExtractionError ? { localExtractionError } : {}),
+    },
+    parserStatus: ParserStatus.NEEDS_REVIEW,
+    rawText,
+    storedResumeBytes,
+  };
+}
+
+async function trySaveResumeFile({
+  bytes,
+  candidateId,
+  fileName,
+  mimeType,
+  organizationId,
+}: {
+  bytes: Buffer | null;
+  candidateId: string;
+  fileName: string;
+  mimeType: string;
+  organizationId: string;
+}) {
+  if (!bytes) {
+    return {
+      storedFile: null,
+      storageError: null,
+    };
+  }
+
+  try {
+    return {
+      storedFile: await saveResumeFile({
+        bytes,
+        candidateId,
+        fileName,
+        mimeType,
+        organizationId,
+      }),
+      storageError: null,
+    };
+  } catch (error) {
+    return {
+      storedFile: null,
+      storageError: error instanceof Error ? error.message : "Resume file storage failed.",
+    };
+  }
 }
 
 async function upsertParsedCandidate({
@@ -507,113 +640,14 @@ export async function parseResumeUpload(formData: FormData) {
     redirect("/candidates?resume=too-large");
   }
 
-  let parsed: ParsedResume | null = null;
-  let rawText = pastedResumeText;
-  let localExtractionError: string | null = null;
-  let parserStatus: ParserStatus = ParserStatus.NEEDS_REVIEW;
-  let parsedData: unknown = null;
-  let storedResumeBytes: Buffer | null = null;
-
-  try {
-    if (resumeFile) {
-      const bytes = Buffer.from(await resumeFile.arrayBuffer());
-      storedResumeBytes = bytes;
-
-      if (isText) {
-        rawText = rawText ?? bytes.toString("utf8");
-      }
-
-      if (isPdf && !rawText) {
-        try {
-          rawText = await extractTextFromPdfBuffer(bytes);
-        } catch (error) {
-          localExtractionError = error instanceof Error ? error.message : "Local PDF text extraction failed.";
-        }
-      }
-
-      if (canUseOpenAIResumeParser() && (isPdf || rawText)) {
-        parsed = await parseResumeWithOpenAI(
-          isPdf
-            ? {
-                kind: "file",
-                fileName,
-                mimeType,
-                base64: bytes.toString("base64"),
-              }
-            : {
-                kind: "text",
-                fileName,
-                text: rawText ?? "",
-              },
-        );
-        parserStatus = ParserStatus.PARSED;
-        parsedData = parsed;
-      }
-    } else if (rawText && canUseOpenAIResumeParser()) {
-      parsed = await parseResumeWithOpenAI({
-        kind: "text",
-        fileName,
-        text: rawText,
-      });
-      parserStatus = ParserStatus.PARSED;
-      parsedData = parsed;
-    }
-  } catch (error) {
-    parserStatus = ParserStatus.FAILED;
-    parsedData = {
-      error: error instanceof Error ? error.message : "Unknown parser error",
-      source: "openai-resume-parser",
-    };
-  }
-
-  if (!parsed && rawText) {
-    parsed = parseResumeLocally(rawText, fileName);
-    const usefulLocalParse = hasUsefulLocalResumeParse(parsed);
-    parsedData = {
-      ...parsed,
-      source: canUseOpenAIResumeParser() ? "local-fallback-after-ai-failure" : "smart-local-parser",
-      ...(localExtractionError ? { localExtractionError } : {}),
-    };
-    parserStatus = usefulLocalParse ? ParserStatus.PARSED : canUseOpenAIResumeParser() ? parserStatus : ParserStatus.NEEDS_REVIEW;
-  }
-
-  if (!parsed) {
-    const openAIConfigured = canUseOpenAIResumeParser();
-    const parsingFailed = parserStatus === ParserStatus.FAILED;
-
-    parsed = {
-      name: getFallbackName(fileName),
-      email: null,
-      phone: null,
-      location: null,
-      currentTitle: null,
-      summary: parsingFailed
-        ? "Resume uploaded, but OpenAI parsing failed. Review the file manually or retry parsing."
-        : openAIConfigured
-        ? "Resume uploaded for manual review. No structured data was extracted automatically."
-        : "Resume uploaded and waiting for OpenAI parsing. Add OPENAI_API_KEY to enable AI extraction.",
-      yearsExperience: null,
-      availability: null,
-      salaryExpectation: null,
-      currency: "USD",
-      skills: [],
-      education: [],
-      experience: [],
-    };
-
-    if (!parsingFailed) {
-      parsedData = {
-        source: openAIConfigured ? "manual-review-no-structured-data" : "pending-openai-parser",
-        message: openAIConfigured
-          ? "OpenAI did not return structured resume data. Review manually or retry parsing."
-          : localExtractionError
-          ? "Local PDF text extraction failed. Paste resume text for manual fallback parsing."
-          : "Local PDF parser could not extract structured resume data.",
-        ...(localExtractionError ? { localExtractionError } : {}),
-      };
-      parserStatus = ParserStatus.NEEDS_REVIEW;
-    }
-  }
+  const { parsed, parsedData, parserStatus, rawText, storedResumeBytes } = await buildLocalResumeReview({
+    fileName,
+    isPdf,
+    isText,
+    mimeType,
+    pastedResumeText,
+    resumeFile,
+  });
 
   const candidate = await upsertParsedCandidate({
     organizationId: organization.id,
@@ -621,16 +655,13 @@ export async function parseResumeUpload(formData: FormData) {
     source,
   });
 
-  storedResumeBytes = storedResumeBytes ?? (rawText ? Buffer.from(rawText, "utf8") : null);
-  const storedFile = storedResumeBytes
-    ? await saveResumeFile({
-        bytes: storedResumeBytes,
-        candidateId: candidate.id,
-        fileName,
-        mimeType,
-        organizationId: organization.id,
-      })
-    : null;
+  const { storedFile, storageError } = await trySaveResumeFile({
+    bytes: storedResumeBytes ?? (rawText ? Buffer.from(rawText, "utf8") : null),
+    candidateId: candidate.id,
+    fileName,
+    mimeType,
+    organizationId: organization.id,
+  });
 
   await createResumeSnapshot({
     candidateId: candidate.id,
@@ -642,7 +673,7 @@ export async function parseResumeUpload(formData: FormData) {
     mimeType,
     sizeBytes: storedFile?.sizeBytes ?? (rawText ? Buffer.byteLength(rawText, "utf8") : null),
     skills: parsed.skills,
-    parsedData,
+    parsedData: storageError ? { ...(parsedData as Record<string, unknown>), storageError } : parsedData,
     parserStatus,
   });
 
@@ -657,17 +688,7 @@ export async function parseResumeUpload(formData: FormData) {
   revalidatePath("/candidates");
   revalidatePath("/jobs");
 
-  redirect(
-    `/candidates?resume=${
-      parserStatus === ParserStatus.PARSED
-        ? "parsed"
-        : parserStatus === ParserStatus.FAILED
-        ? "parse-failed"
-        : canUseOpenAIResumeParser() || isLocalAIProviderMode()
-        ? "needs-review"
-        : "openai-not-configured"
-    }`,
-  );
+  redirect(`/candidates?resume=${parserStatus === ParserStatus.PARSED ? "parsed" : "needs-review"}`);
 }
 
 export async function attachCandidateResume(formData: FormData) {
@@ -705,103 +726,22 @@ export async function attachCandidateResume(formData: FormData) {
   const isPdf = mimeType === "application/pdf" || fileName.toLowerCase().endsWith(".pdf");
   const isText = mimeType.startsWith("text/") || /\.(txt|md|csv)$/i.test(fileName);
 
-  let parsed: ParsedResume | null = null;
-  let rawText = pastedResumeText;
-  let localExtractionError: string | null = null;
-  let parserStatus: ParserStatus = ParserStatus.NEEDS_REVIEW;
-  let parsedData: unknown = null;
-  let storedResumeBytes: Buffer | null = null;
+  const { parsed, parsedData, parserStatus, rawText, storedResumeBytes } = await buildLocalResumeReview({
+    fileName,
+    isPdf,
+    isText,
+    mimeType,
+    pastedResumeText,
+    resumeFile,
+  });
 
-  try {
-    if (resumeFile) {
-      const bytes = Buffer.from(await resumeFile.arrayBuffer());
-      storedResumeBytes = bytes;
-
-      if (isText) {
-        rawText = rawText ?? bytes.toString("utf8");
-      }
-
-      if (isPdf && !rawText) {
-        try {
-          rawText = await extractTextFromPdfBuffer(bytes);
-        } catch (error) {
-          localExtractionError = error instanceof Error ? error.message : "Local PDF text extraction failed.";
-        }
-      }
-
-      if (canUseOpenAIResumeParser() && (isPdf || rawText)) {
-        parsed = await parseResumeWithOpenAI(
-          isPdf
-            ? {
-                kind: "file",
-                fileName,
-                mimeType,
-                base64: bytes.toString("base64"),
-              }
-            : {
-                kind: "text",
-                fileName,
-                text: rawText ?? "",
-              },
-        );
-        parserStatus = ParserStatus.PARSED;
-        parsedData = parsed;
-      }
-    } else if (rawText && canUseOpenAIResumeParser()) {
-      parsed = await parseResumeWithOpenAI({
-        kind: "text",
-        fileName,
-        text: rawText,
-      });
-      parserStatus = ParserStatus.PARSED;
-      parsedData = parsed;
-    }
-  } catch (error) {
-    parserStatus = ParserStatus.FAILED;
-    parsedData = {
-      error: error instanceof Error ? error.message : "Unknown parser error",
-      source: "openai-resume-parser",
-    };
-  }
-
-  if (!parsed && rawText) {
-    parsed = parseResumeLocally(rawText, fileName);
-    const usefulLocalParse = hasUsefulLocalResumeParse(parsed);
-    parsedData = {
-      ...parsed,
-      source: canUseOpenAIResumeParser() ? "local-fallback-after-ai-failure" : "smart-local-parser",
-      ...(localExtractionError ? { localExtractionError } : {}),
-    };
-    parserStatus = usefulLocalParse ? ParserStatus.PARSED : canUseOpenAIResumeParser() ? parserStatus : ParserStatus.NEEDS_REVIEW;
-  }
-
-  if (!parsed) {
-    const openAIConfigured = canUseOpenAIResumeParser();
-
-    if (parserStatus !== ParserStatus.FAILED) {
-      parsedData = {
-        source: openAIConfigured ? "manual-review-no-structured-data" : "pending-openai-parser",
-        message: openAIConfigured
-          ? "OpenAI did not return structured resume data. Review manually or retry parsing."
-          : localExtractionError
-          ? "Local PDF text extraction failed. Paste resume text for manual fallback parsing."
-          : "Local PDF parser could not extract structured resume data.",
-        ...(localExtractionError ? { localExtractionError } : {}),
-      };
-      parserStatus = ParserStatus.NEEDS_REVIEW;
-    }
-  }
-
-  storedResumeBytes = storedResumeBytes ?? (rawText ? Buffer.from(rawText, "utf8") : null);
-  const storedFile = storedResumeBytes
-    ? await saveResumeFile({
-        bytes: storedResumeBytes,
-        candidateId: candidate.id,
-        fileName,
-        mimeType,
-        organizationId: organization.id,
-      })
-    : null;
+  const { storedFile, storageError } = await trySaveResumeFile({
+    bytes: storedResumeBytes ?? (rawText ? Buffer.from(rawText, "utf8") : null),
+    candidateId: candidate.id,
+    fileName,
+    mimeType,
+    organizationId: organization.id,
+  });
 
   await createResumeSnapshot({
     candidateId: candidate.id,
@@ -812,8 +752,8 @@ export async function attachCandidateResume(formData: FormData) {
     resumeText: rawText,
     mimeType,
     sizeBytes: storedFile?.sizeBytes ?? (rawText ? Buffer.byteLength(rawText, "utf8") : null),
-    skills: parsed?.skills ?? [],
-    parsedData,
+    skills: parsed.skills,
+    parsedData: storageError ? { ...(parsedData as Record<string, unknown>), storageError } : parsedData,
     parserStatus,
   });
 
@@ -829,7 +769,7 @@ export async function attachCandidateResume(formData: FormData) {
         fileName,
         parserStatus,
         profileUpdated: false,
-        reviewAvailable: Boolean(parsed),
+        reviewAvailable: parserStatus === ParserStatus.PARSED,
         storageProvider: storedFile?.storageProvider ?? "metadata",
       },
     },
@@ -837,17 +777,7 @@ export async function attachCandidateResume(formData: FormData) {
 
   await revalidateCandidatePaths(candidate.id);
 
-  redirect(
-    `/candidates/${candidate.id}?resume=${
-      parsed
-        ? "review-ready"
-        : parserStatus === ParserStatus.FAILED
-        ? "parse-failed"
-        : canUseOpenAIResumeParser() || isLocalAIProviderMode()
-        ? "needs-review"
-        : "openai-not-configured"
-    }`,
-  );
+  redirect(`/candidates/${candidate.id}?resume=${parserStatus === ParserStatus.PARSED ? "review-ready" : "needs-review"}`);
 }
 
 export async function applyResumeParsedData(formData: FormData) {

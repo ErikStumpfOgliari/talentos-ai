@@ -8,6 +8,7 @@ import {
   Loader2,
   Save,
   Sparkles,
+  UploadCloud,
 } from "lucide-react";
 
 type JobOption = {
@@ -26,8 +27,8 @@ const textareaClass =
   "min-h-24 w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm leading-6 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400";
 
 const reviewSteps = [
-  { icon: FileText, label: "Reading uploaded resume" },
-  { icon: FileSearch, label: "Extracting PDF text locally" },
+  { icon: FileText, label: "Confirming the uploaded file" },
+  { icon: FileSearch, label: "Reading resume text locally" },
   { icon: Sparkles, label: "Detecting skills, experience, and education" },
   { icon: CheckCircle2, label: "Preparing candidate profile and match signals" },
   { icon: Save, label: "Saving review data to the CRM" },
@@ -61,6 +62,7 @@ function hasResumePayload(form: HTMLFormElement) {
 export function ResumeParserForm({ action, jobs }: ResumeParserFormProps) {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [selectedFileName, setSelectedFileName] = useState("");
+  const [selectedFileSize, setSelectedFileSize] = useState("");
 
   return (
     <>
@@ -74,26 +76,54 @@ export function ResumeParserForm({ action, jobs }: ResumeParserFormProps) {
         }}
       >
         <Field label="Resume file">
-          <input
-            accept=".pdf,.txt,.md,text/plain,application/pdf"
-            className="w-full min-w-0 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-3 py-3 text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-slate-950 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white"
-            name="resumeFile"
-            onChange={(event) => setSelectedFileName(event.currentTarget.files?.[0]?.name ?? "")}
-            type="file"
-          />
+          <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-3">
+            <input
+              accept=".pdf,.txt,.md,text/plain,application/pdf"
+              className="sr-only"
+              id="resume-parser-file"
+              name="resumeFile"
+              onChange={(event) => {
+                const file = event.currentTarget.files?.[0];
+                setSelectedFileName(file?.name ?? "");
+                setSelectedFileSize(file ? `${Math.max(1, Math.round(file.size / 1024))} KB` : "");
+              }}
+              type="file"
+            />
+            <label
+              className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white shadow-sm transition hover:scale-[1.02] hover:bg-slate-800 active:scale-[0.98]"
+              htmlFor="resume-parser-file"
+            >
+              <UploadCloud className="h-4 w-4" aria-hidden="true" />
+              Choose file
+            </label>
+            <p className="mt-2 text-xs leading-5 text-slate-500">
+              Upload a PDF or text file. The review runs locally and does not require API credits.
+            </p>
+            {selectedFileName ? (
+              <div className="mt-3 flex min-w-0 animate-[pulse_1.6s_ease-in-out_1] items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
+                <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
+                <span className="min-w-0 flex-1 truncate font-semibold">{selectedFileName}</span>
+                {selectedFileSize ? <span className="shrink-0 text-emerald-700">{selectedFileSize}</span> : null}
+              </div>
+            ) : (
+              <div className="mt-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-500">
+                No file selected yet.
+              </div>
+            )}
+          </div>
         </Field>
 
-        <Field label="Fallback resume text">
+        <Field label="Optional text for scanned PDF">
           <textarea
             className={textareaClass}
             name="resumeText"
-            placeholder="Optional. Text PDFs are parsed locally; paste text here for scanned or image-only PDFs."
+            placeholder="Paste the resume text only if the PDF is scanned, image-only, or the local reader cannot extract text."
           />
         </Field>
 
         <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-600">
-          <p className="font-semibold text-slate-900">Smart local AI review</p>
-          <p className="mt-1">PDFs with embedded text are analyzed locally, without API credits.</p>
+          <p className="font-semibold text-slate-900">Smart local resume review</p>
+          <p className="mt-1">Aptelys reads embedded text, detects profile signals, and saves the review without external AI credits.</p>
         </div>
 
         <div className="grid gap-3">
@@ -125,7 +155,7 @@ export function ResumeParserForm({ action, jobs }: ResumeParserFormProps) {
           type="submit"
         >
           {isAnalyzing ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Sparkles className="h-4 w-4" aria-hidden="true" />}
-          {isAnalyzing ? "Analyzing resume" : "Parse resume"}
+          {isAnalyzing ? "Reviewing resume" : "Review resume"}
         </button>
       </form>
 
@@ -137,9 +167,9 @@ export function ResumeParserForm({ action, jobs }: ResumeParserFormProps) {
                 <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
               </div>
               <div className="min-w-0">
-                <p className="text-base font-semibold text-slate-950">Resume analysis in progress</p>
+                <p className="text-base font-semibold text-slate-950">Resume review in progress</p>
                 <p className="mt-1 text-sm leading-6 text-slate-600">
-                  The parser is reading the file, extracting resume signals, and preparing the candidate record.
+                  Aptelys is reading the file, extracting resume signals, and preparing the candidate record.
                 </p>
               </div>
             </div>

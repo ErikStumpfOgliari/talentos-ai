@@ -16,7 +16,6 @@ import {
   RefreshCcw,
   Save,
   Sparkles,
-  Upload,
   UserRound,
   Users,
 } from "lucide-react";
@@ -26,6 +25,7 @@ import {
   attachCandidateResume,
   updateCandidateProfile,
 } from "@/app/candidates/actions";
+import { CandidateResumeAttachmentForm } from "@/components/candidate-resume-attachment-form";
 import { WorkspacePageShell } from "@/components/workspace-page-shell";
 import { recruitingRoles, requireRole } from "@/lib/auth";
 import { getCandidateDetailData } from "@/lib/candidate-detail-data";
@@ -186,7 +186,6 @@ export default async function CandidateDetailPage({
               query?.resume === "email-conflict" || query?.resume === "missing" || query?.resume === "parse-failed" || query?.resume === "too-large"
                 ? "border-rose-200 bg-rose-50 text-rose-800"
                 : query?.resume === "needs-review" ||
-                  query?.resume === "openai-not-configured" ||
                   query?.resume === "no-parsed-data" ||
                   query?.resume === "no-selection" ||
                   query?.resume === "review-ready"
@@ -204,16 +203,14 @@ export default async function CandidateDetailPage({
               ? "Resume is too large. Upload a file under 10 MB."
               : query?.resume === "email-conflict"
               ? "Parsed email already belongs to another candidate."
-              : query?.resume === "openai-not-configured"
-              ? "Resume attached for review. Configure OPENAI_API_KEY to enable full AI parsing for PDFs."
               : query?.resume === "parse-failed"
-              ? "OpenAI parsing failed. The resume was saved; check the parser model, billing, or retry."
+              ? "Resume review could not be completed automatically. The file was saved for manual review."
               : query?.resume === "no-selection"
               ? "Select at least one extracted field to apply."
               : query?.resume === "no-parsed-data"
               ? "This resume has no structured parsed data to apply."
               : query?.resume === "review-ready"
-              ? "Resume parsed. Review extracted data before applying it."
+              ? "Resume reviewed locally. Review extracted data before applying it."
               : query?.resume === "applied"
               ? "Selected resume data applied to candidate profile."
               : "Resume attached for review."}
@@ -579,31 +576,7 @@ export default async function CandidateDetailPage({
                 <RefreshCcw className="h-4 w-4 text-violet-700" aria-hidden="true" />
                 <p className="text-sm font-semibold text-slate-950">Attach resume</p>
               </div>
-              <form action={attachCandidateResume} className="grid gap-3">
-                <input name="candidateId" type="hidden" value={data.candidate.id} />
-                <Field label="Resume file">
-                  <input
-                    accept=".pdf,.txt,.md,text/plain,application/pdf"
-                    className="w-full min-w-0 overflow-hidden rounded-lg border border-dashed border-slate-300 bg-slate-50 px-3 py-3 text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-slate-950 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white"
-                    name="resumeFile"
-                    type="file"
-                  />
-                </Field>
-                <Field label="Fallback resume text">
-                  <textarea
-                    className={textareaClass}
-                    name="resumeText"
-                    placeholder="Optional. Text PDFs are parsed locally; paste text here for scanned or image-only PDFs."
-                  />
-                </Field>
-                <button
-                  className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-                  type="submit"
-                >
-                  <Upload className="h-4 w-4" aria-hidden="true" />
-                  Attach for review
-                </button>
-              </form>
+              <CandidateResumeAttachmentForm action={attachCandidateResume} candidateId={data.candidate.id} />
             </section>
 
             <section className="min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
