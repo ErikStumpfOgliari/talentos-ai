@@ -59,9 +59,14 @@ export type AuthSession = {
 type AuthSessionDelegate = {
   create(args: { data: Record<string, unknown> }): Promise<unknown>;
   findFirst(args: {
-    select: { lastSeenAt: boolean; organizationId: boolean };
+    select: { expiresAt?: boolean; lastSeenAt: boolean; organizationId: boolean; revokedAt?: boolean };
     where: Record<string, unknown>;
-  }): Promise<{ lastSeenAt: Date; organizationId: string | null } | null>;
+  }): Promise<{
+    expiresAt?: Date;
+    lastSeenAt: Date;
+    organizationId: string | null;
+    revokedAt?: Date | null;
+  } | null>;
   update(args: { data: Record<string, unknown>; where: Record<string, unknown> }): Promise<unknown>;
   updateMany(args: { data: Record<string, unknown>; where: Record<string, unknown> }): Promise<unknown>;
 };
@@ -136,40 +141,65 @@ async function validatePersistedSession({
   const authSessionDelegate = getAuthSessionDelegate();
 
   if (!authSessionDelegate) {
-    return null;
+    return {
+      organizationId,
+    };
   }
 
-  const authSession = await authSessionDelegate.findFirst({
-    where: {
-      id: sessionId,
-      userId,
-      tokenHash: hashSessionToken(token),
-      revokedAt: null,
-      expiresAt: {
-        gt: new Date(),
+  let authSession: {
+    expiresAt?: Date;
+    lastSeenAt: Date;
+    organizationId: string | null;
+    revokedAt?: Date | null;
+  } | null = null;
+
+  try {
+    authSession = await authSessionDelegate.findFirst({
+      where: {
+        id: sessionId,
+        userId,
+        tokenHash: hashSessionToken(token),
       },
-    },
-    select: {
-      lastSeenAt: true,
-      organizationId: true,
-    },
-  });
+      select: {
+        expiresAt: true,
+        lastSeenAt: true,
+        organizationId: true,
+        revokedAt: true,
+      },
+    });
+  } catch {
+    return {
+      organizationId,
+    };
+  }
 
   if (!authSession) {
+    return {
+      organizationId,
+    };
+  }
+
+  if (authSession.revokedAt || (authSession.expiresAt && authSession.expiresAt <= new Date())) {
     return null;
   }
 
   const oneDayAgo = Date.now() - 1000 * 60 * 60 * 24;
 
   if (authSession.lastSeenAt.getTime() < oneDayAgo) {
-    await authSessionDelegate.update({
-      where: {
-        id: sessionId,
-      },
-      data: {
-        lastSeenAt: new Date(),
-      },
-    });
+    try {
+      await authSessionDelegate.update({
+        where: {
+          id: sessionId,
+        },
+        data: {
+          lastSeenAt: new Date(),
+        },
+      });
+    } catch {
+      return {
+        organizationId: authSession.organizationId ?? organizationId,
+      };
+    }
   }
 
   return {
