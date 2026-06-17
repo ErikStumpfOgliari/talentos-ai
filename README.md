@@ -1,6 +1,6 @@
-# TalentOS AI - Recruitment CRM / ATS SaaS
+# Aptelys - Recruitment CRM / ATS SaaS
 
-TalentOS AI is an AI-powered recruitment CRM and applicant tracking system built as a full-stack SaaS portfolio project.
+Aptelys is an AI-powered recruitment CRM and applicant tracking system built as a full-stack SaaS portfolio project.
 
 It gives recruiting teams a single workspace to publish jobs, collect applications, parse resumes with AI, rank candidates against job descriptions, manage ATS pipelines, schedule interviews, automate candidate communication, and monitor hiring performance.
 
@@ -42,7 +42,7 @@ After running the seed script, use the demo owner account:
 
 ```text
 Email: erik@example.com
-Password: talentos-demo-2026
+Password: aptelys-demo-2026
 ```
 
 Main routes for a portfolio walkthrough:
@@ -153,13 +153,13 @@ http://localhost:3000
 The local database URL is defined in `.env` and mirrored in `.env.example`:
 
 ```text
-postgresql://talentos:talentos@localhost:5432/talentos_ai?schema=public
+postgresql://aptelys:aptelys@localhost:5432/aptelys_ai?schema=public
 ```
 
 Minimum local environment:
 
 ```text
-DATABASE_URL="postgresql://talentos:talentos@localhost:5432/talentos_ai?schema=public"
+DATABASE_URL="postgresql://aptelys:aptelys@localhost:5432/aptelys_ai?schema=public"
 AUTH_SECRET="replace-with-a-long-random-secret"
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
 ```
@@ -175,7 +175,7 @@ Optional email delivery:
 
 ```text
 RESEND_API_KEY=""
-EMAIL_FROM="TalentOS AI <onboarding@resend.dev>"
+EMAIL_FROM="Aptelys <onboarding@resend.dev>"
 RESEND_WEBHOOK_SECRET=""
 ```
 

@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AppNavigationMenu, AppNavigationSidebar } from "@/components/app-navigation-menu";
-import { LanguageToggle, useSiteLanguage } from "@/components/site-language-provider";
+import { useSiteLanguage } from "@/components/site-language-provider";
+import { ThemeToggle } from "@/components/site-theme-provider";
 import {
   Activity,
   BarChart3,
@@ -235,7 +236,7 @@ function useDashboardInteractions() {
       if (subtitle) {
         subtitle.textContent = query
           ? `${matches} matching candidate${matches === 1 ? "" : "s"}`
-          : subtitle.dataset.defaultText || "Senior Full Stack Engineer - Remote LATAM";
+          : subtitle.dataset.defaultText || "Operations Coordinator - Hybrid Sao Paulo";
       }
 
       updateStageCounts(query);
@@ -530,7 +531,7 @@ export function RecruitmentDashboard({ data }: { data: DashboardData }) {
     : "Create a job to start your first pipeline";
 
   return (
-    <div className="dashboard-shell min-h-screen text-slate-950" data-dashboard-root>
+    <div className="dashboard-shell min-h-screen text-slate-950" data-app-theme-scope data-dashboard-root>
       <div className="grid min-h-screen lg:grid-cols-[264px_minmax(0,1fr)]">
         <AppNavigationSidebar className="dashboard-surface" />
 
@@ -569,7 +570,7 @@ export function RecruitmentDashboard({ data }: { data: DashboardData }) {
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <LanguageToggle className="shrink-0" />
+                <ThemeToggle />
                 <Link className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50" href="/candidates#resume-parser">
                   <Upload className="h-4 w-4" aria-hidden="true" />
                   <span data-i18n-key="dashboard.resume">{t("dashboard.resume")}</span>

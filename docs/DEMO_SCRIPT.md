@@ -1,8 +1,8 @@
-# TalentOS AI Demo Script
+# Aptelys Demo Script
 
 ## Goal
 
-Use this script to present TalentOS AI in 5 to 7 minutes as a polished full-stack AI SaaS portfolio project.
+Use this script to present Aptelys in 5 to 7 minutes as a polished full-stack AI SaaS portfolio project.
 
 ## Setup
 
@@ -19,12 +19,12 @@ Sign in with:
 
 ```text
 Email: erik@example.com
-Password: talentos-demo-2026
+Password: aptelys-demo-2026
 ```
 
 ## 30-Second Pitch
 
-"TalentOS AI is an AI-powered Recruitment CRM and ATS SaaS. It helps recruiters publish jobs, collect applications, parse resumes, rank candidates with explainable AI matching, manage a drag-and-drop hiring pipeline, schedule interviews, automate emails, and track hiring analytics. I built it as a full-stack product with Next.js, PostgreSQL, Prisma, OpenAI-ready AI workflows, Resend email automation, Google Calendar scheduling, and a multi-tenant admin model."
+"Aptelys is an AI-powered Recruitment CRM and ATS SaaS. It helps recruiters publish jobs, collect applications, parse resumes, rank candidates with explainable AI matching, manage a drag-and-drop hiring pipeline, schedule interviews, automate emails, and track hiring analytics. I built it as a full-stack product with Next.js, PostgreSQL, Prisma, OpenAI-ready AI workflows, Resend email automation, Google Calendar scheduling, and a multi-tenant admin model."
 
 ## Walkthrough
 

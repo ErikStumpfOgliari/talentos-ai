@@ -97,6 +97,21 @@ async function assertOwnerCoverage({
   }
 }
 
+async function requireWorkspaceMembership(membershipId: string, organizationId: string) {
+  const membership = await prisma.membership.findFirst({
+    where: {
+      id: membershipId,
+      organizationId,
+    },
+  });
+
+  if (!membership) {
+    throw new Error("Membership not found for this organization.");
+  }
+
+  return membership;
+}
+
 export async function updateOrganizationSettings(formData: FormData) {
   const session = await requireRole(adminRoles);
   const organization = session.organization;
@@ -224,6 +239,8 @@ export async function updateWorkspaceMember(formData: FormData) {
     throw new Error("Membership id is required.");
   }
 
+  await requireWorkspaceMembership(membershipId, organization.id);
+
   await assertOwnerCoverage({
     organizationId: organization.id,
     membershipId,
@@ -269,6 +286,8 @@ export async function resendWorkspaceInvite(formData: FormData) {
   if (!membershipId) {
     throw new Error("Membership id is required.");
   }
+
+  await requireWorkspaceMembership(membershipId, organization.id);
 
   const membership = await prisma.membership.update({
     where: {

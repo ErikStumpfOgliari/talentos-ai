@@ -271,7 +271,7 @@ export async function getPublicCareersData(): Promise<PublicCareersData> {
   if (!organization) {
     return {
       jobs: [],
-      organizationName: "TalentOS Careers",
+      organizationName: "Aptelys Careers",
     };
   }
 

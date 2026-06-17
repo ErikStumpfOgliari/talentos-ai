@@ -41,7 +41,7 @@ function AddCandidateForm({ jobs }: { jobs: CandidatesPageJob[] }) {
       </div>
       <div className="grid gap-3">
         <Field label="Title">
-          <input className={inputClass} name="currentTitle" placeholder="AI Product Engineer" />
+          <input className={inputClass} name="currentTitle" placeholder="Sales Account Executive" />
         </Field>
         <Field label="Location">
           <input className={inputClass} name="location" placeholder="Sao Paulo, BR" />
@@ -89,14 +89,14 @@ function AddCandidateForm({ jobs }: { jobs: CandidatesPageJob[] }) {
         <textarea className={textareaClass} name="summary" placeholder="Short recruiter-facing profile summary." />
       </Field>
       <Field label="Skills">
-        <textarea className={textareaClass} name="skills" placeholder={"React\nNode.js\nOpenAI\nPostgreSQL"} />
+        <textarea className={textareaClass} name="skills" placeholder={"CRM\nNegotiation\nCustomer service\nReporting"} />
       </Field>
       <div className="grid gap-3">
         <Field label="Degree">
           <input className={inputClass} name="degree" placeholder="B.S." />
         </Field>
         <Field label="Field">
-          <input className={inputClass} name="field" placeholder="Computer Science" />
+          <input className={inputClass} name="field" placeholder="Business Administration" />
         </Field>
         <Field label="Institution">
           <input className={inputClass} name="institution" placeholder="USP" />

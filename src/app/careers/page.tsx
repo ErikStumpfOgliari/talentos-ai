@@ -4,10 +4,10 @@ import {
   BriefcaseBusiness,
   CheckCircle2,
   MapPin,
-  Sparkles,
+  SearchCheck,
   Users,
 } from "lucide-react";
-import { WorkspacePageShell } from "@/components/workspace-page-shell";
+import { PublicPageShell } from "@/components/public-site-shell";
 import { getPublicCareersData } from "@/lib/careers-data";
 
 export const dynamic = "force-dynamic";
@@ -21,16 +21,25 @@ export default async function CareersPage({
   const data = await getPublicCareersData();
 
   return (
-    <WorkspacePageShell
-      icon={<Sparkles className="h-5 w-5" aria-hidden="true" />}
-      organizationName={data.organizationName}
-      title="Open roles"
+    <PublicPageShell
+      actions={
+        <Link
+          className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:scale-[1.03] hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98]"
+          href="/candidate-status"
+        >
+          <SearchCheck className="h-4 w-4" aria-hidden="true" />
+          Track application
+        </Link>
+      }
+      description="Browse public opportunities published by the hiring workspace. This page is separate from the internal Aptelys recruiter dashboard."
+      eyebrow="Aptelys careers"
+      title="Open roles for candidates."
     >
       <section className="grid gap-3 sm:grid-cols-3">
         {[
           { icon: BriefcaseBusiness, label: "Active jobs", value: data.jobs.length },
           { icon: Users, label: "Hiring teams", value: "AI-ready" },
-          { icon: CheckCircle2, label: "Applications", value: "Direct ATS" },
+          { icon: CheckCircle2, label: "Applications", value: "Public intake" },
         ].map((item) => (
           <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm" key={item.label}>
             <item.icon className="h-5 w-5 text-slate-700" aria-hidden="true" />
@@ -49,12 +58,12 @@ export default async function CareersPage({
 
         <div className="grid gap-4">
           {data.jobs.map((job) => (
-            <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm" key={job.id}>
-              <div className="grid gap-5 lg:grid-cols-[1fr_auto]">
+            <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-slate-300 hover:shadow-md" key={job.id}>
+              <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_220px]">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <h2 className="text-xl font-semibold text-slate-950">{job.title}</h2>
-                    <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
+                    <span className="dashboard-pill rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
                       Open
                     </span>
                   </div>
@@ -74,9 +83,9 @@ export default async function CareersPage({
                   <p className="mt-4 max-w-3xl text-sm leading-6 text-slate-600">{job.description}</p>
                 </div>
 
-                <div className="grid content-start gap-3 lg:min-w-52">
+                <div className="grid content-start gap-3">
                   <Link
-                    className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                    className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:scale-[1.03] hover:bg-slate-800 active:scale-[0.98]"
                     href={`/careers/${job.id}`}
                   >
                     Apply now
@@ -101,6 +110,6 @@ export default async function CareersPage({
           ) : null}
         </div>
       </section>
-    </WorkspacePageShell>
+    </PublicPageShell>
   );
 }

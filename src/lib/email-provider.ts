@@ -34,7 +34,7 @@ export function getEmailProviderStatus() {
 
   return {
     configured: Boolean(apiKey),
-    from: process.env.EMAIL_FROM?.trim() || "TalentOS AI <onboarding@resend.dev>",
+    from: process.env.EMAIL_FROM?.trim() || "Aptelys <onboarding@resend.dev>",
     provider: apiKey ? "resend" : "local-outbox",
     webhookConfigured: Boolean(getResendWebhookSecret()),
   };

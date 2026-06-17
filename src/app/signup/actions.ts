@@ -1,9 +1,16 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { EmailTrigger, MembershipRole, MembershipStatus, Plan } from "@/generated/prisma/client";
-import { setSessionCookie } from "@/lib/auth";
+import {
+  AuthFactorMethod,
+} from "@/generated/prisma/client";
+import { sendTransactionalEmail } from "@/lib/email-provider";
 import { hashPassword } from "@/lib/passwords";
+import {
+  createPendingSignupCookie,
+  PENDING_SIGNUP_MAX_ATTEMPTS,
+  PENDING_SIGNUP_MAX_AGE_SECONDS,
+} from "@/lib/pending-signup";
 import { prisma } from "@/lib/prisma";
 
 function readString(formData: FormData, key: string) {
@@ -15,27 +22,12 @@ function normalizeEmail(value: string) {
   return value.trim().toLowerCase();
 }
 
-function slugify(value: string) {
-  return value
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 48);
-}
-
-async function getUniqueOrganizationSlug(name: string) {
-  const baseSlug = slugify(name) || "workspace";
-  let slug = baseSlug;
-  let suffix = 1;
-
-  while (await prisma.organization.findUnique({ where: { slug }, select: { id: true } })) {
-    suffix += 1;
-    slug = `${baseSlug}-${suffix}`;
+function readAuthFactorMethod(value: string) {
+  if (value === AuthFactorMethod.SMS_CODE || value === AuthFactorMethod.AUTHENTICATOR_APP) {
+    return value;
   }
 
-  return slug;
+  return AuthFactorMethod.EMAIL_CODE;
 }
 
 function redirectWithError(error: string): never {
@@ -45,10 +37,20 @@ function redirectWithError(error: string): never {
 export async function createWorkspaceSignup(formData: FormData) {
   const name = readString(formData, "name");
   const email = normalizeEmail(readString(formData, "email"));
+  const phone = readString(formData, "phone");
   const password = readString(formData, "password");
   const organizationName = readString(formData, "organizationName");
+  const addressLine1 = readString(formData, "addressLine1");
+  const addressLine2 = readString(formData, "addressLine2");
+  const city = readString(formData, "city");
+  const region = readString(formData, "region");
+  const postalCode = readString(formData, "postalCode");
+  const country = readString(formData, "country");
+  const selectedAuthFactor = readAuthFactorMethod(readString(formData, "preferredAuthFactor"));
+  const preferredAuthFactor =
+    selectedAuthFactor === AuthFactorMethod.EMAIL_CODE ? selectedAuthFactor : AuthFactorMethod.EMAIL_CODE;
 
-  if (!name || !email || !password || !organizationName) {
+  if (!name || !email || !phone || !password || !organizationName || !addressLine1 || !city || !region || !postalCode || !country) {
     redirectWithError("missing");
   }
 
@@ -69,93 +71,41 @@ export async function createWorkspaceSignup(formData: FormData) {
     redirectWithError("email");
   }
 
-  const slug = await getUniqueOrganizationSlug(organizationName);
   const passwordHash = await hashPassword(password);
-
-  const { organization, user } = await prisma.$transaction(async (tx) => {
-    const createdOrganization = await tx.organization.create({
-      data: {
-        name: organizationName,
-        slug,
-        plan: Plan.PRO,
-        timezone: "America/Sao_Paulo",
-      },
-    });
-
-    const createdUser = await tx.user.create({
-      data: {
-        name,
-        email,
-        passwordHash,
-      },
-    });
-
-    await tx.membership.create({
-      data: {
-        organizationId: createdOrganization.id,
-        userId: createdUser.id,
-        role: MembershipRole.OWNER,
-        status: MembershipStatus.ACTIVE,
-        joinedAt: new Date(),
-      },
-    });
-
-    await tx.userAvailability.create({
-      data: {
-        organizationId: createdOrganization.id,
-        userId: createdUser.id,
-        timezone: createdOrganization.timezone,
-      },
-    });
-
-    await tx.emailTemplate.createMany({
-      data: [
-        {
-          organizationId: createdOrganization.id,
-          name: "Application received",
-          subject: "We received your application for {{jobTitle}}",
-          body: "Hi {{candidateName}}, thanks for applying to {{jobTitle}}. We received your resume and our team will review your profile soon.",
-          trigger: EmailTrigger.APPLICATION_RECEIVED,
-          active: true,
-        },
-        {
-          organizationId: createdOrganization.id,
-          name: "Interview confirmation",
-          subject: "Interview confirmed for {{jobTitle}}",
-          body: "Hi {{candidateName}}, your interview is confirmed for {{interviewTime}}. We are looking forward to speaking with you.",
-          trigger: EmailTrigger.INTERVIEW_SCHEDULED,
-          active: true,
-        },
-        {
-          organizationId: createdOrganization.id,
-          name: "Rejection update",
-          subject: "Update about {{jobTitle}}",
-          body: "Hi {{candidateName}}, thank you for your time in the {{jobTitle}} process. We will not be moving forward at this stage, but we appreciate your interest.",
-          trigger: EmailTrigger.REJECTION_SENT,
-          active: true,
-        },
-      ],
-    });
-
-    await tx.auditEvent.create({
-      data: {
-        organizationId: createdOrganization.id,
-        actorId: createdUser.id,
-        action: "workspace.created",
-        entityType: "organization",
-        entityId: createdOrganization.id,
-        metadata: {
-          signupRole: "owner_recruiter",
-        },
-      },
-    });
-
-    return {
-      organization: createdOrganization,
-      user: createdUser,
-    };
+  const pendingSignup = await createPendingSignupCookie({
+    addressLine1,
+    addressLine2,
+    city,
+    country,
+    email,
+    name,
+    organizationName,
+    passwordHash,
+    phone,
+    postalCode,
+    preferredAuthFactor,
+    region,
   });
 
-  await setSessionCookie(user.id, organization.id);
-  redirect("/dashboard");
+  const subject = "Verify your Aptelys workspace";
+  const body = [
+    `Hi ${name},`,
+    "",
+    `Use this code to finish creating your Aptelys workspace for ${organizationName}:`,
+    "",
+    pendingSignup.code,
+    "",
+    `This code expires in ${Math.floor(PENDING_SIGNUP_MAX_AGE_SECONDS / 60)} minutes and can be used only once.`,
+    `After ${PENDING_SIGNUP_MAX_ATTEMPTS} incorrect attempts, you will need to start again.`,
+    "",
+    "If you did not request this, you can ignore this message.",
+  ].join("\n");
+
+  await sendTransactionalEmail({
+    body,
+    subject,
+    toEmail: email,
+  });
+
+  redirect("/verify-login?mode=signup&next=%2Fdashboard");
 }

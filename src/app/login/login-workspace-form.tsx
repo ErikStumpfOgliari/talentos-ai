@@ -1,0 +1,274 @@
+"use client";
+
+import Link from "next/link";
+import { useRef, useState } from "react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  KeyRound,
+  LockKeyhole,
+  Mail,
+  ShieldCheck,
+  Smartphone,
+} from "lucide-react";
+import { login } from "@/app/login/actions";
+
+type LoginStep = "credentials" | "verification";
+
+type LoginValues = {
+  email: string;
+  method: string;
+  password: string;
+};
+
+const inputClass =
+  "h-11 w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400 focus:ring-4 focus:ring-slate-100";
+
+const initialValues: LoginValues = {
+  email: "",
+  method: "EMAIL_CODE",
+  password: "",
+};
+
+const verificationMethods = [
+  {
+    active: true,
+    detail: "Use your work email as the primary identity check.",
+    icon: Mail,
+    label: "Email code",
+    value: "EMAIL_CODE",
+  },
+  {
+    active: false,
+    detail: "Coming next. Email code is active now.",
+    icon: Smartphone,
+    label: "SMS code",
+    value: "SMS_CODE",
+  },
+  {
+    active: false,
+    detail: "Coming next. Email code is active now.",
+    icon: KeyRound,
+    label: "Authenticator app",
+    value: "AUTHENTICATOR_APP",
+  },
+] as const;
+
+function HiddenLoginFields({ step, values }: { step: LoginStep; values: LoginValues }) {
+  if (step === "credentials") {
+    return <input name="method" type="hidden" value={values.method} />;
+  }
+
+  return (
+    <>
+      <input name="email" type="hidden" value={values.email} />
+      <input name="password" type="hidden" value={values.password} />
+    </>
+  );
+}
+
+export function LoginWorkspaceForm({
+  error,
+  next,
+  reset,
+}: {
+  error?: string;
+  next: string;
+  reset?: string;
+}) {
+  const [step, setStep] = useState<LoginStep>("credentials");
+  const [values, setValues] = useState<LoginValues>(initialValues);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  function updateValue(key: keyof LoginValues, value: string) {
+    setValues((current) => ({
+      ...current,
+      [key]: value,
+    }));
+  }
+
+  function goToVerification() {
+    if (!formRef.current?.reportValidity()) {
+      return;
+    }
+
+    setStep("verification");
+  }
+
+  const recoveryHref = values.email
+    ? `/forgot-password?email=${encodeURIComponent(values.email)}`
+    : "/forgot-password";
+
+  return (
+    <div className="w-full max-w-[430px] rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+      <div className="flex items-center gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-950 text-white">
+          {step === "credentials" ? (
+            <LockKeyhole className="h-5 w-5" aria-hidden="true" />
+          ) : (
+            <ShieldCheck className="h-5 w-5" aria-hidden="true" />
+          )}
+        </div>
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-slate-950">
+            {step === "credentials" ? "Sign in details" : "Security method"}
+          </p>
+          <p className="text-xs text-slate-500">
+            {step === "credentials"
+              ? "Aptelys by Interellis workspace"
+              : "Choose a verification method for this trusted device."}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-5 grid grid-cols-2 gap-2" aria-label="Login progress">
+        {["credentials", "verification"].map((item) => (
+          <div
+            className={`h-1.5 rounded-full transition ${
+              item === "credentials" || step === "verification" ? "bg-slate-950" : "bg-slate-200"
+            }`}
+            key={item}
+          />
+        ))}
+      </div>
+
+      {error === "invalid" ? (
+        <div className="mt-5 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-800">
+          Email, password, or workspace access is invalid.
+        </div>
+      ) : null}
+
+      {error === "verification" ? (
+        <div className="mt-5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900">
+          Verification expired. Sign in again to continue.
+        </div>
+      ) : null}
+
+      {reset === "success" ? (
+        <div className="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-900">
+          Password updated. Sign in with your new password.
+        </div>
+      ) : null}
+
+      {step === "verification" ? (
+        <button
+          className="mt-5 inline-flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-semibold text-slate-500 transition hover:-translate-y-0.5 hover:bg-slate-100 hover:text-slate-950"
+          onClick={() => setStep("credentials")}
+          type="button"
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+          Back to login details
+        </button>
+      ) : null}
+
+      <form action={login} className="mt-5 grid gap-3" ref={formRef}>
+        <input name="next" type="hidden" value={next} />
+        <HiddenLoginFields step={step} values={values} />
+
+        {step === "credentials" ? (
+          <>
+            <label className="grid gap-1.5">
+              <span className="text-xs font-semibold uppercase text-slate-500">Email</span>
+              <input
+                autoComplete="email"
+                className={inputClass}
+                name="email"
+                onChange={(event) => updateValue("email", event.target.value)}
+                placeholder="you@company.com"
+                required
+                type="email"
+                value={values.email}
+              />
+            </label>
+            <label className="grid gap-1.5">
+              <span className="text-xs font-semibold uppercase text-slate-500">Password</span>
+              <input
+                autoComplete="current-password"
+                className={inputClass}
+                name="password"
+                onChange={(event) => updateValue("password", event.target.value)}
+                placeholder="Your password"
+                required
+                type="password"
+                value={values.password}
+              />
+            </label>
+            <div className="flex justify-end">
+              <Link className="text-sm font-semibold text-slate-500 transition hover:text-slate-950" href={recoveryHref}>
+                Forgot password?
+              </Link>
+            </div>
+            <button
+              className="mt-2 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:scale-[1.02] hover:bg-slate-800 active:scale-[0.98]"
+              onClick={goToVerification}
+              type="button"
+            >
+              Continue to verification
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </>
+        ) : null}
+
+        {step === "verification" ? (
+          <>
+            <div className="grid gap-2">
+              {verificationMethods.map((method) => (
+                <label
+                  className={`group flex gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm transition ${
+                    method.active
+                      ? "cursor-pointer hover:scale-[1.015] hover:border-slate-300 hover:bg-white"
+                      : "cursor-not-allowed opacity-55"
+                  }`}
+                  key={method.value}
+                >
+                  <input
+                    checked={values.method === method.value}
+                    className="mt-1 h-4 w-4 shrink-0 accent-slate-950"
+                    disabled={!method.active}
+                    name="method"
+                    onChange={(event) => updateValue("method", event.target.value)}
+                    type="radio"
+                    value={method.value}
+                  />
+                  <span className="flex min-w-0 flex-1 gap-3">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-slate-700 ring-1 ring-slate-200 transition group-hover:bg-slate-950 group-hover:text-white">
+                      <method.icon className="h-4 w-4" aria-hidden="true" />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block font-semibold text-slate-950">{method.label}</span>
+                      <span className="mt-0.5 block text-xs leading-5 text-slate-500">{method.detail}</span>
+                    </span>
+                  </span>
+                </label>
+              ))}
+            </div>
+            <button
+              className="mt-2 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:scale-[1.02] hover:bg-slate-800 active:scale-[0.98]"
+              type="submit"
+            >
+              <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+              Confirm and enter
+            </button>
+          </>
+        ) : null}
+      </form>
+
+      <p className="mt-5 text-center text-sm text-slate-500">
+        New company?{" "}
+        <Link className="font-semibold text-slate-950 hover:text-slate-600" href="/signup">
+          Create workspace
+        </Link>
+      </p>
+
+      <div className="mt-4 flex flex-wrap justify-center gap-x-3 gap-y-2 text-sm font-semibold text-slate-500">
+        <Link className="hover:text-slate-950" href="/">
+          Aptelys home
+        </Link>
+        <span aria-hidden="true">/</span>
+        <Link className="hover:text-slate-950" href="/candidate-status">
+          Candidate status
+        </Link>
+      </div>
+    </div>
+  );
+}

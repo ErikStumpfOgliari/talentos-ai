@@ -1,8 +1,8 @@
-# TalentOS AI Case Study
+# Aptelys Case Study
 
 ## One-Line Summary
 
-TalentOS AI is an AI-powered Recruitment CRM and ATS SaaS that helps hiring teams collect applications, parse resumes, rank candidates, manage pipelines, schedule interviews, automate email communication, and monitor hiring performance.
+Aptelys is an AI-powered Recruitment CRM and ATS SaaS that helps hiring teams collect applications, parse resumes, rank candidates, manage pipelines, schedule interviews, automate email communication, and monitor hiring performance.
 
 ## Problem
 
@@ -63,7 +63,7 @@ The product is designed so provider integrations are optional during development
 
 ## AI Implementation
 
-TalentOS AI uses AI in two places:
+Aptelys uses AI in two places:
 
 1. Resume parsing
    - Extracts structured fields such as name, email, skills, experience, education, summary, availability, and salary expectation.

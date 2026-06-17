@@ -167,7 +167,7 @@ export function SiteLanguageProvider({ children }: { children: React.ReactNode }
   const t = useCallback((key: string) => getLanguageCopy(language, key), [language]);
 
   useEffect(() => {
-    const storedLanguage = window.localStorage.getItem("talentos-language");
+    const storedLanguage = window.localStorage.getItem("aptelys-language");
 
     if (storedLanguage === "en" || storedLanguage === "pt") {
       const timeout = window.setTimeout(() => setLanguageState(storedLanguage), 0);
@@ -178,7 +178,7 @@ export function SiteLanguageProvider({ children }: { children: React.ReactNode }
   }, []);
 
   useEffect(() => {
-    window.localStorage.setItem("talentos-language", language);
+    window.localStorage.setItem("aptelys-language", language);
   }, [language]);
 
   useEffect(() => {

@@ -35,7 +35,7 @@ export function WorkspacePageShell({
   const hasRightPanel = Boolean(rightPanel);
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-slate-100 text-slate-950">
+    <main className="workspace-shell min-h-screen overflow-x-hidden bg-slate-100 text-slate-950" data-app-theme-scope>
       <div className="flex min-h-screen w-full">
         <aside
           aria-hidden={!navigationOpen}
@@ -83,9 +83,10 @@ export function WorkspacePageShell({
                 {hasRightPanel ? (
                   <button
                     aria-expanded={rightPanelOpen}
+                    aria-pressed={rightPanelOpen}
                     className="inline-flex h-10 items-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:scale-[1.03] hover:bg-slate-800 active:scale-[0.98]"
                     data-workspace-panel-button
-                    onClick={() => setRightPanelOpen(true)}
+                    onClick={() => setRightPanelOpen((isOpen) => !isOpen)}
                     type="button"
                   >
                     {rightPanelButtonIcon}

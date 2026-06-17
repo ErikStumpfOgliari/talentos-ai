@@ -1,19 +1,14 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
-  BriefcaseBusiness,
-  LockKeyhole,
-  ShieldCheck,
-  Sparkles,
-  Users,
+  CheckCircle2,
 } from "lucide-react";
-import { login } from "@/app/login/actions";
+import { LoginWorkspaceForm } from "@/app/login/login-workspace-form";
+import { InterellisMark } from "@/components/interellis-mark";
+import { PublicSiteHeader } from "@/components/public-site-shell";
 import { getCurrentSession } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
-
-const inputClass =
-  "h-11 w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400";
 
 function getSafeNext(value?: string) {
   if (!value || !value.startsWith("/") || value.startsWith("//")) {
@@ -26,7 +21,7 @@ function getSafeNext(value?: string) {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ error?: string; next?: string }>;
+  searchParams?: Promise<{ error?: string; next?: string; reset?: string }>;
 }) {
   const session = await getCurrentSession();
 
@@ -38,103 +33,39 @@ export default async function LoginPage({
   const next = getSafeNext(params?.next);
 
   return (
-    <main className="grid min-h-screen bg-slate-100 text-slate-950 lg:grid-cols-[minmax(0,1fr)_480px]">
-      <section className="hidden min-h-screen flex-col justify-between bg-slate-950 p-10 text-white lg:flex">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-white text-slate-950">
-            <Sparkles className="h-5 w-5" aria-hidden="true" />
-          </div>
-          <div>
-            <p className="text-base font-semibold">TalentOS AI</p>
-            <p className="text-sm text-slate-400">Recruitment CRM</p>
-          </div>
-        </div>
-
-        <div className="max-w-xl">
-          <p className="text-sm font-semibold uppercase text-emerald-300">Secure workspace</p>
-          <h1 className="mt-4 max-w-lg text-5xl font-semibold leading-tight">
-            AI recruiting operations with real access control.
-          </h1>
-          <p className="mt-5 max-w-lg text-base leading-7 text-slate-300">
-            Protect candidates, jobs, automation, analytics, and admin settings behind organization roles.
-          </p>
-          <div className="mt-8 grid gap-3 sm:grid-cols-3">
-            {[
-              { icon: Users, label: "Users" },
-              { icon: BriefcaseBusiness, label: "ATS" },
-              { icon: ShieldCheck, label: "Roles" },
-            ].map((item) => (
-              <div className="rounded-lg border border-white/10 bg-white/5 p-4" key={item.label}>
-                <item.icon className="h-5 w-5 text-emerald-300" aria-hidden="true" />
-                <p className="mt-3 text-sm font-semibold">{item.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <p className="text-xs text-slate-500">TalentOS workspace access</p>
-      </section>
-
-      <section className="flex min-h-screen min-w-0 items-center justify-center overflow-hidden px-4 py-10">
-        <div className="w-full max-w-[22rem] rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:max-w-md sm:p-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-950 text-white">
-              <LockKeyhole className="h-5 w-5" aria-hidden="true" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-slate-950">Sign in</p>
-              <p className="text-xs text-slate-500">TalentOS AI workspace</p>
-            </div>
-          </div>
-
-          {params?.error === "invalid" ? (
-            <div className="mt-5 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-800">
-              Email, password, or workspace access is invalid.
-            </div>
-          ) : null}
-
-          <form action={login} className="mt-5 grid gap-3">
-            <input name="next" type="hidden" value={next} />
-            <label className="grid gap-1.5">
-              <span className="text-xs font-semibold uppercase text-slate-500">Email</span>
-              <input
-                autoComplete="email"
-                className={inputClass}
-                name="email"
-                placeholder="you@company.com"
-                required
-                type="email"
-              />
-            </label>
-            <label className="grid gap-1.5">
-              <span className="text-xs font-semibold uppercase text-slate-500">Password</span>
-              <input
-                autoComplete="current-password"
-                className={inputClass}
-                name="password"
-                placeholder="Your password"
-                required
-                type="password"
-              />
-            </label>
-            <button
-              className="mt-2 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-              type="submit"
-            >
-              <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-              Enter workspace
-            </button>
-          </form>
-
-          <div className="mt-5 grid gap-2 rounded-lg bg-slate-50 p-3 text-sm">
-            <p className="font-semibold text-slate-950">New company?</p>
-            <p className="text-slate-600">Create a workspace and start as the owner/recruiter.</p>
-            <Link className="font-semibold text-slate-950 hover:text-slate-600" href="/signup">
-              Create workspace
+    <main className="min-h-screen overflow-hidden bg-slate-950 text-white">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_12%,rgba(45,212,191,0.18),transparent_32%),radial-gradient(circle_at_86%_20%,rgba(99,102,241,0.12),transparent_28%),linear-gradient(135deg,#020617_0%,#0f172a_55%,#111827_100%)]" />
+      <div className="relative">
+        <PublicSiteHeader variant="dark" />
+        <section className="mx-auto grid min-h-[calc(100svh-80px)] max-w-6xl gap-7 px-4 pb-7 pt-3 lg:grid-cols-[minmax(0,0.9fr)_minmax(360px,490px)] lg:items-center lg:px-6">
+          <div className="max-w-xl py-6 lg:py-8">
+            <Link className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm font-semibold text-emerald-200 shadow-lg shadow-slate-950/20 transition hover:-translate-y-0.5 hover:scale-[1.03] hover:bg-white/10" href="/">
+              <InterellisMark className="h-4 w-4" />
+              Aptelys by Interellis
             </Link>
+            <p className="mt-8 text-sm font-semibold uppercase text-emerald-300">Secure workspace access</p>
+            <h1 className="mt-4 max-w-2xl text-3xl font-semibold leading-tight md:text-4xl">
+              Enter your recruiting command center.
+            </h1>
+            <p className="mt-5 max-w-xl text-base leading-7 text-slate-300">
+              Sign in, confirm the trusted device, and continue managing jobs, candidates, interviews, automations, and analytics.
+            </p>
+
+            <div className="mt-7 grid gap-2 text-sm font-semibold text-slate-200 sm:grid-cols-3">
+              {["Persistent session", "Role-based access", "Protected workspace"].map((item) => (
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5" key={item}>
+                  <CheckCircle2 className="h-4 w-4 text-emerald-300" aria-hidden="true" />
+                  {item}
+                </span>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+
+          <section className="flex min-w-0 items-center justify-center py-4">
+            <LoginWorkspaceForm error={params?.error} next={next} reset={params?.reset} />
+          </section>
+        </section>
+      </div>
     </main>
   );
 }

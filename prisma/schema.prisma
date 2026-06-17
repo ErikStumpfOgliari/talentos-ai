@@ -143,6 +143,17 @@ enum EmbeddingEntity {
   JOB_DESCRIPTION
 }
 
+enum AuthFactorMethod {
+  EMAIL_CODE
+  SMS_CODE
+  AUTHENTICATOR_APP
+}
+
+enum AuthVerificationPurpose {
+  LOGIN
+  SIGNUP
+}
+
 model Organization {
   id        String   @id @default(cuid())
   name      String
@@ -155,6 +166,8 @@ model Organization {
   applications    Application[]
   auditEvents     AuditEvent[]
   automationRules AutomationRule[]
+  authSessions    AuthSession[]
+  authVerificationCodes AuthVerificationCode[]
   calendarConnections CalendarConnection[]
   candidates      Candidate[]
   candidateNotes  CandidateNote[]
@@ -164,6 +177,7 @@ model Organization {
   interviews      Interview[]
   jobs            Job[]
   memberships     Membership[]
+  passwordResetTokens PasswordResetToken[]
   pipelineStages  PipelineStage[]
   resumes         ResumeDocument[]
   schedulingLinks SchedulingLink[]
@@ -178,13 +192,18 @@ model User {
   id           String    @id @default(cuid())
   name         String
   email        String    @unique
+  phone        String?
   passwordHash String?
+  preferredAuthFactor AuthFactorMethod @default(EMAIL_CODE)
+  secondFactorEnabled Boolean   @default(false)
   imageUrl     String?
   lastLoginAt  DateTime?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
   auditEvents         AuditEvent[]
+  authSessions        AuthSession[]
+  authVerificationCodes AuthVerificationCode[]
   calendarConnections CalendarConnection[]
   candidateNotes      CandidateNote[]
   createdJobs         Job[]           @relation("JobCreatedBy")
@@ -195,6 +214,7 @@ model User {
   reviewedResumes     ResumeDocument[] @relation("ResumeReviewer")
   sentEmails          EmailMessage[]  @relation("EmailSender")
   managedJobs         Job[]           @relation("JobHiringManager")
+  passwordResetTokens PasswordResetToken[]
 }
 
 model UserAvailability {
@@ -237,6 +257,65 @@ model Membership {
   @@unique([organizationId, userId])
   @@index([userId])
   @@index([organizationId, role])
+}
+
+model AuthSession {
+  id             String    @id
+  userId         String
+  organizationId String?
+  tokenHash      String    @unique
+  deviceLabel    String?
+  userAgent      String?
+  userAgentHash  String?
+  ipHash         String?
+  trusted        Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  lastSeenAt     DateTime  @default(now())
+  expiresAt      DateTime
+  revokedAt      DateTime?
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt, expiresAt])
+  @@index([organizationId])
+}
+
+model PasswordResetToken {
+  id             String    @id @default(cuid())
+  userId         String
+  organizationId String?
+  tokenHash      String    @unique
+  expiresAt      DateTime
+  usedAt         DateTime?
+  createdAt      DateTime  @default(now())
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@index([organizationId, expiresAt])
+}
+
+model AuthVerificationCode {
+  id             String                  @id
+  userId         String
+  organizationId String
+  method         AuthFactorMethod        @default(EMAIL_CODE)
+  purpose        AuthVerificationPurpose
+  codeHash       String
+  sentTo         String
+  expiresAt      DateTime
+  consumedAt     DateTime?
+  attempts       Int                     @default(0)
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, organizationId, purpose, expiresAt])
+  @@index([organizationId, createdAt])
 }
 
 model Job {

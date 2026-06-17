@@ -33,10 +33,10 @@ const prisma = new PrismaClient({
 });
 
 const organizationSlug = "northstar-recruiting";
-const demoPassword = "talentos-demo-2026";
+const demoPassword = "aptelys-demo-2026";
 const now = new Date();
 const seedDemoData = process.env.SEED_DEMO_DATA === "true";
-const organizationName = seedDemoData ? "Northstar Recruiting" : "TalentOS AI";
+const organizationName = seedDemoData ? "Northstar Recruiting" : "Aptelys";
 
 type JobKey = "aiProduct" | "backend" | "fullstack" | "recruitingOps";
 
@@ -932,7 +932,7 @@ async function main() {
   }
 
   if (!seedDemoData) {
-    console.log("Seeded empty TalentOS AI workspace. Set SEED_DEMO_DATA=true to include portfolio demo data.");
+    console.log("Seeded empty Aptelys workspace. Set SEED_DEMO_DATA=true to include portfolio demo data.");
     return;
   }
 
@@ -1267,7 +1267,7 @@ async function main() {
         senderId: recruiterId,
         sentAt: status === EmailStatus.QUEUED ? null : daysAgo(days),
         status,
-        subject: `${templateSeeds.find((template) => template.key === templateKey)?.name ?? "Update"} - TalentOS demo`,
+        subject: `${templateSeeds.find((template) => template.key === templateKey)?.name ?? "Update"} - Aptelys demo`,
         templateId,
         toEmail: candidateEmail === "livia@example.com" ? "candidate.livia@example.com" : candidateEmail,
         trigger,
@@ -1359,7 +1359,7 @@ async function main() {
         candidateId,
         endsAt: addMinutes(interviewSeed.startsAt, interviewSeed.duration),
         jobId,
-        meetingUrl: "https://meet.google.com/talentos-demo",
+        meetingUrl: "https://meet.google.com/aptelys-demo",
         organizationId: organization.id,
         organizerId: interviewSeed.organizerId,
         startsAt: interviewSeed.startsAt,
@@ -1403,7 +1403,7 @@ async function main() {
         durationMinutes: 45,
         expiresAt: daysFromNow(8),
         maxDaysAhead: 12,
-        meetingUrl: "https://meet.google.com/talentos-demo",
+        meetingUrl: "https://meet.google.com/aptelys-demo",
         organizationId: organization.id,
         organizerId: schedulingSeed.organizerId,
         slotIntervalMinutes: 30,

@@ -1,10 +1,11 @@
-import { createHmac, timingSafeEqual } from "crypto";
+import { createHash, createHmac, timingSafeEqual } from "crypto";
 import { SESSION_MAX_AGE_SECONDS } from "@/lib/auth-constants";
 
 type SessionPayload = {
   exp: number;
   iat: number;
   organizationId?: string;
+  sessionId?: string;
   userId: string;
 };
 
@@ -15,11 +16,15 @@ function getAuthSecret() {
     throw new Error("AUTH_SECRET is required in production.");
   }
 
-  return secret ?? "talentos-local-dev-session-secret";
+  return secret ?? "aptelys-local-dev-session-secret";
 }
 
 function sign(value: string) {
   return createHmac("sha256", getAuthSecret()).update(value).digest("base64url");
+}
+
+export function hashSessionToken(token: string) {
+  return createHash("sha256").update(token).digest("hex");
 }
 
 function timingSafeStringEqual(left: string, right: string) {
@@ -33,11 +38,12 @@ function timingSafeStringEqual(left: string, right: string) {
   return timingSafeEqual(leftBuffer, rightBuffer);
 }
 
-export function createSessionToken(userId: string, organizationId?: string) {
+export function createSessionToken(userId: string, organizationId?: string, sessionId?: string) {
   const now = Math.floor(Date.now() / 1000);
   const payload: SessionPayload = {
     userId,
     organizationId,
+    sessionId,
     iat: now,
     exp: now + SESSION_MAX_AGE_SECONDS,
   };

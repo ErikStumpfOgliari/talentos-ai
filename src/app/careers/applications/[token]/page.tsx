@@ -9,8 +9,8 @@ import {
   FileText,
   MailCheck,
   MapPin,
-  Sparkles,
 } from "lucide-react";
+import { PublicSiteFooter, PublicSiteHeader } from "@/components/public-site-shell";
 import { getPublicApplicationStatusData } from "@/lib/careers-data";
 
 export const dynamic = "force-dynamic";
@@ -64,7 +64,8 @@ export default async function PublicApplicationStatusPage({
 
   return (
     <main className="min-h-screen bg-slate-100 text-slate-950">
-      <header className="border-b border-slate-200 bg-white">
+      <PublicSiteHeader />
+      <header className="border-y border-slate-200 bg-white">
         <div className="mx-auto flex max-w-6xl flex-col gap-5 px-4 py-6 lg:px-6">
           <Link className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition hover:text-slate-950" href="/careers">
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
@@ -75,7 +76,7 @@ export default async function PublicApplicationStatusPage({
             <div>
               <div className="flex items-center gap-3">
                 <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-slate-950 text-white">
-                  <Sparkles className="h-5 w-5" aria-hidden="true" />
+                  <BriefcaseBusiness className="h-5 w-5" aria-hidden="true" />
                 </div>
                 <div>
                   <p className="text-sm font-semibold uppercase text-slate-500">{data.organizationName}</p>
@@ -231,6 +232,7 @@ export default async function PublicApplicationStatusPage({
           </section>
         </aside>
       </div>
+      <PublicSiteFooter />
     </main>
   );
 }

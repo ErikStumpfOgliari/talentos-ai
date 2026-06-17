@@ -10,6 +10,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { updateOrganizationSettings } from "@/app/admin/actions";
+import { ThemeToggle } from "@/components/site-theme-provider";
 import { WorkspacePageShell } from "@/components/workspace-page-shell";
 import { adminRoles, requireRole } from "@/lib/auth";
 import { getAdminPageData } from "@/lib/admin-data";
@@ -55,13 +56,16 @@ export default async function SettingsPage({
   return (
     <WorkspacePageShell
       actions={
-        <Link
-          className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:scale-[1.03] hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98]"
-          href="/admin"
-        >
-          <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-          Admin
-        </Link>
+        <>
+          <ThemeToggle />
+          <Link
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:scale-[1.03] hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98]"
+            href="/admin"
+          >
+            <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+            Admin
+          </Link>
+        </>
       }
       icon={<Settings className="h-5 w-5" aria-hidden="true" />}
       organizationName={data.organization.slug}

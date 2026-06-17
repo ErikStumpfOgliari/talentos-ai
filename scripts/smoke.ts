@@ -165,7 +165,7 @@ async function runCheck(check: SmokeCheck): Promise<SmokeResult> {
 async function main() {
   const fixtures = await getSmokeFixtures();
   const checks: SmokeCheck[] = [
-    { cookie: fixtures.adminCookie, expectedText: "TalentOS AI", label: "Dashboard", path: "/" },
+    { cookie: fixtures.adminCookie, expectedText: "Aptelys", label: "Dashboard", path: "/" },
     { cookie: fixtures.adminCookie, expectedText: "Jobs", label: "Jobs", path: "/jobs" },
     { cookie: fixtures.adminCookie, expectedText: "Candidates", label: "Candidates", path: "/candidates" },
     { cookie: fixtures.adminCookie, expectedText: "Applications Inbox", label: "Applications inbox", path: "/applications" },

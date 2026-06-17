@@ -1,7 +1,7 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
 
 function getEncryptionKey() {
-  const secret = process.env.AUTH_SECRET ?? "talentos-local-dev-session-secret";
+  const secret = process.env.AUTH_SECRET ?? "aptelys-local-dev-session-secret";
   return createHash("sha256").update(secret).digest();
 }
 

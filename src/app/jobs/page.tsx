@@ -63,14 +63,14 @@ function CreateJobForm({ managers }: { managers: JobsPageManager[] }) {
   return (
     <form action={createJob} className="grid gap-3">
       <Field label="Title">
-        <input className={inputClass} name="title" placeholder="Senior Full Stack Engineer" required />
+        <input className={inputClass} name="title" placeholder="Operations Coordinator" required />
       </Field>
       <div className="grid gap-3">
         <Field label="Department">
-          <input className={inputClass} name="department" placeholder="Engineering" />
+          <input className={inputClass} name="department" placeholder="Operations" />
         </Field>
         <Field label="Location">
-          <input className={inputClass} name="location" placeholder="Remote LATAM" />
+          <input className={inputClass} name="location" placeholder="Hybrid Sao Paulo" />
         </Field>
       </div>
       <div className="grid gap-3">
@@ -131,10 +131,10 @@ function CreateJobForm({ managers }: { managers: JobsPageManager[] }) {
         />
       </Field>
       <Field label="Requirements">
-        <textarea className={textareaClass} name="requirements" placeholder={"React\nNode.js\nPostgreSQL"} />
+        <textarea className={textareaClass} name="requirements" placeholder={"Customer service\nScheduling\nExcel"} />
       </Field>
       <Field label="Responsibilities">
-        <textarea className={textareaClass} name="responsibilities" placeholder={"Build product features\nOwn API design\nImprove AI workflows"} />
+        <textarea className={textareaClass} name="responsibilities" placeholder={"Coordinate daily workflows\nSupport hiring managers\nTrack operational KPIs"} />
       </Field>
       <button
         className="mt-1 inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:scale-[1.03] hover:bg-slate-800 active:scale-[0.98]"

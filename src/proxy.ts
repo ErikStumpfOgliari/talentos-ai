@@ -7,8 +7,11 @@ function isPublicPath(pathname: string) {
   return (
     pathname === "/login" ||
     pathname === "/logout" ||
+    pathname === "/forgot-password" ||
+    pathname === "/reset-password" ||
     pathname === "/" ||
     pathname === "/signup" ||
+    pathname === "/verify-login" ||
     pathname === "/candidate-status" ||
     pathname.startsWith("/api") ||
     pathname.startsWith("/careers") ||

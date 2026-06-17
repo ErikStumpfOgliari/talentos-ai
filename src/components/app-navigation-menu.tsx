@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useId } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { InterellisMark } from "@/components/interellis-mark";
 import { useSiteLanguage } from "@/components/site-language-provider";
 import {
   Activity,
@@ -17,12 +18,12 @@ import {
   Menu as MenuIcon,
   Settings,
   ShieldCheck,
-  Sparkles,
   Users,
   X,
 } from "lucide-react";
 
 const navItems = [
+  { href: "/", icon: InterellisMark, i18nKey: "nav.home", label: "Aptelys Home" },
   { href: "/dashboard", icon: BarChart3, i18nKey: "nav.dashboard", label: "Dashboard" },
   { href: "/jobs", icon: BriefcaseBusiness, i18nKey: "nav.jobs", label: "Jobs" },
   { href: "/applications", icon: Inbox, i18nKey: "nav.applications", label: "Applications" },
@@ -46,12 +47,12 @@ function NavigationBrand({ copy }: { copy?: NavigationCopy }) {
   return (
     <div className="flex h-16 items-center gap-3 border-b border-slate-200 px-5">
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-950 text-white">
-        <Sparkles className="h-4 w-4" aria-hidden="true" />
+        <InterellisMark className="h-4 w-4" />
       </div>
       <div className="min-w-0">
-        <p className="truncate text-sm font-semibold text-slate-950">TalentOS AI</p>
+        <p className="truncate text-sm font-semibold text-slate-950">Aptelys</p>
         <p className="truncate text-xs text-slate-500" data-i18n-key="nav.recruitmentCrm">
-          {getCopy(copy, "nav.recruitmentCrm", "Recruitment CRM")}
+          {getCopy(copy, "nav.recruitmentCrm", "by Interellis")}
         </p>
       </div>
     </div>
@@ -113,7 +114,7 @@ function NavigationFooter({
           <p className="text-xs font-semibold uppercase text-slate-500" data-i18n-key="nav.organization">
             {getCopy(copy, "nav.organization", "Organization")}
           </p>
-          <p className="mt-1 truncate text-sm font-semibold text-slate-950">TalentOS AI</p>
+          <p className="mt-1 truncate text-sm font-semibold text-slate-950">Aptelys</p>
           <p className="mt-1 truncate text-xs text-slate-500" data-i18n-key="nav.workspaceUsers">
             {getCopy(copy, "nav.workspaceUsers", "Pro workspace")}
           </p>
@@ -225,12 +226,12 @@ export function AppNavigationMenu({ className = "", copy }: { className?: string
           <div className="flex h-16 items-center justify-between gap-3 border-b border-slate-200 px-5">
             <div className="flex min-w-0 items-center gap-3">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-950 text-white">
-                <Sparkles className="h-4 w-4" aria-hidden="true" />
+                <InterellisMark className="h-4 w-4" />
               </div>
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-slate-950">TalentOS AI</p>
+                <p className="truncate text-sm font-semibold text-slate-950">Aptelys</p>
                 <p className="truncate text-xs text-slate-500" data-i18n-key="nav.recruitmentCrm">
-                  {getCopy(resolvedCopy, "nav.recruitmentCrm", "Recruitment CRM")}
+                  {getCopy(resolvedCopy, "nav.recruitmentCrm", "by Interellis")}
                 </p>
               </div>
             </div>

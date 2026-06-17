@@ -5,7 +5,7 @@ import { buildGoogleCalendarAuthUrl } from "@/lib/google-calendar";
 
 export const runtime = "nodejs";
 
-export const GOOGLE_CALENDAR_OAUTH_STATE_COOKIE = "talentos_google_calendar_oauth_state";
+export const GOOGLE_CALENDAR_OAUTH_STATE_COOKIE = "aptelys_google_calendar_oauth_state";
 
 export async function GET(request: Request) {
   const session = await getCurrentSession();

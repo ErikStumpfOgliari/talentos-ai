@@ -48,3 +48,6 @@ next-env.d.ts
 
 # local uploaded files
 /storage/
+
+# local Codex/dev scratch files
+/tmp/

@@ -7,18 +7,18 @@ import {
   FileText,
   MapPin,
   Send,
-  Sparkles,
   UploadCloud,
 } from "lucide-react";
 import { submitCareersApplication } from "@/app/careers/[jobId]/actions";
+import { PublicSiteFooter, PublicSiteHeader } from "@/components/public-site-shell";
 import { getPublicJobApplicationData } from "@/lib/careers-data";
 
 export const dynamic = "force-dynamic";
 
 const inputClass =
-  "h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400";
+  "h-11 w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400";
 const textareaClass =
-  "min-h-28 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm leading-6 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400";
+  "min-h-28 w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm leading-6 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400";
 
 function Field({
   children,
@@ -74,7 +74,8 @@ export default async function PublicJobPage({
 
   return (
     <main className="min-h-screen bg-slate-100 text-slate-950">
-      <header className="border-b border-slate-200 bg-white">
+      <PublicSiteHeader />
+      <header className="border-y border-slate-200 bg-white">
         <div className="mx-auto flex max-w-6xl flex-col gap-5 px-4 py-6 lg:px-6">
           <Link className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition hover:text-slate-950" href="/careers">
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
@@ -85,7 +86,7 @@ export default async function PublicJobPage({
             <div>
               <div className="flex items-center gap-3">
                 <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-slate-950 text-white">
-                  <Sparkles className="h-5 w-5" aria-hidden="true" />
+                  <BriefcaseBusiness className="h-5 w-5" aria-hidden="true" />
                 </div>
                 <div>
                   <p className="text-sm font-semibold uppercase text-slate-500">{data.organizationName}</p>
@@ -200,14 +201,14 @@ export default async function PublicJobPage({
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <Field label="Current title">
-                <input className={inputClass} name="currentTitle" placeholder="Full Stack Engineer" />
+                <input className={inputClass} name="currentTitle" placeholder="Operations Coordinator" />
               </Field>
               <Field label="Experience">
                 <input className={inputClass} min={0} name="yearsExperience" placeholder="5" type="number" />
               </Field>
             </div>
             <Field label="Key skills">
-              <input className={inputClass} name="skills" placeholder="React, Node.js, PostgreSQL" />
+              <input className={inputClass} name="skills" placeholder="Customer service, scheduling, Excel" />
             </Field>
             <Field label="Resume file">
               <input
@@ -233,6 +234,7 @@ export default async function PublicJobPage({
           </form>
         </aside>
       </div>
+      <PublicSiteFooter />
     </main>
   );
 }

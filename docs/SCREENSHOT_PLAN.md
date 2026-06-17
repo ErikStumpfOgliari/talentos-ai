@@ -1,4 +1,4 @@
-# TalentOS AI Screenshot Plan
+# Aptelys Screenshot Plan
 
 ## Purpose
 
@@ -20,7 +20,7 @@ npm run dev
 Sign in:
 
 ```text
-erik@example.com / talentos-demo-2026
+erik@example.com / aptelys-demo-2026
 ```
 
 Validate:
@@ -275,4 +275,4 @@ Shows production mindset, permissions, reliability checks, and integration monit
 
 ## Suggested Caption
 
-"TalentOS AI is a full-stack AI Recruitment CRM / ATS SaaS built with Next.js, PostgreSQL, Prisma, OpenAI-ready resume parsing and matching, drag-and-drop ATS pipelines, public careers intake, email automation, Google Calendar scheduling, analytics, and admin readiness checks."
+"Aptelys is a full-stack AI Recruitment CRM / ATS SaaS built with Next.js, PostgreSQL, Prisma, OpenAI-ready resume parsing and matching, drag-and-drop ATS pipelines, public careers intake, email automation, Google Calendar scheduling, analytics, and admin readiness checks."
