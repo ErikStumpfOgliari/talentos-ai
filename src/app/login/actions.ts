@@ -29,14 +29,6 @@ function getSafeNext(value: string) {
   return value;
 }
 
-function readAuthFactorMethod(value: string) {
-  if (value === AuthFactorMethod.SMS_CODE || value === AuthFactorMethod.AUTHENTICATOR_APP) {
-    return value;
-  }
-
-  return AuthFactorMethod.EMAIL_CODE;
-}
-
 type LoginAttemptState = {
   count: number;
   email: string;
@@ -116,9 +108,6 @@ async function redirectInvalid(next: string, email: string): Promise<never> {
 export async function login(formData: FormData) {
   const email = normalizeEmail(readString(formData, "email"));
   const password = readString(formData, "password");
-  const selectedAuthFactor = readAuthFactorMethod(readString(formData, "method"));
-  const preferredAuthFactor =
-    selectedAuthFactor === AuthFactorMethod.EMAIL_CODE ? selectedAuthFactor : AuthFactorMethod.EMAIL_CODE;
   const next = getSafeNext(readString(formData, "next"));
 
   if (!email || !password) {
@@ -169,7 +158,7 @@ export async function login(formData: FormData) {
     mode: "login",
     nextPath: next,
     organizationId: user.memberships[0].organizationId,
-    preferredAuthFactor,
+    preferredAuthFactor: AuthFactorMethod.EMAIL_CODE,
     userId: user.id,
     verificationChallengeId: challenge.challengeId,
     verificationDebugCode: challenge.debugCode,

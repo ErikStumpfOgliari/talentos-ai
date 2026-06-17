@@ -22,14 +22,6 @@ function normalizeEmail(value: string) {
   return value.trim().toLowerCase();
 }
 
-function readAuthFactorMethod(value: string) {
-  if (value === AuthFactorMethod.SMS_CODE || value === AuthFactorMethod.AUTHENTICATOR_APP) {
-    return value;
-  }
-
-  return AuthFactorMethod.EMAIL_CODE;
-}
-
 function redirectWithError(error: string): never {
   redirect(`/signup?error=${encodeURIComponent(error)}`);
 }
@@ -46,9 +38,6 @@ export async function createWorkspaceSignup(formData: FormData) {
   const region = readString(formData, "region");
   const postalCode = readString(formData, "postalCode");
   const country = readString(formData, "country");
-  const selectedAuthFactor = readAuthFactorMethod(readString(formData, "preferredAuthFactor"));
-  const preferredAuthFactor =
-    selectedAuthFactor === AuthFactorMethod.EMAIL_CODE ? selectedAuthFactor : AuthFactorMethod.EMAIL_CODE;
 
   if (!name || !email || !phone || !password || !organizationName || !addressLine1 || !city || !region || !postalCode || !country) {
     redirectWithError("missing");
@@ -83,7 +72,7 @@ export async function createWorkspaceSignup(formData: FormData) {
     passwordHash,
     phone,
     postalCode,
-    preferredAuthFactor,
+    preferredAuthFactor: AuthFactorMethod.EMAIL_CODE,
     region,
   });
 

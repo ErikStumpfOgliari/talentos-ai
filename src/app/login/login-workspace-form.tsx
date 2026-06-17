@@ -5,11 +5,9 @@ import { useRef, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
-  KeyRound,
   LockKeyhole,
   Mail,
   ShieldCheck,
-  Smartphone,
 } from "lucide-react";
 import { login } from "@/app/login/actions";
 
@@ -17,7 +15,6 @@ type LoginStep = "credentials" | "verification";
 
 type LoginValues = {
   email: string;
-  method: string;
   password: string;
 };
 
@@ -26,37 +23,12 @@ const inputClass =
 
 const initialValues: LoginValues = {
   email: "",
-  method: "EMAIL_CODE",
   password: "",
 };
 
-const verificationMethods = [
-  {
-    active: true,
-    detail: "Use your work email as the primary identity check.",
-    icon: Mail,
-    label: "Email code",
-    value: "EMAIL_CODE",
-  },
-  {
-    active: false,
-    detail: "Coming next. Email code is active now.",
-    icon: Smartphone,
-    label: "SMS code",
-    value: "SMS_CODE",
-  },
-  {
-    active: false,
-    detail: "Coming next. Email code is active now.",
-    icon: KeyRound,
-    label: "Authenticator app",
-    value: "AUTHENTICATOR_APP",
-  },
-] as const;
-
 function HiddenLoginFields({ step, values }: { step: LoginStep; values: LoginValues }) {
   if (step === "credentials") {
-    return <input name="method" type="hidden" value={values.method} />;
+    return null;
   }
 
   return (
@@ -111,12 +83,12 @@ export function LoginWorkspaceForm({
         </div>
         <div className="min-w-0">
           <p className="text-sm font-semibold text-slate-950">
-            {step === "credentials" ? "Sign in details" : "Security method"}
+            {step === "credentials" ? "Sign in details" : "Email verification"}
           </p>
           <p className="text-xs text-slate-500">
             {step === "credentials"
               ? "Aptelys by Interellis workspace"
-              : "Choose a verification method for this trusted device."}
+              : "Aptelys sends a code to your work email."}
           </p>
         </div>
       </div>
@@ -211,36 +183,16 @@ export function LoginWorkspaceForm({
 
         {step === "verification" ? (
           <>
-            <div className="grid gap-2">
-              {verificationMethods.map((method) => (
-                <label
-                  className={`group flex gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm transition ${
-                    method.active
-                      ? "cursor-pointer hover:scale-[1.015] hover:border-slate-300 hover:bg-white"
-                      : "cursor-not-allowed opacity-55"
-                  }`}
-                  key={method.value}
-                >
-                  <input
-                    checked={values.method === method.value}
-                    className="mt-1 h-4 w-4 shrink-0 accent-slate-950"
-                    disabled={!method.active}
-                    name="method"
-                    onChange={(event) => updateValue("method", event.target.value)}
-                    type="radio"
-                    value={method.value}
-                  />
-                  <span className="flex min-w-0 flex-1 gap-3">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-slate-700 ring-1 ring-slate-200 transition group-hover:bg-slate-950 group-hover:text-white">
-                      <method.icon className="h-4 w-4" aria-hidden="true" />
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block font-semibold text-slate-950">{method.label}</span>
-                      <span className="mt-0.5 block text-xs leading-5 text-slate-500">{method.detail}</span>
-                    </span>
-                  </span>
-                </label>
-              ))}
+            <div className="flex gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-slate-700 ring-1 ring-slate-200">
+                <Mail className="h-4 w-4" aria-hidden="true" />
+              </span>
+              <span className="min-w-0">
+                <span className="block font-semibold text-slate-950">Email code</span>
+                <span className="mt-0.5 block text-xs leading-5 text-slate-500">
+                  Aptelys will send a 6-digit code to your work email.
+                </span>
+              </span>
             </div>
             <button
               className="mt-2 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:scale-[1.02] hover:bg-slate-800 active:scale-[0.98]"

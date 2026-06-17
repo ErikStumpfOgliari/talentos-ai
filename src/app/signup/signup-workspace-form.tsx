@@ -25,7 +25,6 @@ type SignupValues = {
   password: string;
   phone: string;
   postalCode: string;
-  preferredAuthFactor: string;
   region: string;
 };
 
@@ -43,7 +42,6 @@ const initialValues: SignupValues = {
   password: "",
   phone: "",
   postalCode: "",
-  preferredAuthFactor: "EMAIL_CODE",
   region: "",
 };
 
@@ -52,12 +50,6 @@ const steps: Array<{ id: SignupStep; label: string }> = [
   { id: "address", label: "Company address" },
   { id: "verification", label: "Security check" },
 ];
-
-const verificationMethods = [
-  ["EMAIL_CODE", "Email code", "Receive security codes by email."],
-  ["SMS_CODE", "SMS code", "Coming next. Email code is active now."],
-  ["AUTHENTICATOR_APP", "Authenticator app", "Coming next. Email code is active now."],
-] as const;
 
 function getStepIndex(step: SignupStep) {
   return steps.findIndex((item) => item.id === step);
@@ -91,9 +83,7 @@ function HiddenFields({
           <input name="country" type="hidden" value={values.country} />
         </>
       ) : null}
-      {currentStep !== "verification" ? (
-        <input name="preferredAuthFactor" type="hidden" value={values.preferredAuthFactor} />
-      ) : null}
+      <input name="preferredAuthFactor" type="hidden" value="EMAIL_CODE" />
     </>
   );
 }
@@ -156,7 +146,7 @@ export function SignupWorkspaceForm({ errorMessage }: { errorMessage: string | n
               ? "Tell Aptelys who owns this workspace."
               : step === "address"
                 ? "Where should this workspace be registered?"
-                : "Choose how this owner account should verify future sign-ins."}
+                : "Aptelys will verify this owner account by email."}
           </p>
         </div>
       </div>
@@ -349,33 +339,16 @@ export function SignupWorkspaceForm({ errorMessage }: { errorMessage: string | n
 
         {step === "verification" ? (
           <>
-            <div className="grid gap-2">
-              {verificationMethods.map(([value, label, detail]) => {
-                const active = value === "EMAIL_CODE";
-
-                return (
-                  <label
-                    className={`flex gap-3 rounded-lg bg-slate-50 p-3 text-sm ring-1 ring-slate-200 transition ${
-                      active ? "cursor-pointer hover:scale-[1.01] hover:bg-white hover:ring-slate-300" : "cursor-not-allowed opacity-55"
-                    }`}
-                    key={value}
-                  >
-                    <input
-                      className="mt-1 h-4 w-4 shrink-0 accent-slate-950"
-                      checked={values.preferredAuthFactor === value}
-                      disabled={!active}
-                      name="preferredAuthFactor"
-                      onChange={(event) => updateValue("preferredAuthFactor", event.target.value)}
-                      type="radio"
-                      value={value}
-                    />
-                    <span>
-                      <span className="block font-semibold text-slate-950">{label}</span>
-                      <span className="mt-0.5 block text-xs leading-5 text-slate-500">{detail}</span>
-                    </span>
-                  </label>
-                );
-              })}
+            <div className="flex gap-3 rounded-lg bg-slate-50 p-3 text-sm ring-1 ring-slate-200">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-slate-700 ring-1 ring-slate-200">
+                <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+              </span>
+              <span className="min-w-0">
+                <span className="block font-semibold text-slate-950">Email code</span>
+                <span className="mt-0.5 block text-xs leading-5 text-slate-500">
+                  The workspace owner receives a 6-digit security code by email.
+                </span>
+              </span>
             </div>
             <p className="rounded-lg bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-500">
               After signup, Aptelys opens a verification step before entering the workspace.

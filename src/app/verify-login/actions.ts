@@ -178,14 +178,6 @@ function getSafeNext(value?: string) {
   return value;
 }
 
-function readAuthFactorMethod(value: string) {
-  if (value === AuthFactorMethod.SMS_CODE || value === AuthFactorMethod.AUTHENTICATOR_APP) {
-    return value;
-  }
-
-  return AuthFactorMethod.EMAIL_CODE;
-}
-
 export async function completeLoginVerification(formData: FormData) {
   const pendingAuth = await getPendingAuth();
 
@@ -195,7 +187,6 @@ export async function completeLoginVerification(formData: FormData) {
 
   const nextPath = getSafeNext(pendingAuth.nextPath);
   const code = readString(formData, "code");
-  const selectedMethod = readAuthFactorMethod(pendingAuth.preferredAuthFactor ?? readString(formData, "method"));
   const verification = await verifyEmailCode({
     challengeId: pendingAuth.verificationChallengeId ?? "",
     code,
@@ -214,7 +205,7 @@ export async function completeLoginVerification(formData: FormData) {
       },
       data: {
         lastLoginAt: new Date(),
-        preferredAuthFactor: selectedMethod,
+        preferredAuthFactor: AuthFactorMethod.EMAIL_CODE,
         secondFactorEnabled: true,
       },
     });
