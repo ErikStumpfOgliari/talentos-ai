@@ -5,34 +5,12 @@ import {
   CheckCircle2,
   FileText,
   MapPin,
-  Send,
-  UploadCloud,
 } from "lucide-react";
-import { submitCareersApplication } from "@/app/careers/[jobId]/actions";
+import { PublicJobApplicationForm } from "@/components/public-job-application-form";
 import { PublicSiteFooter, PublicSiteHeader } from "@/components/public-site-shell";
 import { getPublicJobApplicationData } from "@/lib/careers-data";
 
 export const dynamic = "force-dynamic";
-
-const inputClass =
-  "h-11 w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400";
-const textareaClass =
-  "min-h-28 w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm leading-6 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400";
-
-function Field({
-  children,
-  label,
-}: {
-  children: React.ReactNode;
-  label: string;
-}) {
-  return (
-    <label className="grid gap-1.5">
-      <span className="text-xs font-semibold uppercase text-slate-500">{label}</span>
-      {children}
-    </label>
-  );
-}
 
 function getErrorMessage(error?: string) {
   if (error === "missing_candidate") {
@@ -139,6 +117,12 @@ export default async function PublicJobPage({
                 <p className="text-xs font-semibold uppercase text-slate-500">Pipeline</p>
                 <p className="mt-1 text-lg font-semibold text-slate-950">{data.job.applicationCount}</p>
               </div>
+              <Link
+                className="inline-flex h-10 w-full items-center justify-center rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800 sm:col-span-2"
+                href="#apply"
+              >
+                Apply now
+              </Link>
             </div>
           </div>
         </div>
@@ -157,12 +141,6 @@ export default async function PublicJobPage({
                   </p>
                 </div>
               </div>
-            </div>
-          ) : null}
-
-          {errorMessage ? (
-            <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-800">
-              {errorMessage}
             </div>
           ) : null}
 
@@ -200,60 +178,11 @@ export default async function PublicJobPage({
           </section>
         </section>
 
-        <aside className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-5 lg:self-start">
+        <aside className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-5 lg:self-start" id="apply">
           <div className="mb-4 flex items-center gap-2">
-            <UploadCloud className="h-4 w-4 text-emerald-700" aria-hidden="true" />
             <p className="text-sm font-semibold text-slate-950">Apply for this role</p>
           </div>
-          <form action={submitCareersApplication} className="grid gap-3">
-            <input name="jobId" type="hidden" value={data.job.id} />
-            <Field label="Full name">
-              <input className={inputClass} name="name" placeholder="Ana Martins" required />
-            </Field>
-            <Field label="Email">
-              <input className={inputClass} name="email" placeholder="ana@example.com" required type="email" />
-            </Field>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Field label="Phone">
-                <input className={inputClass} name="phone" placeholder="+55 11 90000-0000" />
-              </Field>
-              <Field label="Location">
-                <input className={inputClass} name="location" placeholder="Sao Paulo, BR" />
-              </Field>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Field label="Current title">
-                <input className={inputClass} name="currentTitle" placeholder="Operations Coordinator" />
-              </Field>
-              <Field label="Experience">
-                <input className={inputClass} min={0} name="yearsExperience" placeholder="5" type="number" />
-              </Field>
-            </div>
-            <Field label="Key skills">
-              <input className={inputClass} name="skills" placeholder="Customer service, scheduling, Excel" />
-            </Field>
-            <Field label="Resume file">
-              <input
-                accept=".pdf,.txt,.md,.csv,application/pdf,text/plain,text/markdown,text/csv"
-                className="w-full rounded-lg border border-dashed border-slate-300 bg-slate-50 px-3 py-3 text-sm text-slate-700"
-                name="resumeFile"
-                type="file"
-              />
-            </Field>
-            <Field label="Resume text">
-              <textarea className={textareaClass} name="resumeText" placeholder="Paste resume text if you do not upload a file." />
-            </Field>
-            <Field label="Note to hiring team">
-              <textarea className={textareaClass} name="coverLetter" placeholder="Share context, availability, or why this role fits." />
-            </Field>
-            <button
-              className="mt-1 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-              type="submit"
-            >
-              <Send className="h-4 w-4" aria-hidden="true" />
-              Submit application
-            </button>
-          </form>
+          <PublicJobApplicationForm errorMessage={errorMessage} jobId={data.job.id} />
         </aside>
       </div>
       <PublicSiteFooter />
