@@ -6,11 +6,13 @@ import {
   BriefcaseBusiness,
   Layers3,
   Gauge,
+  SlidersHorizontal,
   Sparkles,
   Target,
   Users,
 } from "lucide-react";
 import { rankCandidatesForJob } from "@/app/matching/actions";
+import { WorkspacePanelTabs } from "@/components/workspace-panel-tabs";
 import { WorkspacePageShell } from "@/components/workspace-page-shell";
 import { canUseOpenAIProvider } from "@/lib/ai-provider";
 import { recruitingRoles, requireRole } from "@/lib/auth";
@@ -42,6 +44,169 @@ function ProgressBar({ value }: { value: number }) {
     <div className="h-2 rounded-full bg-slate-100">
       <div className="h-2 rounded-full bg-emerald-500" style={{ width: `${Math.max(2, Math.min(100, value))}%` }} />
     </div>
+  );
+}
+
+type MatchingPageData = Awaited<ReturnType<typeof getMatchingPageData>>;
+
+function MatchingToolsPanel({
+  data,
+  selectedJobId,
+}: {
+  data: MatchingPageData;
+  selectedJobId: string;
+}) {
+  return (
+    <WorkspacePanelTabs
+      tabs={[
+        {
+          id: "rank",
+          label: "Rank",
+          description: "Choose an open role and run candidate ranking without crowding the shortlist.",
+          children: (
+            <div className="grid gap-4">
+              <form action="/matching" className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4">
+                <div className="flex items-center gap-2">
+                  <Target className="h-4 w-4 text-emerald-700" aria-hidden="true" />
+                  <p className="text-sm font-semibold text-slate-950">Select role</p>
+                </div>
+                <select className={inputClass} defaultValue={selectedJobId} name="jobId">
+                  {data.jobs.map((job) => (
+                    <option key={job.id} value={job.id}>
+                      {job.title}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                  type="submit"
+                >
+                  View shortlist
+                </button>
+              </form>
+
+              <form action={rankCandidatesForJob} className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4">
+                <input name="jobId" type="hidden" value={selectedJobId} />
+                <div>
+                  <p className="text-sm font-semibold text-slate-950">Rank candidates</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                    Updates match scores and feeds the ATS pipeline for the selected role.
+                  </p>
+                </div>
+                <button
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+                  disabled={!selectedJobId}
+                  type="submit"
+                >
+                  <Sparkles className="h-4 w-4" aria-hidden="true" />
+                  Rank candidates
+                </button>
+              </form>
+            </div>
+          ),
+        },
+        {
+          id: "roles",
+          label: "Roles",
+          description: "Switch between open roles and keep the main ranking area focused.",
+          children: (
+            <div className="space-y-3">
+              {data.selectedJob ? (
+                <section className="rounded-lg border border-slate-200 bg-white p-4">
+                  <div className="mb-4 flex items-center gap-2">
+                    <Target className="h-4 w-4 text-emerald-700" aria-hidden="true" />
+                    <p className="text-sm font-semibold text-slate-950">Selected role</p>
+                  </div>
+                  <div className="grid gap-2 text-sm">
+                    <div className="rounded-lg bg-slate-50 p-3">
+                      <p className="text-xs font-semibold uppercase text-slate-500">Title</p>
+                      <p className="mt-1 font-semibold text-slate-950">{data.selectedJob.title}</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="rounded-lg bg-slate-50 p-3">
+                        <p className="text-xs font-semibold uppercase text-slate-500">Status</p>
+                        <p className="mt-1 font-semibold text-slate-950">{data.selectedJob.status}</p>
+                      </div>
+                      <div className="rounded-lg bg-slate-50 p-3">
+                        <p className="text-xs font-semibold uppercase text-slate-500">Avg</p>
+                        <p className="mt-1 font-semibold text-slate-950">{data.selectedJob.avgScore}%</p>
+                      </div>
+                    </div>
+                    <div className="rounded-lg bg-slate-50 p-3">
+                      <p className="text-xs font-semibold uppercase text-slate-500">Department</p>
+                      <p className="mt-1 font-semibold text-slate-950">{data.selectedJob.department}</p>
+                    </div>
+                  </div>
+                </section>
+              ) : (
+                <p className="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-500">No active jobs available.</p>
+              )}
+
+              <section className="rounded-lg border border-slate-200 bg-white p-4">
+                <div className="mb-4 flex items-center gap-2">
+                  <Layers3 className="h-4 w-4 text-sky-700" aria-hidden="true" />
+                  <p className="text-sm font-semibold text-slate-950">Role queue</p>
+                </div>
+                <div className="space-y-2">
+                  {data.jobs.map((job) => (
+                    <Link
+                      className={`block rounded-lg border p-3 transition ${
+                        job.id === selectedJobId
+                          ? "border-slate-950 bg-slate-950 text-white"
+                          : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
+                      }`}
+                      href={`/matching?jobId=${job.id}`}
+                      key={job.id}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold">{job.title}</p>
+                          <p className={`mt-1 text-xs ${job.id === selectedJobId ? "text-slate-300" : "text-slate-500"}`}>
+                            {job.department} - {job.status}
+                          </p>
+                        </div>
+                        <span
+                          className={`rounded-full px-2 py-1 text-xs font-semibold ${
+                            job.id === selectedJobId ? "bg-white text-slate-950" : "bg-slate-100 text-slate-600"
+                          }`}
+                        >
+                          {job.avgScore}%
+                        </span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            </div>
+          ),
+        },
+        {
+          id: "engine",
+          label: "Engine",
+          description: "Technical status for the matching engine and persistence layer.",
+          children: (
+            <section className="rounded-lg border border-slate-200 bg-white p-4">
+              <div className="mb-4 flex items-center gap-2">
+                <BadgeCheck className="h-4 w-4 text-violet-700" aria-hidden="true" />
+                <p className="text-sm font-semibold text-slate-950">Matching engine</p>
+              </div>
+              <div className="grid gap-3 text-sm">
+                <div className="rounded-lg bg-slate-50 p-3">
+                  <p className="text-xs font-semibold uppercase text-slate-500">Mode</p>
+                  <p className="mt-1 font-semibold text-slate-950">
+                    {canUseOpenAIProvider() ? "OpenAI embeddings" : "Smart local matching"}
+                  </p>
+                </div>
+                <div className="rounded-lg bg-slate-50 p-3">
+                  <p className="text-xs font-semibold uppercase text-slate-500">Persistence</p>
+                  <p className="mt-1 text-slate-600">Scores write to Application.matchScore and feed the ATS pipeline.</p>
+                </div>
+              </div>
+            </section>
+          ),
+        },
+      ]}
+    />
   );
 }
 
@@ -77,9 +242,14 @@ export default async function MatchingPage({
       }
       icon={<Gauge className="h-5 w-5" aria-hidden="true" />}
       organizationName={data.organizationName}
+      rightPanel={<MatchingToolsPanel data={data} selectedJobId={selectedJobId} />}
+      rightPanelButtonIcon={<SlidersHorizontal className="h-4 w-4" aria-hidden="true" />}
+      rightPanelButtonLabel="Tools"
+      rightPanelDescription="Role selection, ranking, and engine status."
+      rightPanelTitle="Matching tools"
       title="AI Matching"
     >
-      <div className="grid min-w-0 gap-5 2xl:grid-cols-[minmax(0,1fr)_340px]">
+      <div className="grid min-w-0 gap-5">
         <section className="space-y-5">
           {params?.ranked ? (
             <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
@@ -111,34 +281,6 @@ export default async function MatchingPage({
                 <p className="mt-1 truncate text-xs text-slate-500">
                   {data.selectedJob ? `${data.selectedJob.title} - ${data.selectedJob.location}` : "No open role selected"}
                 </p>
-              </div>
-              <div className="flex min-w-0 flex-col gap-2 sm:flex-row">
-                <form action="/matching" className="grid min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
-                  <select className={inputClass} defaultValue={selectedJobId} name="jobId">
-                    {data.jobs.map((job) => (
-                      <option key={job.id} value={job.id}>
-                        {job.title}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-                    type="submit"
-                  >
-                    View
-                  </button>
-                </form>
-                <form action={rankCandidatesForJob} className="min-w-0">
-                  <input name="jobId" type="hidden" value={selectedJobId} />
-                  <button
-                    className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
-                    disabled={!selectedJobId}
-                    type="submit"
-                  >
-                    <Sparkles className="h-4 w-4" aria-hidden="true" />
-                    Rank candidates
-                  </button>
-                </form>
               </div>
             </div>
 
@@ -221,93 +363,6 @@ export default async function MatchingPage({
           </section>
         </section>
 
-        <aside className="space-y-5">
-          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="mb-4 flex items-center gap-2">
-              <Target className="h-4 w-4 text-emerald-700" aria-hidden="true" />
-              <p className="text-sm font-semibold text-slate-950">Selected role</p>
-            </div>
-            {data.selectedJob ? (
-              <div className="grid gap-3 text-sm">
-                <div className="rounded-lg bg-slate-50 p-3">
-                  <p className="text-xs font-semibold uppercase text-slate-500">Title</p>
-                  <p className="mt-1 font-semibold text-slate-950">{data.selectedJob.title}</p>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="rounded-lg bg-slate-50 p-3">
-                    <p className="text-xs font-semibold uppercase text-slate-500">Status</p>
-                    <p className="mt-1 font-semibold text-slate-950">{data.selectedJob.status}</p>
-                  </div>
-                  <div className="rounded-lg bg-slate-50 p-3">
-                    <p className="text-xs font-semibold uppercase text-slate-500">Avg</p>
-                    <p className="mt-1 font-semibold text-slate-950">{data.selectedJob.avgScore}%</p>
-                  </div>
-                </div>
-                <div className="rounded-lg bg-slate-50 p-3">
-                  <p className="text-xs font-semibold uppercase text-slate-500">Department</p>
-                  <p className="mt-1 font-semibold text-slate-950">{data.selectedJob.department}</p>
-                </div>
-              </div>
-            ) : (
-              <p className="text-sm text-slate-500">No active jobs available.</p>
-            )}
-          </section>
-
-          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="mb-4 flex items-center gap-2">
-              <Layers3 className="h-4 w-4 text-sky-700" aria-hidden="true" />
-              <p className="text-sm font-semibold text-slate-950">Role queue</p>
-            </div>
-            <div className="space-y-2">
-              {data.jobs.map((job) => (
-                <Link
-                  className={`block rounded-lg border p-3 transition ${
-                    job.id === selectedJobId
-                      ? "border-slate-950 bg-slate-950 text-white"
-                      : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
-                  }`}
-                  href={`/matching?jobId=${job.id}`}
-                  key={job.id}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold">{job.title}</p>
-                      <p className={`mt-1 text-xs ${job.id === selectedJobId ? "text-slate-300" : "text-slate-500"}`}>
-                        {job.department} - {job.status}
-                      </p>
-                    </div>
-                    <span
-                      className={`rounded-full px-2 py-1 text-xs font-semibold ${
-                        job.id === selectedJobId ? "bg-white text-slate-950" : "bg-slate-100 text-slate-600"
-                      }`}
-                    >
-                      {job.avgScore}%
-                    </span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </section>
-
-          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="mb-4 flex items-center gap-2">
-              <BadgeCheck className="h-4 w-4 text-violet-700" aria-hidden="true" />
-              <p className="text-sm font-semibold text-slate-950">Matching engine</p>
-            </div>
-            <div className="grid gap-3 text-sm">
-              <div className="rounded-lg bg-slate-50 p-3">
-                <p className="text-xs font-semibold uppercase text-slate-500">Mode</p>
-                <p className="mt-1 font-semibold text-slate-950">
-                  {canUseOpenAIProvider() ? "OpenAI embeddings" : "Smart local matching"}
-                </p>
-              </div>
-              <div className="rounded-lg bg-slate-50 p-3">
-                <p className="text-xs font-semibold uppercase text-slate-500">Persistence</p>
-                <p className="mt-1 text-slate-600">Scores write to Application.matchScore and feed the ATS pipeline.</p>
-              </div>
-            </div>
-          </section>
-        </aside>
       </div>
     </WorkspacePageShell>
   );

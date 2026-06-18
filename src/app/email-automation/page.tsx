@@ -8,6 +8,7 @@ import {
   Power,
   Send,
   ShieldAlert,
+  SlidersHorizontal,
   Workflow,
 } from "lucide-react";
 import {
@@ -18,6 +19,7 @@ import {
   sendQueuedEmail,
   toggleAutomationRule,
 } from "@/app/email-automation/actions";
+import { WorkspacePanelTabs } from "@/components/workspace-panel-tabs";
 import { WorkspacePageShell } from "@/components/workspace-page-shell";
 import { automationRoles, requireRole } from "@/lib/auth";
 import { getEmailAutomationPageData } from "@/lib/email-automation-data";
@@ -145,6 +147,252 @@ function getNotice(params?: {
   return null;
 }
 
+type EmailAutomationPageData = Awaited<ReturnType<typeof getEmailAutomationPageData>>;
+
+function EmailAutomationToolsPanel({
+  data,
+  rejectionTemplates,
+}: {
+  data: EmailAutomationPageData;
+  rejectionTemplates: EmailAutomationPageData["templates"];
+}) {
+  return (
+    <WorkspacePanelTabs
+      tabs={[
+        {
+          id: "template",
+          label: "Template",
+          description: "Create reusable candidate messages for manual or automated events.",
+          children: <CreateTemplateForm />,
+        },
+        {
+          id: "rule",
+          label: "Rule",
+          description: "Connect an event, stage, and template into an automation rule.",
+          children: (
+            <form action={createAutomationRule} className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4">
+              <div className="mb-1 flex items-center gap-2">
+                <Workflow className="h-4 w-4 text-violet-700" aria-hidden="true" />
+                <p className="text-sm font-semibold text-slate-950">Create rule</p>
+              </div>
+              <Field label="Name">
+                <input className={inputClass} name="name" placeholder="Send interview confirmation" required />
+              </Field>
+              <Field label="Event">
+                <select className={inputClass} name="trigger" defaultValue="INTERVIEW_SCHEDULED">
+                  <option value="STAGE_CHANGED">Stage changed</option>
+                  <option value="INTERVIEW_SCHEDULED">Interview scheduled</option>
+                  <option value="CANDIDATE_CREATED">Candidate created</option>
+                  <option value="SCORE_UPDATED">Score updated</option>
+                  <option value="REJECTION_SENT">Rejection sent</option>
+                </select>
+              </Field>
+              <Field label="Template">
+                <select className={inputClass} name="templateId" required>
+                  <option value="">Select template</option>
+                  {data.templates.map((template) => (
+                    <option key={template.id} value={template.id}>
+                      {template.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Stage">
+                <select className={inputClass} name="stageId" defaultValue="">
+                  <option value="">Any stage</option>
+                  {data.stages.map((stage) => (
+                    <option key={stage.id} value={stage.id}>
+                      {stage.label}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Delay minutes">
+                <input className={inputClass} min="0" name="delayMinutes" placeholder="0" type="number" />
+              </Field>
+              <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                <input className="h-4 w-4 rounded border-slate-300" defaultChecked name="active" type="checkbox" />
+                Active
+              </label>
+              <button
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+                disabled={data.templates.length === 0}
+                type="submit"
+              >
+                <Workflow className="h-4 w-4" aria-hidden="true" />
+                Save rule
+              </button>
+            </form>
+          ),
+        },
+        {
+          id: "queue",
+          label: "Queue",
+          description: "Queue a template email manually from an existing application.",
+          children: (
+            <form action={queueManualTemplateEmail} className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4">
+              <div className="mb-1 flex items-center gap-2">
+                <Send className="h-4 w-4 text-emerald-700" aria-hidden="true" />
+                <p className="text-sm font-semibold text-slate-950">Queue email</p>
+              </div>
+              <Field label="Application">
+                <select className={inputClass} name="applicationId" required>
+                  <option value="">Select application</option>
+                  {data.applications.map((application) => (
+                    <option key={application.id} value={application.id}>
+                      {application.label} ({application.matchScore}%)
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Template">
+                <select className={inputClass} name="templateId" required>
+                  <option value="">Select template</option>
+                  {data.templates.map((template) => (
+                    <option key={template.id} value={template.id}>
+                      {template.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Sender">
+                <select className={inputClass} name="senderId" defaultValue="">
+                  <option value="">Unassigned</option>
+                  {data.senders.map((sender) => (
+                    <option key={sender.id} value={sender.id}>
+                      {sender.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <button
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+                disabled={data.applications.length === 0 || data.templates.length === 0}
+                type="submit"
+              >
+                <Send className="h-4 w-4" aria-hidden="true" />
+                Queue email
+              </button>
+            </form>
+          ),
+        },
+        {
+          id: "reject",
+          label: "Reject",
+          description: "Reject an application and send or queue a rejection email.",
+          children: (
+            <form action={rejectApplicationWithEmail} className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4">
+              <div className="mb-1 flex items-center gap-2">
+                <ShieldAlert className="h-4 w-4 text-rose-700" aria-hidden="true" />
+                <p className="text-sm font-semibold text-slate-950">Reject with email</p>
+              </div>
+              <Field label="Application">
+                <select className={inputClass} name="applicationId" required>
+                  <option value="">Select application</option>
+                  {data.applications.map((application) => (
+                    <option key={application.id} value={application.id}>
+                      {application.label} ({application.stage})
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Template">
+                <select className={inputClass} name="templateId" required>
+                  <option value="">Select rejection template</option>
+                  {(rejectionTemplates.length ? rejectionTemplates : data.templates).map((template) => (
+                    <option key={template.id} value={template.id}>
+                      {template.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Sender">
+                <select className={inputClass} name="senderId" defaultValue="">
+                  <option value="">Unassigned</option>
+                  {data.senders.map((sender) => (
+                    <option key={sender.id} value={sender.id}>
+                      {sender.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <button
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-rose-200 bg-white px-3 text-sm font-semibold text-rose-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-rose-300"
+                disabled={data.applications.length === 0 || data.templates.length === 0}
+                type="submit"
+              >
+                <ShieldAlert className="h-4 w-4" aria-hidden="true" />
+                Reject candidate
+              </button>
+            </form>
+          ),
+        },
+        {
+          id: "setup",
+          label: "Setup",
+          description: "Provider status, webhook readiness, and template variables.",
+          children: (
+            <div className="grid gap-4">
+              <section className="rounded-lg border border-slate-200 bg-white p-4">
+                <div className="mb-4 flex items-center gap-2">
+                  <MailCheck className="h-4 w-4 text-emerald-700" aria-hidden="true" />
+                  <p className="text-sm font-semibold text-slate-950">Delivery provider</p>
+                </div>
+                <div className="grid gap-2">
+                  <div className="rounded-lg bg-slate-50 p-3">
+                    <p className="text-xs font-semibold uppercase text-slate-500">Provider</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-950">{data.stats.providerName}</p>
+                  </div>
+                  <div className="rounded-lg bg-slate-50 p-3">
+                    <p className="text-xs font-semibold uppercase text-slate-500">From</p>
+                    <p className="mt-1 break-words text-sm font-semibold text-slate-950">{data.stats.providerFrom}</p>
+                  </div>
+                  <div className="rounded-lg bg-slate-50 p-3">
+                    <p className="text-xs font-semibold uppercase text-slate-500">Webhook endpoint</p>
+                    <p className="mt-1 break-words text-sm font-semibold text-slate-950">/api/webhooks/resend</p>
+                  </div>
+                  <span
+                    className={
+                      data.stats.providerConfigured
+                        ? "rounded-md bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700"
+                        : "rounded-md bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700"
+                    }
+                  >
+                    {data.stats.providerConfigured ? "Ready to send" : "Outbox mode"}
+                  </span>
+                  <span
+                    className={
+                      data.stats.webhookConfigured
+                        ? "rounded-md bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700"
+                        : "rounded-md bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700"
+                    }
+                  >
+                    {data.stats.webhookConfigured ? "Webhooks verified" : "Webhook secret missing"}
+                  </span>
+                </div>
+              </section>
+
+              <section className="rounded-lg border border-slate-200 bg-white p-4">
+                <div className="mb-4 flex items-center gap-2">
+                  <BadgeCheck className="h-4 w-4 text-violet-700" aria-hidden="true" />
+                  <p className="text-sm font-semibold text-slate-950">Variables</p>
+                </div>
+                <div className="flex flex-wrap gap-2 text-xs font-semibold text-slate-600">
+                  {["candidateName", "jobTitle", "stageName", "interviewTime", "meetingUrl", "matchScore"].map((variable) => (
+                    <span className="rounded-md bg-slate-100 px-2 py-1" key={variable}>
+                      {`{{${variable}}}`}
+                    </span>
+                  ))}
+                </div>
+              </section>
+            </div>
+          ),
+        },
+      ]}
+    />
+  );
+}
+
 export default async function EmailAutomationPage({
   searchParams,
 }: {
@@ -169,14 +417,14 @@ export default async function EmailAutomationPage({
       }
       icon={<Mail className="h-5 w-5" aria-hidden="true" />}
       organizationName={data.organizationName}
-      rightPanel={<CreateTemplateForm />}
-      rightPanelButtonIcon={<MailPlus className="h-4 w-4" aria-hidden="true" />}
-      rightPanelButtonLabel="Template"
-      rightPanelDescription="Create reusable candidate communication."
-      rightPanelTitle="Create template"
+      rightPanel={<EmailAutomationToolsPanel data={data} rejectionTemplates={rejectionTemplates} />}
+      rightPanelButtonIcon={<SlidersHorizontal className="h-4 w-4" aria-hidden="true" />}
+      rightPanelButtonLabel="Tools"
+      rightPanelDescription="Templates, rules, manual emails, and provider setup."
+      rightPanelTitle="Email tools"
       title="Email Automation"
     >
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="grid gap-5">
         <section className="space-y-5">
           {notice ? (
             <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
@@ -342,210 +590,6 @@ export default async function EmailAutomationPage({
           </section>
         </section>
 
-        <aside className="space-y-5">
-          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="mb-4 flex items-center gap-2">
-              <MailCheck className="h-4 w-4 text-emerald-700" aria-hidden="true" />
-              <p className="text-sm font-semibold text-slate-950">Delivery provider</p>
-            </div>
-            <div className="grid gap-2">
-              <div className="rounded-lg bg-slate-50 p-3">
-                <p className="text-xs font-semibold uppercase text-slate-500">Provider</p>
-                <p className="mt-1 text-sm font-semibold text-slate-950">{data.stats.providerName}</p>
-              </div>
-              <div className="rounded-lg bg-slate-50 p-3">
-                <p className="text-xs font-semibold uppercase text-slate-500">From</p>
-                <p className="mt-1 break-words text-sm font-semibold text-slate-950">{data.stats.providerFrom}</p>
-              </div>
-              <div className="rounded-lg bg-slate-50 p-3">
-                <p className="text-xs font-semibold uppercase text-slate-500">Webhook endpoint</p>
-                <p className="mt-1 break-words text-sm font-semibold text-slate-950">/api/webhooks/resend</p>
-              </div>
-              <span
-                className={
-                  data.stats.providerConfigured
-                    ? "rounded-md bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700"
-                    : "rounded-md bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700"
-                }
-              >
-                {data.stats.providerConfigured ? "Ready to send" : "Outbox mode"}
-              </span>
-              <span
-                className={
-                  data.stats.webhookConfigured
-                    ? "rounded-md bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700"
-                    : "rounded-md bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700"
-                }
-              >
-                {data.stats.webhookConfigured ? "Webhooks verified" : "Webhook secret missing"}
-              </span>
-            </div>
-          </section>
-
-          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="mb-4 flex items-center gap-2">
-              <Workflow className="h-4 w-4 text-violet-700" aria-hidden="true" />
-              <p className="text-sm font-semibold text-slate-950">Create rule</p>
-            </div>
-            <form action={createAutomationRule} className="grid gap-3">
-              <Field label="Name">
-                <input className={inputClass} name="name" placeholder="Send interview confirmation" required />
-              </Field>
-              <Field label="Event">
-                <select className={inputClass} name="trigger" defaultValue="INTERVIEW_SCHEDULED">
-                  <option value="STAGE_CHANGED">Stage changed</option>
-                  <option value="INTERVIEW_SCHEDULED">Interview scheduled</option>
-                  <option value="CANDIDATE_CREATED">Candidate created</option>
-                  <option value="SCORE_UPDATED">Score updated</option>
-                  <option value="REJECTION_SENT">Rejection sent</option>
-                </select>
-              </Field>
-              <Field label="Template">
-                <select className={inputClass} name="templateId" required>
-                  <option value="">Select template</option>
-                  {data.templates.map((template) => (
-                    <option key={template.id} value={template.id}>
-                      {template.name}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="Stage">
-                <select className={inputClass} name="stageId" defaultValue="">
-                  <option value="">Any stage</option>
-                  {data.stages.map((stage) => (
-                    <option key={stage.id} value={stage.id}>
-                      {stage.label}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="Delay minutes">
-                <input className={inputClass} min="0" name="delayMinutes" placeholder="0" type="number" />
-              </Field>
-              <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
-                <input className="h-4 w-4 rounded border-slate-300" defaultChecked name="active" type="checkbox" />
-                Active
-              </label>
-              <button
-                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
-                disabled={data.templates.length === 0}
-                type="submit"
-              >
-                <Workflow className="h-4 w-4" aria-hidden="true" />
-                Save rule
-              </button>
-            </form>
-          </section>
-
-          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="mb-4 flex items-center gap-2">
-              <Send className="h-4 w-4 text-emerald-700" aria-hidden="true" />
-              <p className="text-sm font-semibold text-slate-950">Queue email</p>
-            </div>
-            <form action={queueManualTemplateEmail} className="grid gap-3">
-              <Field label="Application">
-                <select className={inputClass} name="applicationId" required>
-                  <option value="">Select application</option>
-                  {data.applications.map((application) => (
-                    <option key={application.id} value={application.id}>
-                      {application.label} ({application.matchScore}%)
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="Template">
-                <select className={inputClass} name="templateId" required>
-                  <option value="">Select template</option>
-                  {data.templates.map((template) => (
-                    <option key={template.id} value={template.id}>
-                      {template.name}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="Sender">
-                <select className={inputClass} name="senderId" defaultValue="">
-                  <option value="">Unassigned</option>
-                  {data.senders.map((sender) => (
-                    <option key={sender.id} value={sender.id}>
-                      {sender.name}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <button
-                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
-                disabled={data.applications.length === 0 || data.templates.length === 0}
-                type="submit"
-              >
-                <Send className="h-4 w-4" aria-hidden="true" />
-                Queue email
-              </button>
-            </form>
-          </section>
-
-          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="mb-4 flex items-center gap-2">
-              <ShieldAlert className="h-4 w-4 text-rose-700" aria-hidden="true" />
-              <p className="text-sm font-semibold text-slate-950">Reject with email</p>
-            </div>
-            <form action={rejectApplicationWithEmail} className="grid gap-3">
-              <Field label="Application">
-                <select className={inputClass} name="applicationId" required>
-                  <option value="">Select application</option>
-                  {data.applications.map((application) => (
-                    <option key={application.id} value={application.id}>
-                      {application.label} ({application.stage})
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="Template">
-                <select className={inputClass} name="templateId" required>
-                  <option value="">Select rejection template</option>
-                  {(rejectionTemplates.length ? rejectionTemplates : data.templates).map((template) => (
-                    <option key={template.id} value={template.id}>
-                      {template.name}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="Sender">
-                <select className={inputClass} name="senderId" defaultValue="">
-                  <option value="">Unassigned</option>
-                  {data.senders.map((sender) => (
-                    <option key={sender.id} value={sender.id}>
-                      {sender.name}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-              <button
-                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-rose-200 bg-white px-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:text-rose-300"
-                disabled={data.applications.length === 0 || data.templates.length === 0}
-                type="submit"
-              >
-                <ShieldAlert className="h-4 w-4" aria-hidden="true" />
-                Reject candidate
-              </button>
-            </form>
-          </section>
-
-          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="mb-4 flex items-center gap-2">
-              <BadgeCheck className="h-4 w-4 text-violet-700" aria-hidden="true" />
-              <p className="text-sm font-semibold text-slate-950">Variables</p>
-            </div>
-            <div className="flex flex-wrap gap-2 text-xs font-semibold text-slate-600">
-              {["candidateName", "jobTitle", "stageName", "interviewTime", "meetingUrl", "matchScore"].map((variable) => (
-                <span className="rounded-md bg-slate-100 px-2 py-1" key={variable}>
-                  {`{{${variable}}}`}
-                </span>
-              ))}
-            </div>
-          </section>
-        </aside>
       </div>
     </WorkspacePageShell>
   );
