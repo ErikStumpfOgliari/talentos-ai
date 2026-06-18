@@ -5,6 +5,8 @@ import { useFormStatus } from "react-dom";
 import { AlertCircle, CheckCircle2, FileText, Loader2, Send, UploadCloud, X } from "lucide-react";
 import { submitCareersApplication } from "@/app/careers/[jobId]/actions";
 
+const maxResumeFileSizeBytes = 10 * 1024 * 1024;
+
 const inputClass =
   "h-11 w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400";
 const textareaClass =
@@ -28,13 +30,13 @@ function Field({
   );
 }
 
-function SubmitButton() {
+function SubmitButton({ disabled = false }: { disabled?: boolean }) {
   const { pending } = useFormStatus();
 
   return (
     <button
       className="mt-1 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-wait disabled:bg-slate-500"
-      disabled={pending}
+      disabled={pending || disabled}
       type="submit"
     >
       {pending ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Send className="h-4 w-4" aria-hidden="true" />}
@@ -52,6 +54,7 @@ export function PublicJobApplicationForm({
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [fileName, setFileName] = useState("");
+  const [fileError, setFileError] = useState("");
   const hasSelectedFile = fileName.length > 0;
 
   function clearSelectedFile() {
@@ -60,6 +63,24 @@ export function PublicJobApplicationForm({
     }
 
     setFileName("");
+    setFileError("");
+  }
+
+  function handleFileChange(file: File | undefined) {
+    if (!file) {
+      setFileName("");
+      setFileError("");
+      return;
+    }
+
+    setFileName(file.name);
+
+    if (file.size > maxResumeFileSizeBytes) {
+      setFileError("Resume file must be 10 MB or smaller.");
+      return;
+    }
+
+    setFileError("");
   }
 
   return (
@@ -131,7 +152,7 @@ export function PublicJobApplicationForm({
             className="sr-only"
             id="public-resume-file"
             name="resumeFile"
-            onChange={(event) => setFileName(event.target.files?.[0]?.name ?? "")}
+            onChange={(event) => handleFileChange(event.target.files?.[0])}
             ref={fileInputRef}
             type="file"
           />
@@ -158,6 +179,12 @@ export function PublicJobApplicationForm({
               Remove file
             </button>
           ) : null}
+
+          {fileError ? (
+            <p className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold leading-5 text-rose-800">
+              {fileError}
+            </p>
+          ) : null}
         </div>
 
         <Field
@@ -174,7 +201,7 @@ export function PublicJobApplicationForm({
         </Field>
       </section>
 
-      <SubmitButton />
+      <SubmitButton disabled={Boolean(fileError)} />
     </form>
   );
 }

@@ -19,10 +19,17 @@ export async function submitCareersApplication(formData: FormData) {
     redirect("/careers?error=job_unavailable");
   }
 
-  const result = await submitPublicJobApplication({
-    formData,
-    jobId,
-  });
+  let result: Awaited<ReturnType<typeof submitPublicJobApplication>>;
+
+  try {
+    result = await submitPublicJobApplication({
+      formData,
+      jobId,
+    });
+  } catch (error) {
+    console.error("Public application submission failed", error);
+    redirect(`/careers/${jobId}?error=submit_failed`);
+  }
 
   if (!result.ok) {
     redirect(`/careers/${jobId}?error=${result.error}`);

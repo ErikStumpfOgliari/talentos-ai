@@ -788,6 +788,7 @@ export const ENGLISH_TO_PORTUGUESE: Record<string, string> = {
   View: "Ver",
   "View role": "Ver vaga",
   Viewer: "Visualizador",
+  "We could not submit this application. Try again with a smaller PDF or paste your resume text.": "Não conseguimos enviar esta candidatura. Tente novamente com um PDF menor ou cole o texto do currículo.",
   "We sent a confirmation email when a delivery provider is configured. This page stays available for status updates.": "Enviamos um email de confirmação quando há um provider de entrega configurado. Esta página fica disponível para atualizações de status.",
   "Webhook endpoint": "Endpoint de webhook",
   Workflow: "Workflow",

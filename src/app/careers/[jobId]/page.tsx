@@ -29,6 +29,10 @@ function getErrorMessage(error?: string) {
     return "This job is not accepting applications anymore.";
   }
 
+  if (error === "submit_failed") {
+    return "We could not submit this application. Try again with a smaller PDF or paste your resume text.";
+  }
+
   return null;
 }
 
