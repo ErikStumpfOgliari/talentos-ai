@@ -63,10 +63,10 @@ export default async function PublicApplicationStatusPage({
   const application = data.application;
 
   return (
-    <main className="min-h-screen bg-slate-100 text-slate-950">
-      <PublicSiteHeader />
+    <main className="public-shell min-h-screen overflow-x-hidden bg-slate-100 text-slate-950" data-public-theme-scope>
+      <PublicSiteHeader showThemeToggle />
       <header className="border-y border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-6xl flex-col gap-5 px-4 py-6 lg:px-6">
+        <div className="mx-auto flex max-w-6xl flex-col gap-5 px-4 py-5 sm:py-6 lg:px-6">
           <Link className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition hover:text-slate-950" href="/careers">
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
             Open roles
@@ -74,13 +74,13 @@ export default async function PublicApplicationStatusPage({
 
           <div className="grid gap-5 lg:grid-cols-[1fr_300px] lg:items-end">
             <div>
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-slate-950 text-white">
+              <div className="flex items-start gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-slate-950 text-white">
                   <BriefcaseBusiness className="h-5 w-5" aria-hidden="true" />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className="text-sm font-semibold uppercase text-slate-500">{data.organizationName}</p>
-                  <h1 className="text-3xl font-semibold text-slate-950">Application status</h1>
+                  <h1 className="break-words text-2xl font-semibold text-slate-950 sm:text-3xl">Application status</h1>
                 </div>
               </div>
               <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-500">
@@ -97,7 +97,7 @@ export default async function PublicApplicationStatusPage({
             </div>
 
             <Link
-              className="inline-flex h-10 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+              className="inline-flex h-10 w-full items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 sm:w-auto lg:justify-self-end"
               href={`/careers/${application.jobId}`}
             >
               View role
@@ -106,7 +106,7 @@ export default async function PublicApplicationStatusPage({
         </div>
       </header>
 
-      <div className="mx-auto grid max-w-6xl gap-5 px-4 py-6 lg:grid-cols-[1fr_360px] lg:px-6">
+      <div className="mx-auto grid max-w-6xl gap-5 px-4 py-5 sm:py-6 lg:grid-cols-[1fr_360px] lg:px-6">
         <section className="space-y-5">
           {query?.submitted ? (
             <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
@@ -120,7 +120,7 @@ export default async function PublicApplicationStatusPage({
             </div>
           ) : null}
 
-          <section className={`rounded-lg border p-5 shadow-sm ${statusToneClasses[application.statusTone]}`}>
+          <section className={`rounded-lg border p-4 shadow-sm sm:p-5 ${statusToneClasses[application.statusTone]}`}>
             <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
               <div>
                 <p className="text-xs font-semibold uppercase opacity-75">Current status</p>
@@ -134,12 +134,12 @@ export default async function PublicApplicationStatusPage({
             </div>
           </section>
 
-          <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
             <div className="mb-5 flex items-center gap-2">
               <Clock3 className="h-4 w-4 text-slate-700" aria-hidden="true" />
               <p className="text-sm font-semibold text-slate-950">Hiring timeline</p>
             </div>
-            <div className="grid gap-4 md:grid-cols-4">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {application.timeline.map((step) => (
                 <div className="grid gap-3" key={step.label}>
                   <div className={`flex h-9 w-9 items-center justify-center rounded-full ${dotClasses[step.state]}`}>
@@ -159,7 +159,7 @@ export default async function PublicApplicationStatusPage({
           </section>
 
           {application.nextInterview ? (
-            <section className="rounded-lg border border-sky-200 bg-white p-5 shadow-sm">
+            <section className="rounded-lg border border-sky-200 bg-white p-4 shadow-sm sm:p-5">
               <div className="flex gap-3">
                 <CalendarClock className="h-5 w-5 shrink-0 text-sky-700" aria-hidden="true" />
                 <div>
@@ -177,7 +177,7 @@ export default async function PublicApplicationStatusPage({
         </section>
 
         <aside className="space-y-5">
-          <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
             <div className="mb-4 flex items-center gap-2">
               <FileText className="h-4 w-4 text-slate-700" aria-hidden="true" />
               <p className="text-sm font-semibold text-slate-950">Application details</p>
@@ -188,7 +188,7 @@ export default async function PublicApplicationStatusPage({
                 <p className="mt-1 font-semibold text-slate-950">{application.candidateName}</p>
                 <p className="mt-1 break-words text-slate-500">{application.candidateEmail}</p>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <div className="rounded-lg bg-slate-50 p-3">
                   <p className="text-xs font-semibold uppercase text-slate-500">Applied</p>
                   <p className="mt-1 font-semibold text-slate-950">{application.appliedAt}</p>
@@ -201,7 +201,7 @@ export default async function PublicApplicationStatusPage({
             </div>
           </section>
 
-          <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
             <div className="mb-4 flex items-center gap-2">
               <FileText className="h-4 w-4 text-emerald-700" aria-hidden="true" />
               <p className="text-sm font-semibold text-slate-950">Resume</p>
@@ -212,7 +212,7 @@ export default async function PublicApplicationStatusPage({
             </div>
           </section>
 
-          <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
             <div className="mb-4 flex items-center gap-2">
               <MailCheck className="h-4 w-4 text-sky-700" aria-hidden="true" />
               <p className="text-sm font-semibold text-slate-950">Confirmation email</p>

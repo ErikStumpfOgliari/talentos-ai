@@ -24,7 +24,7 @@ export default async function CareersPage({
     <PublicPageShell
       actions={
         <Link
-          className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:scale-[1.03] hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98]"
+          className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:scale-[1.03] hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98] sm:w-auto"
           href="/candidate-status"
         >
           <SearchCheck className="h-4 w-4" aria-hidden="true" />
@@ -58,11 +58,11 @@ export default async function CareersPage({
 
         <div className="grid gap-4">
           {data.jobs.map((job) => (
-            <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-slate-300 hover:shadow-md" key={job.id}>
+            <article className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-1 hover:border-slate-300 hover:shadow-md sm:p-5" key={job.id}>
               <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_220px]">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h2 className="text-xl font-semibold text-slate-950">{job.title}</h2>
+                    <h2 className="break-words text-lg font-semibold text-slate-950 sm:text-xl">{job.title}</h2>
                     <span className="dashboard-pill rounded-full bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700 ring-1 ring-emerald-200">
                       Open
                     </span>
@@ -85,7 +85,7 @@ export default async function CareersPage({
 
                 <div className="grid content-start gap-3">
                   <Link
-                    className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:scale-[1.03] hover:bg-slate-800 active:scale-[0.98]"
+                    className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:scale-[1.03] hover:bg-slate-800 active:scale-[0.98]"
                     href={`/careers/${job.id}`}
                   >
                     Apply now
@@ -102,7 +102,7 @@ export default async function CareersPage({
           ))}
 
           {data.jobs.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-slate-300 bg-white p-10 text-center">
+            <div className="rounded-lg border border-dashed border-slate-300 bg-white p-6 text-center sm:p-10">
               <BriefcaseBusiness className="mx-auto h-8 w-8 text-slate-400" aria-hidden="true" />
               <p className="mt-3 text-sm font-semibold text-slate-950">No open roles</p>
               <p className="mt-1 text-sm text-slate-500">Please check back later for new opportunities.</p>

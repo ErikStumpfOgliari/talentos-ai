@@ -25,7 +25,7 @@ export default async function CandidateStatusPage({
     <PublicPageShell
       actions={
         <Link
-          className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:scale-[1.03] hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98]"
+          className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:scale-[1.03] hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98] sm:w-auto"
           href="/careers"
         >
           <BriefcaseBusiness className="h-4 w-4" aria-hidden="true" />
@@ -37,7 +37,7 @@ export default async function CandidateStatusPage({
       title="Access your application timeline."
     >
       <section className="mx-auto grid w-full max-w-3xl gap-5">
-        <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-950 text-white">
               <KeyRound className="h-5 w-5" aria-hidden="true" />
@@ -58,19 +58,19 @@ export default async function CandidateStatusPage({
                 required
               />
             </label>
-            <button className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:scale-[1.03] hover:bg-slate-800 active:scale-[0.98]" type="submit">
+            <button className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:scale-[1.03] hover:bg-slate-800 active:scale-[0.98]" type="submit">
               Open application
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </button>
           </form>
         </div>
 
-        <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
           <p className="text-sm font-semibold text-slate-950">Looking for open roles?</p>
           <p className="mt-2 text-sm leading-6 text-slate-600">
             Browse published jobs and apply directly through the public candidate experience.
           </p>
-          <Link className="mt-4 inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:scale-[1.03] hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98]" href="/careers">
+          <Link className="mt-4 inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:scale-[1.03] hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98] sm:w-auto" href="/careers">
             <BriefcaseBusiness className="h-4 w-4" aria-hidden="true" />
             View available jobs
           </Link>

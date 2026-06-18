@@ -73,10 +73,10 @@ export default async function PublicJobPage({
   const errorMessage = getErrorMessage(query?.error);
 
   return (
-    <main className="min-h-screen bg-slate-100 text-slate-950">
-      <PublicSiteHeader />
+    <main className="public-shell min-h-screen overflow-x-hidden bg-slate-100 text-slate-950" data-public-theme-scope>
+      <PublicSiteHeader showThemeToggle />
       <header className="border-y border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-6xl flex-col gap-5 px-4 py-6 lg:px-6">
+        <div className="mx-auto flex max-w-6xl flex-col gap-5 px-4 py-5 sm:py-6 lg:px-6">
           <Link className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition hover:text-slate-950" href="/careers">
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
             Open roles
@@ -84,13 +84,13 @@ export default async function PublicJobPage({
 
           <div className="grid gap-5 lg:grid-cols-[1fr_320px] lg:items-end">
             <div>
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-slate-950 text-white">
+              <div className="flex items-start gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-slate-950 text-white">
                   <BriefcaseBusiness className="h-5 w-5" aria-hidden="true" />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className="text-sm font-semibold uppercase text-slate-500">{data.organizationName}</p>
-                  <h1 className="text-3xl font-semibold text-slate-950">{data.job.title}</h1>
+                  <h1 className="break-words text-2xl font-semibold text-slate-950 sm:text-3xl">{data.job.title}</h1>
                 </div>
               </div>
               <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-500">
@@ -108,7 +108,7 @@ export default async function PublicJobPage({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
                 <p className="text-xs font-semibold uppercase text-slate-500">Openings</p>
                 <p className="mt-1 text-lg font-semibold text-slate-950">{data.job.openings}</p>
@@ -122,7 +122,7 @@ export default async function PublicJobPage({
         </div>
       </header>
 
-      <div className="mx-auto grid max-w-6xl gap-5 px-4 py-6 lg:grid-cols-[1fr_420px] lg:px-6">
+      <div className="mx-auto grid max-w-6xl gap-5 px-4 py-5 sm:py-6 lg:grid-cols-[1fr_420px] lg:px-6">
         <section className="space-y-5">
           {query?.applied ? (
             <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
@@ -144,7 +144,7 @@ export default async function PublicJobPage({
             </div>
           ) : null}
 
-          <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
             <div className="mb-4 flex items-center gap-2">
               <FileText className="h-4 w-4 text-slate-700" aria-hidden="true" />
               <p className="text-sm font-semibold text-slate-950">Role brief</p>
@@ -153,7 +153,7 @@ export default async function PublicJobPage({
           </section>
 
           <section className="grid gap-5 md:grid-cols-2">
-            <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
               <p className="text-sm font-semibold text-slate-950">Requirements</p>
               <ul className="mt-4 space-y-2 text-sm text-slate-600">
                 {(data.job.requirements.length ? data.job.requirements : ["No requirements listed"]).map((item) => (
@@ -164,7 +164,7 @@ export default async function PublicJobPage({
                 ))}
               </ul>
             </div>
-            <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
               <p className="text-sm font-semibold text-slate-950">Responsibilities</p>
               <ul className="mt-4 space-y-2 text-sm text-slate-600">
                 {(data.job.responsibilities.length ? data.job.responsibilities : ["No responsibilities listed"]).map((item) => (
@@ -178,7 +178,7 @@ export default async function PublicJobPage({
           </section>
         </section>
 
-        <aside className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+        <aside className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-5 lg:self-start">
           <div className="mb-4 flex items-center gap-2">
             <UploadCloud className="h-4 w-4 text-emerald-700" aria-hidden="true" />
             <p className="text-sm font-semibold text-slate-950">Apply for this role</p>
@@ -213,7 +213,7 @@ export default async function PublicJobPage({
             <Field label="Resume file">
               <input
                 accept=".pdf,.txt,.md,.csv,application/pdf,text/plain,text/markdown,text/csv"
-                className="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-3 py-3 text-sm text-slate-700"
+                className="w-full rounded-lg border border-dashed border-slate-300 bg-slate-50 px-3 py-3 text-sm text-slate-700"
                 name="resumeFile"
                 type="file"
               />
@@ -225,7 +225,7 @@ export default async function PublicJobPage({
               <textarea className={textareaClass} name="coverLetter" placeholder="Share context, availability, or why this role fits." />
             </Field>
             <button
-              className="mt-1 inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+              className="mt-1 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800"
               type="submit"
             >
               <Send className="h-4 w-4" aria-hidden="true" />

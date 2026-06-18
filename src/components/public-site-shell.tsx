@@ -8,10 +8,12 @@ import {
   LogIn,
 } from "lucide-react";
 import { InterellisMark } from "@/components/interellis-mark";
+import { ThemeToggle } from "@/components/site-theme-provider";
 
 type PublicSiteHeaderProps = {
   className?: string;
   floating?: boolean;
+  showThemeToggle?: boolean;
   variant?: "dark" | "light";
 };
 
@@ -22,7 +24,12 @@ const navLinks = [
   { href: "/candidate-status", label: "Application status" },
 ];
 
-export function PublicSiteHeader({ className = "", floating = false, variant = "light" }: PublicSiteHeaderProps) {
+export function PublicSiteHeader({
+  className = "",
+  floating = false,
+  showThemeToggle = false,
+  variant = "light",
+}: PublicSiteHeaderProps) {
   const isDark = variant === "dark";
   const linkClass = isDark
     ? "text-slate-300 hover:bg-white/10 hover:text-white hover:shadow-lg hover:shadow-slate-950/20"
@@ -63,6 +70,7 @@ export function PublicSiteHeader({ className = "", floating = false, variant = "
         </nav>
 
         <div className="flex shrink-0 items-center gap-2">
+          {showThemeToggle ? <ThemeToggle className="shrink-0" /> : null}
           <Link
             className={`hidden h-10 items-center justify-center gap-2 whitespace-nowrap rounded-lg border px-3 text-sm font-semibold transition hover:scale-[1.03] active:scale-[0.98] sm:inline-flex ${secondaryButtonClass}`}
             href="/careers"
@@ -129,18 +137,18 @@ export function PublicPageShell({
   title: string;
 }) {
   return (
-    <main className="min-h-screen bg-slate-100 text-slate-950">
-      <PublicSiteHeader />
+    <main className="public-shell min-h-screen overflow-x-hidden bg-slate-100 text-slate-950" data-public-theme-scope>
+      <PublicSiteHeader showThemeToggle />
       <section className="border-y border-slate-200 bg-white">
-        <div className="mx-auto grid max-w-7xl gap-5 px-4 py-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end lg:px-6">
+        <div className="mx-auto grid max-w-7xl gap-5 px-4 py-8 sm:py-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end lg:px-6">
           <div>
             <p className="text-sm font-semibold uppercase text-slate-500">{eyebrow}</p>
-            <h1 className="mt-3 max-w-4xl text-4xl font-semibold leading-tight text-slate-950 md:text-5xl">
+            <h1 className="mt-3 max-w-4xl text-3xl font-semibold leading-tight text-slate-950 sm:text-4xl md:text-5xl">
               {title}
             </h1>
             <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">{description}</p>
           </div>
-          {actions ? <div className="flex flex-wrap gap-2 lg:justify-end">{actions}</div> : null}
+          {actions ? <div className="flex w-full flex-wrap gap-2 sm:w-auto lg:justify-end">{actions}</div> : null}
         </div>
       </section>
       <div className="mx-auto grid max-w-7xl gap-5 px-4 py-6 lg:px-6">{children}</div>
