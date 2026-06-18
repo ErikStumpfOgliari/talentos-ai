@@ -700,6 +700,97 @@ body.theme-dark [data-public-theme-scope] .text-rose-800 {
   display: none;
 }
 
+.app-nav-pending-hint {
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 9999px;
+  background: currentColor;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.app-nav-pending-hint-visible {
+  visibility: visible;
+  animation:
+    app-nav-hint-fade 180ms ease 120ms forwards,
+    app-nav-hint-pulse 900ms ease-in-out 120ms infinite;
+}
+
+.route-loading-shell {
+  background:
+    radial-gradient(circle at 12% 0%, rgb(14 165 233 / 0.08), transparent 22rem),
+    radial-gradient(circle at 88% 0%, rgb(16 185 129 / 0.08), transparent 22rem),
+    #f1f5f9;
+}
+
+.route-loading-progress {
+  height: 0.2rem;
+  overflow: hidden;
+  border-radius: 9999px;
+  background: rgb(226 232 240 / 0.9);
+}
+
+.route-loading-progress > span {
+  display: block;
+  width: 34%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #0f172a, #2563eb, #14b8a6);
+  animation: route-loading-progress 1.1s ease-in-out infinite;
+}
+
+.route-loading-line {
+  position: relative;
+  overflow: hidden;
+  border-radius: 9999px;
+  background: #e2e8f0;
+}
+
+.route-loading-line::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.72), transparent);
+  transform: translateX(-110%);
+  animation: route-loading-shimmer 1.35s ease-in-out infinite;
+}
+
+[data-color-theme="dark"] .route-loading-shell,
+body.theme-dark .route-loading-shell {
+  background:
+    radial-gradient(circle at 14% 0%, rgb(37 99 235 / 0.16), transparent 24rem),
+    radial-gradient(circle at 88% 0%, rgb(20 184 166 / 0.12), transparent 22rem),
+    #071017;
+  color: #eef6f7;
+}
+
+[data-color-theme="dark"] .route-loading-shell .bg-white,
+body.theme-dark .route-loading-shell .bg-white {
+  background-color: #101923;
+  border-color: rgb(126 145 159 / 0.24);
+}
+
+[data-color-theme="dark"] .route-loading-shell .bg-slate-50,
+body.theme-dark .route-loading-shell .bg-slate-50 {
+  background-color: #0c1520;
+  border-color: rgb(126 145 159 / 0.24);
+}
+
+[data-color-theme="dark"] .route-loading-progress,
+body.theme-dark .route-loading-progress {
+  background: rgb(126 145 159 / 0.18);
+}
+
+[data-color-theme="dark"] .route-loading-line,
+body.theme-dark .route-loading-line {
+  background: #172536;
+}
+
+[data-color-theme="dark"] .route-loading-line::after,
+body.theme-dark .route-loading-line::after {
+  background: linear-gradient(90deg, transparent, rgb(238 246 247 / 0.16), transparent);
+}
+
 .language-toggle {
   position: relative;
   display: inline-flex;
@@ -788,6 +879,35 @@ body.theme-dark [data-public-theme-scope] .text-rose-800 {
   }
 }
 
+@keyframes app-nav-hint-fade {
+  to {
+    opacity: 0.52;
+  }
+}
+
+@keyframes app-nav-hint-pulse {
+  50% {
+    opacity: 0.18;
+    transform: scale(0.72);
+  }
+}
+
+@keyframes route-loading-progress {
+  from {
+    transform: translateX(-120%);
+  }
+
+  to {
+    transform: translateX(320%);
+  }
+}
+
+@keyframes route-loading-shimmer {
+  to {
+    transform: translateX(110%);
+  }
+}
+
 @media (hover: hover) and (pointer: fine) {
   button:not(:disabled),
   a.inline-flex,
@@ -841,8 +961,12 @@ body.theme-dark [data-public-theme-scope] .text-rose-800 {
   label[role="button"],
   [data-app-nav-link],
   [data-candidate-id],
-  .dashboard-hover-card {
+  .dashboard-hover-card,
+  .route-loading-progress > span,
+  .route-loading-line::after {
     transition-duration: 0.01ms;
+    animation-duration: 0.01ms;
+    animation-iteration-count: 1;
   }
 
   button:hover,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useId } from "react";
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import { InterellisMark } from "@/components/interellis-mark";
 import { useSiteLanguage } from "@/components/site-language-provider";
@@ -67,6 +67,17 @@ function isActivePath(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+function NavigationPendingHint() {
+  const { pending } = useLinkStatus();
+
+  return (
+    <span
+      aria-hidden="true"
+      className={`app-nav-pending-hint ml-auto shrink-0 ${pending ? "app-nav-pending-hint-visible" : ""}`}
+    />
+  );
+}
+
 function NavigationLinks({ copy, onNavigate }: { copy?: NavigationCopy; onNavigate?: () => void }) {
   const pathname = usePathname();
 
@@ -86,12 +97,12 @@ function NavigationLinks({ copy, onNavigate }: { copy?: NavigationCopy; onNaviga
             href={item.href}
             key={item.href}
             onClick={onNavigate}
-            prefetch={false}
           >
             <ItemIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span className="truncate" data-i18n-key={item.i18nKey}>
               {getCopy(copy, item.i18nKey, item.label)}
             </span>
+            <NavigationPendingHint />
           </Link>
         );
       })}
