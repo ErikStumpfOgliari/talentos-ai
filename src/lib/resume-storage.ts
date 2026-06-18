@@ -2,6 +2,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { join } from "node:path";
 import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 type SaveResumeFileInput = {
   bytes: Buffer;
@@ -18,6 +19,19 @@ type StoredResumeFile = {
   storageProvider: "local" | "s3";
 };
 
+type CreateSignedResumeUploadInput = {
+  fileName: string;
+  mimeType: string;
+  organizationId: string;
+};
+
+type SignedResumeUploadTarget = {
+  expiresInSeconds: number;
+  fileKey: string;
+  fileUrl: string | null;
+  uploadUrl: string;
+};
+
 type ReadResumeFileInput = {
   fileKey: string | null;
   fileUrl: string | null;
@@ -30,6 +44,7 @@ type ReadResumeFileResult = {
 
 const LOCAL_STORAGE_PREFIX = "local:";
 const S3_STORAGE_PREFIX = "s3:";
+const DIRECT_UPLOAD_EXPIRES_IN_SECONDS = 10 * 60;
 
 export function getResumeStorageStatus() {
   const bucket = process.env.RESUME_STORAGE_S3_BUCKET?.trim();
@@ -68,11 +83,35 @@ function sanitizeSegment(value: string) {
     .slice(0, 120);
 }
 
-function buildObjectKey({ candidateId, fileName, organizationId }: Omit<SaveResumeFileInput, "bytes" | "mimeType">) {
+function buildStorageObjectKey({
+  fileName,
+  organizationId,
+  pathSegment,
+}: {
+  fileName: string;
+  organizationId: string;
+  pathSegment: string;
+}) {
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
   const safeFileName = sanitizeSegment(fileName) || "resume";
 
-  return `organizations/${organizationId}/candidates/${candidateId}/${timestamp}-${randomUUID()}-${safeFileName}`;
+  return `organizations/${organizationId}/${pathSegment}/${timestamp}-${randomUUID()}-${safeFileName}`;
+}
+
+function buildObjectKey({ candidateId, fileName, organizationId }: Omit<SaveResumeFileInput, "bytes" | "mimeType">) {
+  return buildStorageObjectKey({
+    fileName,
+    organizationId,
+    pathSegment: `candidates/${candidateId}`,
+  });
+}
+
+function buildPublicApplicationObjectKey({ fileName, organizationId }: CreateSignedResumeUploadInput) {
+  return buildStorageObjectKey({
+    fileName,
+    organizationId,
+    pathSegment: "public-applications",
+  });
 }
 
 function getS3Config() {
@@ -128,6 +167,46 @@ async function readStreamToBuffer(stream: unknown) {
 
 export function canDownloadStoredResume(fileKey: string | null, fileUrl: string | null) {
   return Boolean(fileUrl || fileKey?.startsWith(LOCAL_STORAGE_PREFIX) || fileKey?.startsWith(S3_STORAGE_PREFIX));
+}
+
+export function canCreateSignedResumeUploads() {
+  return Boolean(getS3Client());
+}
+
+export function isPublicDirectResumeFileKeyForOrganization(fileKey: string | null, organizationId: string) {
+  if (!fileKey?.startsWith(S3_STORAGE_PREFIX)) {
+    return false;
+  }
+
+  const objectKey = fileKey.slice(S3_STORAGE_PREFIX.length);
+  return objectKey.startsWith(`organizations/${organizationId}/public-applications/`);
+}
+
+export async function createSignedPublicResumeUploadTarget(
+  input: CreateSignedResumeUploadInput,
+): Promise<SignedResumeUploadTarget | null> {
+  const s3 = getS3Client();
+
+  if (!s3) {
+    return null;
+  }
+
+  const objectKey = buildPublicApplicationObjectKey(input);
+  const command = new PutObjectCommand({
+    Bucket: s3.bucket,
+    ContentType: input.mimeType,
+    Key: objectKey,
+  });
+  const uploadUrl = await getSignedUrl(s3.client, command, {
+    expiresIn: DIRECT_UPLOAD_EXPIRES_IN_SECONDS,
+  });
+
+  return {
+    expiresInSeconds: DIRECT_UPLOAD_EXPIRES_IN_SECONDS,
+    fileKey: `${S3_STORAGE_PREFIX}${objectKey}`,
+    fileUrl: s3.publicBaseUrl ? `${s3.publicBaseUrl.replace(/\/$/, "")}/${objectKey}` : null,
+    uploadUrl,
+  };
 }
 
 export async function saveResumeFile(input: SaveResumeFileInput): Promise<StoredResumeFile> {

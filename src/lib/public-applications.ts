@@ -20,8 +20,12 @@ import {
   parseResumeWithOpenAI,
   type ParsedResume,
 } from "@/lib/resume-parser";
-import { saveResumeFile } from "@/lib/resume-storage";
-import { MAX_RESUME_FILE_SIZE_BYTES } from "@/lib/resume-upload-limits";
+import {
+  isPublicDirectResumeFileKeyForOrganization,
+  readResumeFile,
+  saveResumeFile,
+} from "@/lib/resume-storage";
+import { DIRECT_STORAGE_RESUME_PARSE_FILE_SIZE_BYTES, MAX_RESUME_FILE_SIZE_BYTES } from "@/lib/resume-upload-limits";
 import { limitText } from "@/lib/text-limits";
 
 export type PublicApplicationResult =
@@ -485,6 +489,9 @@ export async function submitPublicJobApplication({
   const submittedResumeFileName = readOptionalString(formData, "resumeFileName");
   const submittedResumeSizeBytes = readNumber(formData, "resumeFileSizeBytes");
   const resumeUploadMode = readOptionalString(formData, "resumeUploadMode");
+  const directResumeUploaded = readOptionalString(formData, "directResumeUploaded") === "1";
+  const submittedDirectResumeFileKey = readOptionalString(formData, "directResumeFileKey");
+  const submittedDirectResumeMimeType = readOptionalString(formData, "directResumeMimeType");
   const isDeferredLargeFile = resumeUploadMode === "deferred_large_file" && Boolean(submittedResumeFileName) && !resumeFile;
 
   if (!submittedName || !submittedEmail) {
@@ -494,7 +501,20 @@ export async function submitPublicJobApplication({
     };
   }
 
-  if (!resumeFile && !pastedResumeText && !submittedResumeFileName) {
+  const directResumeFileKey =
+    directResumeUploaded && isPublicDirectResumeFileKeyForOrganization(submittedDirectResumeFileKey, organization.id)
+      ? submittedDirectResumeFileKey
+      : null;
+  const hasDirectResume = Boolean(directResumeFileKey && submittedResumeFileName);
+
+  if (directResumeUploaded && !hasDirectResume) {
+    return {
+      error: "missing_resume",
+      ok: false,
+    };
+  }
+
+  if (!resumeFile && !pastedResumeText && !submittedResumeFileName && !hasDirectResume) {
     return {
       error: "missing_resume",
       ok: false,
@@ -509,10 +529,30 @@ export async function submitPublicJobApplication({
   }
 
   const fileName = resumeFile?.name ?? submittedResumeFileName ?? "pasted-resume.txt";
-  const mimeType = inferMimeType(fileName, resumeFile?.type ?? "");
+  const mimeType = submittedDirectResumeMimeType ?? inferMimeType(fileName, resumeFile?.type ?? "");
   const isTextFile = mimeType.startsWith("text/") || /\.(txt|md|csv)$/i.test(fileName);
-  const resumeBytes = resumeFile ? Buffer.from(await resumeFile.arrayBuffer()) : null;
-  const rawText = pastedResumeText ?? (resumeBytes && isTextFile ? resumeBytes.toString("utf8") : null);
+  const uploadedResumeBytes = resumeFile ? Buffer.from(await resumeFile.arrayBuffer()) : null;
+  let resumeBytesForParsing: Buffer | null = uploadedResumeBytes;
+  let directStorageReadError: string | null = null;
+
+  if (
+    !resumeBytesForParsing &&
+    directResumeFileKey &&
+    submittedResumeSizeBytes !== null &&
+    submittedResumeSizeBytes <= DIRECT_STORAGE_RESUME_PARSE_FILE_SIZE_BYTES
+  ) {
+    try {
+      const storedResume = await readResumeFile({
+        fileKey: directResumeFileKey,
+        fileUrl: null,
+      });
+      resumeBytesForParsing = storedResume.bytes;
+    } catch (error) {
+      directStorageReadError = error instanceof Error ? error.message : "Direct resume storage read failed.";
+    }
+  }
+
+  const rawText = pastedResumeText ?? (resumeBytesForParsing && isTextFile ? resumeBytesForParsing.toString("utf8") : null);
   const { parsed, parserStatus, ...parseResult } = await parsePublicResume({
     coverLetter,
     email: submittedEmail,
@@ -521,7 +561,7 @@ export async function submitPublicJobApplication({
     name: submittedName,
     phone: submittedPhone,
     rawText,
-    resumeBytes,
+    resumeBytes: resumeBytesForParsing,
     skills: submittedSkills,
   });
   let parsedData = parseResult.parsedData;
@@ -533,6 +573,18 @@ export async function submitPublicJobApplication({
         "Large resume file recorded for recruiter review. The candidate should paste resume text or send a smaller readable attachment if structured parsing is required.",
       sizeBytes: submittedResumeSizeBytes,
       source: "public-application-deferred-large-file",
+    } satisfies Prisma.InputJsonValue;
+  }
+
+  if (hasDirectResume && !resumeBytesForParsing && !rawText) {
+    parsedData = {
+      fileName,
+      message: directStorageReadError
+        ? "Resume uploaded to secure storage, but immediate reading failed. The recruiter can download and review it manually."
+        : "Resume uploaded to secure storage and queued for recruiter review.",
+      sizeBytes: submittedResumeSizeBytes,
+      source: "public-application-direct-storage",
+      ...(directStorageReadError ? { directStorageReadError } : {}),
     } satisfies Prisma.InputJsonValue;
   }
   const existingCandidate = await prisma.candidate.findUnique({
@@ -573,21 +625,21 @@ export async function submitPublicJobApplication({
   await syncCandidateSkills(organization.id, candidate.id, unique([...parsed.skills, ...submittedSkills]));
   await createParsedProfileDetails(candidate.id, parsed, Boolean(existingCandidate));
 
-  const shouldSaveResumeFile = Boolean(resumeBytes || (!isDeferredLargeFile && rawText));
+  const shouldSaveResumeFile = Boolean(uploadedResumeBytes || (!isDeferredLargeFile && !hasDirectResume && rawText));
   const storedFile =
     shouldSaveResumeFile
       ? await saveResumeFile({
-          bytes: resumeBytes ?? Buffer.from(rawText ?? "", "utf8"),
+          bytes: uploadedResumeBytes ?? Buffer.from(rawText ?? "", "utf8"),
           candidateId: candidate.id,
           fileName,
-          mimeType: resumeBytes ? mimeType : "text/plain",
+          mimeType: uploadedResumeBytes ? mimeType : "text/plain",
           organizationId: organization.id,
         })
       : null;
 
   const resume = await createResumeSnapshot({
     candidateId: candidate.id,
-    fileKey: storedFile?.fileKey ?? null,
+    fileKey: storedFile?.fileKey ?? directResumeFileKey ?? null,
     fileName,
     fileUrl: storedFile?.fileUrl ?? null,
     mimeType,
@@ -596,7 +648,9 @@ export async function submitPublicJobApplication({
     parsedData,
     parserStatus,
     rawText,
-    sizeBytes: storedFile?.sizeBytes ?? (rawText ? Buffer.byteLength(rawText, "utf8") : submittedResumeSizeBytes),
+    sizeBytes:
+      storedFile?.sizeBytes ??
+      (directResumeFileKey ? submittedResumeSizeBytes : rawText ? Buffer.byteLength(rawText, "utf8") : submittedResumeSizeBytes),
   });
   const existingApplication = await prisma.application.findUnique({
     where: {
@@ -697,6 +751,7 @@ export async function submitPublicJobApplication({
         parserStatus,
         resumeId: resume.id,
         resumeUploadMode,
+        usedDirectResumeStorage: hasDirectResume,
         source: "careers_page",
         updatedExistingApplication: Boolean(existingApplication),
       },
