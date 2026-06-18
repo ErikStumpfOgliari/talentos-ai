@@ -67,6 +67,7 @@ export default async function CareersPage({
                       Open
                     </span>
                   </div>
+                  <p className="mt-1 text-xs font-semibold uppercase text-slate-500">{job.organizationName}</p>
                   <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-500">
                     <span className="inline-flex items-center gap-1.5">
                       <BriefcaseBusiness className="h-4 w-4" aria-hidden="true" />

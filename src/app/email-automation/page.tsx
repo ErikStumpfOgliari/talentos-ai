@@ -1,6 +1,5 @@
 import Link from "next/link";
 import {
-  BadgeCheck,
   Clock3,
   Mail,
   MailCheck,
@@ -327,67 +326,6 @@ function EmailAutomationToolsPanel({
             </form>
           ),
         },
-        {
-          id: "setup",
-          label: "Setup",
-          description: "Provider status, webhook readiness, and template variables.",
-          children: (
-            <div className="grid gap-4">
-              <section className="rounded-lg border border-slate-200 bg-white p-4">
-                <div className="mb-4 flex items-center gap-2">
-                  <MailCheck className="h-4 w-4 text-emerald-700" aria-hidden="true" />
-                  <p className="text-sm font-semibold text-slate-950">Delivery provider</p>
-                </div>
-                <div className="grid gap-2">
-                  <div className="rounded-lg bg-slate-50 p-3">
-                    <p className="text-xs font-semibold uppercase text-slate-500">Provider</p>
-                    <p className="mt-1 text-sm font-semibold text-slate-950">{data.stats.providerName}</p>
-                  </div>
-                  <div className="rounded-lg bg-slate-50 p-3">
-                    <p className="text-xs font-semibold uppercase text-slate-500">From</p>
-                    <p className="mt-1 break-words text-sm font-semibold text-slate-950">{data.stats.providerFrom}</p>
-                  </div>
-                  <div className="rounded-lg bg-slate-50 p-3">
-                    <p className="text-xs font-semibold uppercase text-slate-500">Webhook endpoint</p>
-                    <p className="mt-1 break-words text-sm font-semibold text-slate-950">/api/webhooks/resend</p>
-                  </div>
-                  <span
-                    className={
-                      data.stats.providerConfigured
-                        ? "rounded-md bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700"
-                        : "rounded-md bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700"
-                    }
-                  >
-                    {data.stats.providerConfigured ? "Ready to send" : "Outbox mode"}
-                  </span>
-                  <span
-                    className={
-                      data.stats.webhookConfigured
-                        ? "rounded-md bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700"
-                        : "rounded-md bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700"
-                    }
-                  >
-                    {data.stats.webhookConfigured ? "Webhooks verified" : "Webhook secret missing"}
-                  </span>
-                </div>
-              </section>
-
-              <section className="rounded-lg border border-slate-200 bg-white p-4">
-                <div className="mb-4 flex items-center gap-2">
-                  <BadgeCheck className="h-4 w-4 text-violet-700" aria-hidden="true" />
-                  <p className="text-sm font-semibold text-slate-950">Variables</p>
-                </div>
-                <div className="flex flex-wrap gap-2 text-xs font-semibold text-slate-600">
-                  {["candidateName", "jobTitle", "stageName", "interviewTime", "meetingUrl", "matchScore"].map((variable) => (
-                    <span className="rounded-md bg-slate-100 px-2 py-1" key={variable}>
-                      {`{{${variable}}}`}
-                    </span>
-                  ))}
-                </div>
-              </section>
-            </div>
-          ),
-        },
       ]}
     />
   );
@@ -420,7 +358,7 @@ export default async function EmailAutomationPage({
       rightPanel={<EmailAutomationToolsPanel data={data} rejectionTemplates={rejectionTemplates} />}
       rightPanelButtonIcon={<SlidersHorizontal className="h-4 w-4" aria-hidden="true" />}
       rightPanelButtonLabel="Tools"
-      rightPanelDescription="Templates, rules, manual emails, and provider setup."
+      rightPanelDescription="Templates, rules, and manual email actions."
       rightPanelTitle="Email tools"
       title="Email Automation"
     >

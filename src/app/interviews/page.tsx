@@ -1,6 +1,5 @@
 import Link from "next/link";
 import {
-  BadgeCheck,
   BriefcaseBusiness,
   CalendarDays,
   CheckCircle2,
@@ -9,7 +8,6 @@ import {
   Gauge,
   LinkIcon,
   SlidersHorizontal,
-  Users,
 } from "lucide-react";
 import {
   createInterview,
@@ -566,53 +564,6 @@ function InterviewToolsPanel({
                 </div>
               ) : null}
             </section>
-          ),
-        },
-        {
-          id: "ready",
-          label: "Ready",
-          description: "Candidates ready for interview actions and workflow notes.",
-          children: (
-            <div className="grid gap-4">
-              <section className="rounded-lg border border-slate-200 bg-white p-4">
-                <div className="mb-4 flex items-center gap-2">
-                  <Users className="h-4 w-4 text-emerald-700" aria-hidden="true" />
-                  <p className="text-sm font-semibold text-slate-950">Interview-ready</p>
-                </div>
-                <div className="space-y-2">
-                  {data.applications.slice(0, 6).map((application) => (
-                    <article className="rounded-lg border border-slate-200 p-3" key={application.id}>
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-slate-950">{application.candidate}</p>
-                          <p className="mt-1 truncate text-xs text-slate-500">{application.jobTitle} - {application.stage}</p>
-                        </div>
-                        <span className={`shrink-0 rounded-full px-2 py-1 text-xs font-semibold ring-1 ${getScoreTone(application.matchScore)}`}>
-                          {application.matchScore}%
-                        </span>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              </section>
-
-              <section className="rounded-lg border border-slate-200 bg-white p-4">
-                <div className="mb-4 flex items-center gap-2">
-                  <BadgeCheck className="h-4 w-4 text-violet-700" aria-hidden="true" />
-                  <p className="text-sm font-semibold text-slate-950">Workflow</p>
-                </div>
-                <div className="grid gap-3 text-sm">
-                  <div className="rounded-lg bg-slate-50 p-3">
-                    <p className="text-xs font-semibold uppercase text-slate-500">Pipeline sync</p>
-                    <p className="mt-1 text-slate-600">Scheduling an interview moves the application into the Interview stage.</p>
-                  </div>
-                  <div className="rounded-lg bg-slate-50 p-3">
-                    <p className="text-xs font-semibold uppercase text-slate-500">Audit trail</p>
-                    <p className="mt-1 text-slate-600">Schedule and status changes are recorded as organization-scoped events.</p>
-                  </div>
-                </div>
-              </section>
-            </div>
           ),
         },
       ]}

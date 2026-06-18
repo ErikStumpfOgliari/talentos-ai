@@ -128,6 +128,7 @@ export const ENGLISH_TO_PORTUGUESE: Record<string, string> = {
   "Secure recovery flow": "Fluxo seguro de recupera\u00e7\u00e3o",
   "Selected verification": "Verifica\u00e7\u00e3o selecionada",
   "Send recovery instructions": "Enviar instru\u00e7\u00f5es de recupera\u00e7\u00e3o",
+  "Sending code...": "Enviando codigo...",
   "Sign in details": "Dados de login",
   "Sign in, confirm the trusted device, and continue managing jobs, candidates, interviews, automations, and analytics.": "Entre, confirme o dispositivo confi\u00e1vel e continue gerenciando vagas, candidatos, entrevistas, automa\u00e7\u00f5es e an\u00e1lises.",
   "Start hiring": "Come\u00e7ar a contratar",
@@ -953,6 +954,7 @@ export const ENGLISH_TO_PORTUGUESE: Record<string, string> = {
   "Tools": "Ferramentas",
   "Matching tools": "Ferramentas de matching",
   "Role selection, ranking, and engine status.": "Selecao de vaga, ranqueamento e status do motor.",
+  "Role selection and candidate ranking.": "Selecao de vaga e ranqueamento de candidatos.",
   "Choose an open role and run candidate ranking without crowding the shortlist.": "Escolha uma vaga aberta e rode o ranqueamento sem lotar a shortlist.",
   "Select role": "Selecionar vaga",
   "View shortlist": "Ver shortlist",
@@ -969,6 +971,7 @@ export const ENGLISH_TO_PORTUGUESE: Record<string, string> = {
   "Candidates ready for interview actions and workflow notes.": "Candidatos prontos para acoes de entrevista e notas de fluxo.",
   "Email tools": "Ferramentas de email",
   "Templates, rules, manual emails, and provider setup.": "Templates, regras, emails manuais e configuracao do provider.",
+  "Templates, rules, and manual email actions.": "Templates, regras e acoes manuais de email.",
   "Create reusable candidate messages for manual or automated events.": "Crie mensagens reutilizaveis para eventos manuais ou automaticos.",
   "Rule": "Regra",
   "Connect an event, stage, and template into an automation rule.": "Conecte um evento, etapa e template em uma regra de automacao.",
@@ -1007,6 +1010,10 @@ export const ENGLISH_TO_PORTUGUESE: Record<string, string> = {
   "Webhooks verified": "Webhooks verificados",
   "Webhook secret missing": "Segredo do webhook ausente",
   "No open role selected": "Nenhuma vaga aberta selecionada",
+  "Publish to open public page": "Publique para abrir a pagina publica",
+  "Publish job to open careers page": "Publique a vaga para abrir a pagina de carreiras",
+  "This role is not accepting applications.": "Esta vaga nao esta recebendo candidaturas.",
+  "The job may still be a draft, paused, closed, or no longer published by the hiring workspace.": "A vaga pode estar em rascunho, pausada, fechada ou nao publicada pelo workspace contratante.",
 };
 
 const PORTUGUESE_PATTERNS: Array<[RegExp, (match: RegExpMatchArray) => string]> = [

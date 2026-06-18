@@ -39,6 +39,10 @@ function getStatusTone(status: string) {
   return "bg-rose-50 text-rose-700 ring-rose-200";
 }
 
+function isPublicJob(status: string) {
+  return status === "Active";
+}
+
 function Field({
   children,
   label,
@@ -245,13 +249,20 @@ export default async function JobsPage() {
                         Open pipeline
                         <ChevronRight className="h-4 w-4" aria-hidden="true" />
                       </Link>
-                      <Link
-                        className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-                        href={`/careers/${job.id}`}
-                      >
-                        <Globe2 className="h-4 w-4" aria-hidden="true" />
-                        Public page
-                      </Link>
+                      {isPublicJob(job.status) ? (
+                        <Link
+                          className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                          href={`/careers/${job.id}`}
+                        >
+                          <Globe2 className="h-4 w-4" aria-hidden="true" />
+                          Public page
+                        </Link>
+                      ) : (
+                        <div className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 text-center text-sm font-semibold text-slate-500">
+                          <Globe2 className="h-4 w-4" aria-hidden="true" />
+                          Publish to open public page
+                        </div>
+                      )}
                       <div className="rounded-lg bg-slate-50 p-3">
                         <p className="text-xs font-semibold uppercase text-slate-500">Hiring manager</p>
                         <p className="mt-1 text-sm font-semibold text-slate-950">{job.hiringManager}</p>

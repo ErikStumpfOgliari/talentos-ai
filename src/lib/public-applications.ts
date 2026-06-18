@@ -11,7 +11,6 @@ import {
 } from "@/generated/prisma/client";
 import { scoreCandidateForJob } from "@/lib/candidate-matching";
 import { deliverEmailMessage, queueAutomationEmails } from "@/lib/email-automation";
-import { defaultOrganizationSlug } from "@/lib/organization";
 import { prisma } from "@/lib/prisma";
 import {
   canUseOpenAIResumeParser,
@@ -444,26 +443,13 @@ export async function submitPublicJobApplication({
   formData: FormData;
   jobId: string;
 }): Promise<PublicApplicationResult> {
-  const organization = await prisma.organization.findUnique({
-    where: {
-      slug: defaultOrganizationSlug,
-    },
-  });
-
-  if (!organization) {
-    return {
-      error: "job_unavailable",
-      ok: false,
-    };
-  }
-
   const job = await prisma.job.findFirst({
     where: {
       id: jobId,
-      organizationId: organization.id,
       status: "ACTIVE",
     },
     include: {
+      organization: true,
       pipelineStages: {
         orderBy: {
           position: "asc",
@@ -479,6 +465,8 @@ export async function submitPublicJobApplication({
       ok: false,
     };
   }
+
+  const organization = job.organization;
 
   const submittedName = readString(formData, "name");
   const submittedEmail = readString(formData, "email").toLowerCase();

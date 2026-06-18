@@ -51,7 +51,7 @@ export async function createJob(formData: FormData) {
   const salaryMin = readNumber(formData, "salaryMin");
   const salaryMax = readNumber(formData, "salaryMax");
 
-  await prisma.job.create({
+  const job = await prisma.job.create({
     data: {
       organizationId: organization.id,
       createdById: session.user.id,
@@ -83,6 +83,8 @@ export async function createJob(formData: FormData) {
 
   revalidatePath("/dashboard");
   revalidatePath("/jobs");
+  revalidatePath("/careers");
+  revalidatePath(`/careers/${job.id}`);
 }
 
 export async function updateJobStatus(formData: FormData) {
@@ -110,6 +112,8 @@ export async function updateJobStatus(formData: FormData) {
   revalidatePath("/dashboard");
   revalidatePath("/jobs");
   revalidatePath(`/jobs/${jobId}`);
+  revalidatePath("/careers");
+  revalidatePath(`/careers/${jobId}`);
 }
 
 export async function archiveJob(formData: FormData) {
@@ -135,4 +139,6 @@ export async function archiveJob(formData: FormData) {
   revalidatePath("/dashboard");
   revalidatePath("/jobs");
   revalidatePath(`/jobs/${jobId}`);
+  revalidatePath("/careers");
+  revalidatePath(`/careers/${jobId}`);
 }

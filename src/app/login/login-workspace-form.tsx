@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRef, useState } from "react";
+import { useFormStatus } from "react-dom";
 import {
   ArrowLeft,
   ArrowRight,
@@ -36,6 +37,21 @@ function HiddenLoginFields({ step, values }: { step: LoginStep; values: LoginVal
       <input name="email" type="hidden" value={values.email} />
       <input name="password" type="hidden" value={values.password} />
     </>
+  );
+}
+
+function VerificationSubmitButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <button
+      className="mt-2 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:scale-[1.02] hover:bg-slate-800 active:scale-[0.98] disabled:cursor-wait disabled:bg-slate-500"
+      disabled={pending}
+      type="submit"
+    >
+      <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+      {pending ? "Sending code..." : "Confirm and enter"}
+    </button>
   );
 }
 
@@ -194,13 +210,7 @@ export function LoginWorkspaceForm({
                 </span>
               </span>
             </div>
-            <button
-              className="mt-2 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:scale-[1.02] hover:bg-slate-800 active:scale-[0.98]"
-              type="submit"
-            >
-              <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-              Confirm and enter
-            </button>
+            <VerificationSubmitButton />
           </>
         ) : null}
       </form>

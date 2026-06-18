@@ -1,5 +1,4 @@
 import { ApplicationStatus, EmailTrigger, PipelineCategory } from "@/generated/prisma/client";
-import { defaultOrganizationSlug } from "@/lib/organization";
 import { prisma } from "@/lib/prisma";
 
 export type PublicCareersJob = {
@@ -10,6 +9,7 @@ export type PublicCareersJob = {
   id: string;
   location: string;
   openings: number;
+  organizationName: string;
   salaryRange: string;
   title: string;
   workMode: string;
@@ -229,6 +229,9 @@ function mapPublicJob(job: {
   salaryMin: number | null;
   title: string;
   workMode: string;
+  organization?: {
+    name: string;
+  };
 }): PublicCareersJob {
   return {
     applicationCount: job._count.applications,
@@ -238,6 +241,7 @@ function mapPublicJob(job: {
     id: job.id,
     location: job.location ?? "Remote",
     openings: job.openings,
+    organizationName: job.organization?.name ?? "Aptelys",
     salaryRange: formatSalary(job.salaryMin, job.salaryMax, job.currency),
     title: job.title,
     workMode: formatEnum(job.workMode),
@@ -245,67 +249,54 @@ function mapPublicJob(job: {
 }
 
 export async function getPublicCareersData(): Promise<PublicCareersData> {
-  const organization = await prisma.organization.findUnique({
+  const jobs = await prisma.job.findMany({
     where: {
-      slug: defaultOrganizationSlug,
+      status: "ACTIVE",
     },
     include: {
-      jobs: {
-        where: {
-          status: "ACTIVE",
+      _count: {
+        select: {
+          applications: true,
         },
-        include: {
-          _count: {
-            select: {
-              applications: true,
-            },
-          },
-        },
-        orderBy: {
-          publishedAt: "desc",
+      },
+      organization: {
+        select: {
+          name: true,
         },
       },
     },
+    orderBy: {
+      publishedAt: "desc",
+    },
   });
 
-  if (!organization) {
-    return {
-      jobs: [],
-      organizationName: "Aptelys Careers",
-    };
-  }
-
   return {
-    jobs: organization.jobs.map(mapPublicJob),
-    organizationName: organization.name,
+    jobs: jobs.map(mapPublicJob),
+    organizationName: "Aptelys Careers",
   };
 }
 
 export async function getPublicJobApplicationData(jobId: string): Promise<PublicJobApplicationData | null> {
-  const organization = await prisma.organization.findUnique({
+  const job = await prisma.job.findFirst({
     where: {
-      slug: defaultOrganizationSlug,
+      id: jobId,
+      status: "ACTIVE",
     },
     include: {
-      jobs: {
-        where: {
-          id: jobId,
-          status: "ACTIVE",
+      _count: {
+        select: {
+          applications: true,
         },
-        include: {
-          _count: {
-            select: {
-              applications: true,
-            },
-          },
+      },
+      organization: {
+        select: {
+          name: true,
         },
-        take: 1,
       },
     },
   });
-  const job = organization?.jobs[0];
 
-  if (!organization || !job) {
+  if (!job) {
     return null;
   }
 
@@ -315,7 +306,7 @@ export async function getPublicJobApplicationData(jobId: string): Promise<Public
       requirements: readStringArray(job.requirements),
       responsibilities: readStringArray(job.responsibilities),
     },
-    organizationName: organization.name,
+    organizationName: job.organization.name,
   };
 }
 
@@ -327,11 +318,6 @@ export async function getPublicApplicationStatusData(publicToken: string): Promi
   const application = await prisma.application.findFirst({
     where: {
       publicToken,
-      organization: {
-        is: {
-          slug: defaultOrganizationSlug,
-        },
-      },
     },
     include: {
       candidate: {

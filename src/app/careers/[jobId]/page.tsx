@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import {
   ArrowLeft,
   BriefcaseBusiness,
@@ -67,7 +66,30 @@ export default async function PublicJobPage({
   const data = await getPublicJobApplicationData(jobId);
 
   if (!data) {
-    notFound();
+    return (
+      <main className="public-shell min-h-screen overflow-x-hidden bg-slate-100 text-slate-950" data-public-theme-scope>
+        <PublicSiteHeader showThemeToggle />
+        <section className="mx-auto flex min-h-[70vh] max-w-3xl items-center px-4 py-10 lg:px-6">
+          <div className="w-full rounded-lg border border-slate-200 bg-white p-5 text-center shadow-sm sm:p-8">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-slate-950 text-white">
+              <BriefcaseBusiness className="h-5 w-5" aria-hidden="true" />
+            </div>
+            <h1 className="mt-5 text-2xl font-semibold text-slate-950">This role is not accepting applications.</h1>
+            <p className="mt-3 text-sm leading-6 text-slate-600">
+              The job may still be a draft, paused, closed, or no longer published by the hiring workspace.
+            </p>
+            <Link
+              className="mt-6 inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800"
+              href="/careers"
+            >
+              View open roles
+              <ArrowLeft className="h-4 w-4 rotate-180" aria-hidden="true" />
+            </Link>
+          </div>
+        </section>
+        <PublicSiteFooter />
+      </main>
+    );
   }
 
   const errorMessage = getErrorMessage(query?.error);

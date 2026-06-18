@@ -50,6 +50,10 @@ function statusValue(status: string) {
   return status.toUpperCase().replaceAll(" ", "_");
 }
 
+function isPublicJob(status: string) {
+  return status === "Active";
+}
+
 function StatCard({
   icon: Icon,
   label,
@@ -99,13 +103,20 @@ export default async function JobDetailPage({
             <Gauge className="h-4 w-4" aria-hidden="true" />
             Matching
           </Link>
-          <Link
-            className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:scale-[1.03] hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98]"
-            href={`/careers/${data.job.id}`}
-          >
-            <Globe2 className="h-4 w-4" aria-hidden="true" />
-            Careers page
-          </Link>
+          {isPublicJob(data.job.status) ? (
+            <Link
+              className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:scale-[1.03] hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98]"
+              href={`/careers/${data.job.id}`}
+            >
+              <Globe2 className="h-4 w-4" aria-hidden="true" />
+              Careers page
+            </Link>
+          ) : (
+            <span className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-500">
+              <Globe2 className="h-4 w-4" aria-hidden="true" />
+              Publish job to open careers page
+            </span>
+          )}
           <Link
             className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:scale-[1.03] hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98]"
             href="/interviews"
