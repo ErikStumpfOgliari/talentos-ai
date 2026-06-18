@@ -3,6 +3,12 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   allowedDevOrigins: ["127.0.0.1"],
   poweredByHeader: false,
+  experimental: {
+    staleTimes: {
+      dynamic: 90,
+      static: 300,
+    },
+  },
   async headers() {
     return [
       {

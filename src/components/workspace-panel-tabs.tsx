@@ -2,6 +2,8 @@
 
 import type { ReactNode } from "react";
 import { useState } from "react";
+import { useSiteLanguage } from "@/components/site-language-provider";
+import { translateText } from "@/lib/site-language";
 
 export type WorkspacePanelTab = {
   children: ReactNode;
@@ -15,6 +17,7 @@ export function WorkspacePanelTabs({
 }: {
   tabs: WorkspacePanelTab[];
 }) {
+  const { language } = useSiteLanguage();
   const [activeTabId, setActiveTabId] = useState(tabs[0]?.id ?? "");
   const activeTab = tabs.find((tab) => tab.id === activeTabId) ?? tabs[0];
 
@@ -40,14 +43,14 @@ export function WorkspacePanelTabs({
               onClick={() => setActiveTabId(tab.id)}
               type="button"
             >
-              {tab.label}
+              {translateText(tab.label, language)}
             </button>
           );
         })}
       </div>
 
       {activeTab.description ? (
-        <p className="text-sm leading-6 text-slate-500">{activeTab.description}</p>
+        <p className="text-sm leading-6 text-slate-500">{translateText(activeTab.description, language)}</p>
       ) : null}
 
       <div>{activeTab.children}</div>

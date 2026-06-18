@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useId } from "react";
 import Link, { useLinkStatus } from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { InterellisMark } from "@/components/interellis-mark";
 import { useSiteLanguage } from "@/components/site-language-provider";
 import {
@@ -36,6 +36,9 @@ const navItems = [
   { href: "/settings", icon: Settings, i18nKey: "nav.settings", label: "Settings" },
   { href: "/careers", icon: Globe2, i18nKey: "nav.careers", label: "Careers Page" },
 ];
+
+const prefetchRoutes = navItems.map((item) => item.href);
+let appRoutesWarmupStarted = false;
 
 type NavigationCopy = Partial<Record<string, string>>;
 
@@ -78,8 +81,54 @@ function NavigationPendingHint() {
   );
 }
 
+function AppRoutesPrefetcher() {
+  const router = useRouter();
+
+  useEffect(() => {
+    if (appRoutesWarmupStarted) {
+      return;
+    }
+
+    appRoutesWarmupStarted = true;
+    let cancelled = false;
+    let timeoutId = 0;
+    let idleId = 0;
+
+    const warmRoute = (index: number) => {
+      if (cancelled || index >= prefetchRoutes.length) {
+        return;
+      }
+
+      router.prefetch(prefetchRoutes[index]);
+      timeoutId = window.setTimeout(() => warmRoute(index + 1), 85);
+    };
+
+    const startWarmup = () => warmRoute(0);
+
+    timeoutId = window.setTimeout(() => {
+      if ("requestIdleCallback" in window) {
+        idleId = window.requestIdleCallback(startWarmup, { timeout: 1200 });
+        return;
+      }
+
+      startWarmup();
+    }, 250);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+      if (idleId && "cancelIdleCallback" in window) {
+        window.cancelIdleCallback(idleId);
+      }
+    };
+  }, [router]);
+
+  return null;
+}
+
 function NavigationLinks({ copy, onNavigate }: { copy?: NavigationCopy; onNavigate?: () => void }) {
   const pathname = usePathname();
+  const router = useRouter();
 
   return (
     <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-4 text-sm font-medium text-slate-600">
@@ -97,6 +146,10 @@ function NavigationLinks({ copy, onNavigate }: { copy?: NavigationCopy; onNaviga
             href={item.href}
             key={item.href}
             onClick={onNavigate}
+            onFocus={() => router.prefetch(item.href)}
+            onMouseEnter={() => router.prefetch(item.href)}
+            onTouchStart={() => router.prefetch(item.href)}
+            prefetch={true}
           >
             <ItemIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
             <span className="truncate" data-i18n-key={item.i18nKey}>
@@ -162,6 +215,7 @@ export function AppNavigationPanelContent({
   return (
     <div className={`flex h-full min-h-0 flex-col bg-white ${className}`}>
       <NavigationBrand copy={resolvedCopy} />
+      <AppRoutesPrefetcher />
       <NavigationLinks copy={resolvedCopy} onNavigate={onNavigate} />
       <NavigationFooter copy={resolvedCopy} onNavigate={onNavigate} showWorkspace={showWorkspace} />
     </div>
@@ -223,16 +277,21 @@ export function AppNavigationMenu({ className = "", copy }: { className?: string
         <span className="sr-only">Open navigation</span>
       </label>
 
-      <div className="pointer-events-none fixed inset-0 z-50 hidden peer-checked:pointer-events-auto peer-checked:block">
+      <div
+        className="pointer-events-none fixed inset-0 z-50 peer-checked:pointer-events-auto"
+        data-app-mobile-nav-overlay
+      >
         <label
           aria-label="Close navigation"
-          className="absolute inset-0 block cursor-pointer bg-slate-950/40"
+          className="absolute inset-0 block cursor-pointer bg-slate-950/40 opacity-0 transition-opacity duration-200"
+          data-app-mobile-nav-backdrop
           htmlFor={menuId}
         />
         <aside
           aria-label="Site navigation"
           aria-modal="true"
-          className="relative flex h-full w-full max-w-80 flex-col border-r border-slate-200 bg-white shadow-xl"
+          className="relative flex h-full w-full max-w-80 -translate-x-full flex-col border-r border-slate-200 bg-white shadow-xl transition-transform duration-300 ease-out"
+          data-app-mobile-nav-drawer
           id={drawerId}
           role="dialog"
         >

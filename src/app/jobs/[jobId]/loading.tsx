@@ -1,5 +1,5 @@
 import { AppRouteLoading } from "@/components/app-route-loading";
 
 export default function Loading() {
-  return <AppRouteLoading withNavigation={false} />;
+  return <AppRouteLoading title="Loading job pipeline" />;
 }

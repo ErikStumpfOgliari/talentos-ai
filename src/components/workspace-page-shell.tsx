@@ -3,6 +3,8 @@
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { AppNavigationPanelContent } from "@/components/app-navigation-menu";
+import { useSiteLanguage } from "@/components/site-language-provider";
+import { translateText } from "@/lib/site-language";
 import { Menu, PanelRightClose, X } from "lucide-react";
 
 export function WorkspacePageShell({
@@ -30,9 +32,16 @@ export function WorkspacePageShell({
   rightPanelTitle?: string;
   title: string;
 }) {
+  const { language } = useSiteLanguage();
   const [navigationOpen, setNavigationOpen] = useState(false);
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
   const hasRightPanel = Boolean(rightPanel);
+  const pageTitle = translateText(title, language);
+  const panelTitle = rightPanelTitle ? translateText(rightPanelTitle, language) : undefined;
+  const panelDescription = rightPanelDescription ? translateText(rightPanelDescription, language) : undefined;
+  const panelButtonLabel = rightPanelButtonLabel
+    ? translateText(rightPanelButtonLabel, language)
+    : panelTitle ?? translateText("Open", language);
 
   return (
     <main className="workspace-shell min-h-screen overflow-x-hidden bg-slate-100 text-slate-950" data-app-theme-scope>
@@ -81,7 +90,7 @@ export function WorkspacePageShell({
                   </div>
                   <div className="min-w-0">
                     <p className="truncate text-xs font-semibold uppercase text-slate-500">{organizationName}</p>
-                    <h1 className="break-words text-xl font-semibold leading-tight text-slate-950 sm:text-2xl">{title}</h1>
+                    <h1 className="break-words text-xl font-semibold leading-tight text-slate-950 sm:text-2xl">{pageTitle}</h1>
                   </div>
                 </div>
               </div>
@@ -98,7 +107,7 @@ export function WorkspacePageShell({
                     type="button"
                   >
                     {rightPanelButtonIcon}
-                    {rightPanelButtonLabel ?? rightPanelTitle ?? "Open"}
+                    {panelButtonLabel}
                   </button>
                 ) : null}
               </div>
@@ -132,8 +141,8 @@ export function WorkspacePageShell({
             >
               <div className="sticky top-0 z-10 flex h-16 items-center justify-between gap-3 border-b border-slate-200 bg-white px-5">
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-slate-950">{rightPanelTitle ?? rightPanelButtonLabel}</p>
-                  {rightPanelDescription ? <p className="truncate text-xs text-slate-500">{rightPanelDescription}</p> : null}
+                  <p className="truncate text-sm font-semibold text-slate-950">{panelTitle ?? panelButtonLabel}</p>
+                  {panelDescription ? <p className="truncate text-xs text-slate-500">{panelDescription}</p> : null}
                 </div>
                 <button
                   aria-label="Close panel"

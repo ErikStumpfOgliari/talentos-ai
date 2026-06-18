@@ -716,6 +716,22 @@ body.theme-dark [data-public-theme-scope] .text-rose-800 {
     app-nav-hint-pulse 900ms ease-in-out 120ms infinite;
 }
 
+[data-app-mobile-nav-overlay] {
+  visibility: hidden;
+}
+
+input[data-testid="app-navigation-trigger"]:checked ~ [data-app-mobile-nav-overlay] {
+  visibility: visible;
+}
+
+input[data-testid="app-navigation-trigger"]:checked ~ [data-app-mobile-nav-overlay] [data-app-mobile-nav-backdrop] {
+  opacity: 1;
+}
+
+input[data-testid="app-navigation-trigger"]:checked ~ [data-app-mobile-nav-overlay] [data-app-mobile-nav-drawer] {
+  transform: translateX(0);
+}
+
 .route-loading-shell {
   background:
     radial-gradient(circle at 12% 0%, rgb(14 165 233 / 0.08), transparent 22rem),
