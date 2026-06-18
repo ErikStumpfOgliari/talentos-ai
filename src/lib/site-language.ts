@@ -944,6 +944,9 @@ export const ENGLISH_TO_PORTUGUESE: Record<string, string> = {
   "Remove this candidate and all related recruiting records from this workspace.": "Remova este candidato e todos os registros de recrutamento relacionados deste workspace.",
   "Delete candidate": "Excluir candidato",
   "Deleting candidate": "Excluindo candidato",
+  "Candidate actions": "Acoes do candidato",
+  "Copy email": "Copiar email",
+  "Email copied": "Email copiado",
 };
 
 const PORTUGUESE_PATTERNS: Array<[RegExp, (match: RegExpMatchArray) => string]> = [

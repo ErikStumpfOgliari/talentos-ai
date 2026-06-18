@@ -12,7 +12,8 @@ import {
   Sparkles,
   Users,
 } from "lucide-react";
-import { createCandidate, parseResumeUpload } from "@/app/candidates/actions";
+import { createCandidate, deleteCandidate, parseResumeUpload } from "@/app/candidates/actions";
+import { CandidateQuickActionsMenu } from "@/components/candidate-quick-actions-menu";
 import { ResumeParserForm } from "@/components/resume-parser-form";
 import { WorkspacePageShell } from "@/components/workspace-page-shell";
 import { recruitingRoles, requireRole } from "@/lib/auth";
@@ -333,13 +334,21 @@ export default async function CandidatesPage({
                     </div>
 
                     <div className="grid content-start gap-3">
-                      <Link
-                        className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-                        href={`/candidates/${candidate.id}`}
-                      >
-                        Open profile
-                        <ChevronRight className="h-4 w-4" aria-hidden="true" />
-                      </Link>
+                      <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+                        <Link
+                          className="inline-flex h-10 min-w-0 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                          href={`/candidates/${candidate.id}`}
+                        >
+                          Open profile
+                          <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                        </Link>
+                        <CandidateQuickActionsMenu
+                          action={deleteCandidate}
+                          candidateEmail={candidate.email}
+                          candidateId={candidate.id}
+                          candidateName={candidate.name}
+                        />
+                      </div>
                       <div className="grid grid-cols-2 gap-2">
                         {[
                           ["Experience", candidate.yearsExperience],

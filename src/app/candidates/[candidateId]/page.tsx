@@ -319,7 +319,7 @@ export default async function CandidateDetailPage({
               </div>
             </section>
 
-            <section className="min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <section className="min-w-0 scroll-mt-24 overflow-hidden rounded-lg border border-slate-200 bg-white p-4 shadow-sm" id="resume-history">
               <div className="mb-4 flex items-center gap-2">
                 <FileText className="h-4 w-4 text-violet-700" aria-hidden="true" />
                 <p className="text-sm font-semibold text-slate-950">Parsed resumes</p>
@@ -581,10 +581,10 @@ export default async function CandidateDetailPage({
               <CandidateResumeAttachmentForm action={attachCandidateResume} candidateId={data.candidate.id} />
             </section>
 
-            <section className="min-w-0 overflow-hidden rounded-lg border border-rose-200 bg-rose-50/60 p-4 shadow-sm">
+            <section className="min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
               <div className="mb-4">
-                <p className="text-sm font-semibold text-rose-950">Danger zone</p>
-                <p className="mt-1 text-xs leading-5 text-rose-700">
+                <p className="text-sm font-semibold text-slate-950">Danger zone</p>
+                <p className="mt-1 text-xs leading-5 text-slate-500">
                   Remove this candidate and all related recruiting records from this workspace.
                 </p>
               </div>
