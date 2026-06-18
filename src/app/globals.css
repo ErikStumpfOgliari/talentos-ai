@@ -732,6 +732,44 @@ input[data-testid="app-navigation-trigger"]:checked ~ [data-app-mobile-nav-overl
   transform: translateX(0);
 }
 
+[data-workspace-right-panel],
+[data-workspace-right-panel] * {
+  min-width: 0;
+}
+
+[data-workspace-right-panel] {
+  max-width: 100dvw;
+  overflow-x: clip;
+}
+
+[data-workspace-panel-scroll],
+[data-workspace-panel-body],
+[data-workspace-panel-body] form,
+[data-workspace-panel-body] section,
+[data-workspace-panel-body] article,
+[data-workspace-panel-body] div {
+  max-width: 100%;
+}
+
+[data-workspace-panel-body] {
+  overflow-x: hidden;
+}
+
+[data-workspace-panel-body] p,
+[data-workspace-panel-body] span,
+[data-workspace-panel-body] li,
+[data-workspace-panel-body] label {
+  overflow-wrap: anywhere;
+}
+
+[data-workspace-panel-body] input,
+[data-workspace-panel-body] select,
+[data-workspace-panel-body] textarea,
+[data-workspace-panel-body] button,
+[data-workspace-panel-body] a {
+  max-width: 100%;
+}
+
 .route-loading-shell {
   background:
     radial-gradient(circle at 12% 0%, rgb(14 165 233 / 0.08), transparent 22rem),

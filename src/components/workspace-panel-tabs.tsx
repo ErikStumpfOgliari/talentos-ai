@@ -26,15 +26,15 @@ export function WorkspacePanelTabs({
   }
 
   return (
-    <div className="grid gap-4">
-      <div className="flex flex-wrap gap-2 rounded-lg border border-slate-200 bg-slate-50 p-1.5">
+    <div className="grid min-w-0 max-w-full gap-4 overflow-x-hidden">
+      <div className="grid min-w-0 grid-cols-2 gap-2 rounded-lg border border-slate-200 bg-slate-50 p-1.5 sm:flex sm:flex-wrap">
         {tabs.map((tab) => {
           const isActive = tab.id === activeTab.id;
 
           return (
             <button
               aria-pressed={isActive}
-              className={`inline-flex min-h-9 flex-1 items-center justify-center rounded-md px-3 py-2 text-sm font-semibold transition ${
+              className={`inline-flex min-h-9 min-w-0 flex-1 items-center justify-center rounded-md px-2 py-2 text-center text-xs font-semibold leading-tight transition sm:px-3 sm:text-sm ${
                 isActive
                   ? "bg-slate-950 text-white shadow-sm"
                   : "text-slate-600 hover:bg-white hover:text-slate-950"
@@ -50,10 +50,10 @@ export function WorkspacePanelTabs({
       </div>
 
       {activeTab.description ? (
-        <p className="text-sm leading-6 text-slate-500">{translateText(activeTab.description, language)}</p>
+        <p className="break-words text-sm leading-6 text-slate-500">{translateText(activeTab.description, language)}</p>
       ) : null}
 
-      <div>{activeTab.children}</div>
+      <div className="min-w-0 max-w-full overflow-x-hidden">{activeTab.children}</div>
     </div>
   );
 }

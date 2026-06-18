@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AppNavigationPanelContent } from "@/components/app-navigation-menu";
 import { useSiteLanguage } from "@/components/site-language-provider";
 import { translateText } from "@/lib/site-language";
@@ -35,7 +35,10 @@ export function WorkspacePageShell({
   const { language } = useSiteLanguage();
   const [navigationOpen, setNavigationOpen] = useState(false);
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
+  const [navigationUsesOverlay, setNavigationUsesOverlay] = useState(false);
+  const [rightPanelUsesOverlay, setRightPanelUsesOverlay] = useState(false);
   const hasRightPanel = Boolean(rightPanel);
+  const overlayLayerOpen = (navigationOpen && navigationUsesOverlay) || (rightPanelOpen && rightPanelUsesOverlay);
   const pageTitle = translateText(title, language);
   const panelTitle = rightPanelTitle ? translateText(rightPanelTitle, language) : undefined;
   const panelDescription = rightPanelDescription ? translateText(rightPanelDescription, language) : undefined;
@@ -43,13 +46,54 @@ export function WorkspacePageShell({
     ? translateText(rightPanelButtonLabel, language)
     : panelTitle ?? translateText("Open", language);
 
+  useEffect(() => {
+    const navigationQuery = window.matchMedia("(max-width: 767px)");
+    const rightPanelQuery = window.matchMedia("(max-width: 1279px)");
+    const syncOverlayMode = () => {
+      setNavigationUsesOverlay(navigationQuery.matches);
+      setRightPanelUsesOverlay(rightPanelQuery.matches);
+    };
+
+    syncOverlayMode();
+    navigationQuery.addEventListener("change", syncOverlayMode);
+    rightPanelQuery.addEventListener("change", syncOverlayMode);
+
+    return () => {
+      navigationQuery.removeEventListener("change", syncOverlayMode);
+      rightPanelQuery.removeEventListener("change", syncOverlayMode);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!overlayLayerOpen) {
+      return undefined;
+    }
+
+    const previousHtmlOverflow = document.documentElement.style.overflow;
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousBodyOverscroll = document.body.style.overscrollBehavior;
+    const previousBodyWidth = document.body.style.width;
+
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+    document.body.style.overscrollBehavior = "none";
+    document.body.style.width = "100%";
+
+    return () => {
+      document.documentElement.style.overflow = previousHtmlOverflow;
+      document.body.style.overflow = previousBodyOverflow;
+      document.body.style.overscrollBehavior = previousBodyOverscroll;
+      document.body.style.width = previousBodyWidth;
+    };
+  }, [overlayLayerOpen]);
+
   return (
     <main className="workspace-shell min-h-screen overflow-x-hidden bg-slate-100 text-slate-950" data-app-theme-scope>
       <div className="relative flex min-h-screen w-full">
         {navigationOpen ? (
           <button
             aria-label="Close navigation"
-            className="fixed inset-0 z-30 bg-slate-950/35 backdrop-blur-[1px] md:hidden"
+            className="fixed inset-0 z-30 touch-none bg-slate-950/35 backdrop-blur-[1px] md:hidden"
             onClick={() => setNavigationOpen(false)}
             type="button"
           />
@@ -70,7 +114,7 @@ export function WorkspacePageShell({
           </div>
         </aside>
 
-        <div className="min-w-0 flex-1">
+        <div className={`min-w-0 flex-1 ${rightPanelOpen && rightPanelUsesOverlay ? "pointer-events-none select-none" : ""}`}>
           <header className="border-b border-slate-200 bg-white">
             <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-4 md:flex-row md:items-center md:justify-between lg:px-6">
               <div className="min-w-0">
@@ -122,22 +166,23 @@ export function WorkspacePageShell({
             {rightPanelOpen ? (
               <button
                 aria-label="Close panel"
-                className="fixed inset-0 z-40 bg-slate-950/35 backdrop-blur-[1px] xl:hidden"
+                className="fixed inset-0 z-[80] touch-none bg-slate-950/35 backdrop-blur-[1px] xl:hidden"
                 onClick={() => setRightPanelOpen(false)}
                 type="button"
               />
             ) : null}
           <aside
             aria-hidden={!rightPanelOpen}
-            className={`fixed inset-y-0 right-0 z-50 shrink-0 overflow-hidden border-l border-slate-200 bg-white shadow-xl transition-[width] duration-300 ease-out xl:relative xl:z-auto xl:shadow-none ${
-              rightPanelOpen ? "w-full sm:w-[400px]" : "w-0"
+            className={`fixed inset-y-0 right-0 z-[90] max-w-[100dvw] shrink-0 overflow-hidden border-l border-slate-200 bg-white shadow-xl transition-[width] duration-300 ease-out xl:relative xl:z-auto xl:shadow-none ${
+              rightPanelOpen ? "w-[100dvw] sm:w-[400px]" : "w-0"
             }`}
             data-workspace-right-panel
           >
             <div
-              className={`h-screen w-screen max-w-full overflow-y-auto transition duration-300 ease-out sm:w-[400px] ${
+              className={`h-dvh w-full max-w-[100dvw] overflow-x-hidden overflow-y-auto overscroll-contain transition duration-300 ease-out sm:w-[400px] ${
                 rightPanelOpen ? "translate-x-0 opacity-100" : "translate-x-10 opacity-0"
               }`}
+              data-workspace-panel-scroll
             >
               <div className="sticky top-0 z-10 flex h-16 items-center justify-between gap-3 border-b border-slate-200 bg-white px-5">
                 <div className="min-w-0">
@@ -153,7 +198,7 @@ export function WorkspacePageShell({
                   <PanelRightClose className="h-4 w-4" aria-hidden="true" />
                 </button>
               </div>
-              <div className="p-5">{rightPanel}</div>
+              <div className="max-w-full overflow-x-hidden p-4 sm:p-5" data-workspace-panel-body>{rightPanel}</div>
             </div>
           </aside>
           </>
