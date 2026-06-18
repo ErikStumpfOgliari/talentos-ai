@@ -56,6 +56,14 @@ function readOptionalString(formData: FormData, key: string) {
   return value.length > 0 ? value : null;
 }
 
+function fillMissingString(currentValue: string | null, incomingValue: string | null) {
+  return currentValue || incomingValue === null ? undefined : incomingValue;
+}
+
+function fillMissingNumber(currentValue: number | null, incomingValue: number | null) {
+  return currentValue === null && incomingValue !== null ? incomingValue : undefined;
+}
+
 function readOptionalLongString(formData: FormData, key: string) {
   const value = limitText(readString(formData, key));
   return value.length > 0 ? value : null;
@@ -609,12 +617,27 @@ export async function submitPublicJobApplication({
     yearsExperience: readNumber(formData, "yearsExperience") ?? (parsed.yearsExperience ? Math.round(parsed.yearsExperience) : null),
   };
   const candidate = existingCandidate
-    ? await prisma.candidate.update({
-        where: {
-          id: existingCandidate.id,
-        },
-        data: candidatePayload,
-      })
+    ? await (async () => {
+        const candidateUpdatePayload = {
+          availability: fillMissingString(existingCandidate.availability, candidatePayload.availability),
+          currentTitle: fillMissingString(existingCandidate.currentTitle, candidatePayload.currentTitle),
+          location: fillMissingString(existingCandidate.location, candidatePayload.location),
+          phone: fillMissingString(existingCandidate.phone, candidatePayload.phone),
+          salaryExpectation: fillMissingNumber(existingCandidate.salaryExpectation, candidatePayload.salaryExpectation),
+          summary: fillMissingString(existingCandidate.summary, candidatePayload.summary),
+          yearsExperience: fillMissingNumber(existingCandidate.yearsExperience, candidatePayload.yearsExperience),
+        } satisfies Prisma.CandidateUncheckedUpdateInput;
+        const hasCandidateUpdate = Object.values(candidateUpdatePayload).some((value) => value !== undefined);
+
+        return hasCandidateUpdate
+          ? prisma.candidate.update({
+              where: {
+                id: existingCandidate.id,
+              },
+              data: candidateUpdatePayload,
+            })
+          : existingCandidate;
+      })()
     : await prisma.candidate.create({
         data: {
           organizationId: organization.id,
@@ -622,7 +645,9 @@ export async function submitPublicJobApplication({
         },
       });
 
-  await syncCandidateSkills(organization.id, candidate.id, unique([...parsed.skills, ...submittedSkills]));
+  if (!existingCandidate) {
+    await syncCandidateSkills(organization.id, candidate.id, unique([...parsed.skills, ...submittedSkills]));
+  }
   await createParsedProfileDetails(candidate.id, parsed, Boolean(existingCandidate));
 
   const shouldSaveResumeFile = Boolean(uploadedResumeBytes || (!isDeferredLargeFile && !hasDirectResume && rawText));

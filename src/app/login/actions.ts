@@ -12,6 +12,8 @@ import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "@/lib/passwords";
 import { setPendingAuthCookie } from "@/lib/pending-auth";
 
+const MAX_FAILED_LOGIN_ATTEMPTS = 5;
+
 function readString(formData: FormData, key: string) {
   const value = formData.get(key);
   return typeof value === "string" ? value.trim() : "";
@@ -98,11 +100,65 @@ async function registerFailedLoginAttempt(email: string) {
 async function redirectInvalid(next: string, email: string): Promise<never> {
   const attempts = await registerFailedLoginAttempt(email);
 
-  if (attempts >= 5) {
+  if (attempts >= MAX_FAILED_LOGIN_ATTEMPTS) {
     redirect(`/forgot-password?reason=attempts&email=${encodeURIComponent(email)}`);
   }
 
   redirect(`/login?error=invalid&next=${encodeURIComponent(next)}`);
+}
+
+function getLoginAttemptWindowStart() {
+  return new Date(Date.now() - LOGIN_ATTEMPTS_MAX_AGE_SECONDS * 1000);
+}
+
+async function countRecentFailedLoginAttempts({
+  organizationId,
+  userId,
+}: {
+  organizationId: string;
+  userId: string;
+}) {
+  return prisma.auditEvent.count({
+    where: {
+      action: "auth.login_failed",
+      actorId: userId,
+      entityId: userId,
+      entityType: "user",
+      organizationId,
+      createdAt: {
+        gte: getLoginAttemptWindowStart(),
+      },
+    },
+  });
+}
+
+async function recordFailedLoginAttempt({
+  organizationId,
+  reason,
+  userId,
+}: {
+  organizationId: string;
+  reason: "invalid_password";
+  userId: string;
+}) {
+  await prisma.auditEvent.create({
+    data: {
+      action: "auth.login_failed",
+      actorId: userId,
+      entityId: userId,
+      entityType: "user",
+      metadata: {
+        reason,
+        source: "login_form",
+      },
+      organizationId,
+    },
+  });
+}
+
+async function redirectBlocked(next: string, email: string): Promise<never> {
+  await registerFailedLoginAttempt(email);
+  redirect(`/forgot-password?reason=attempts&email=${encodeURIComponent(email)}&next=${encodeURIComponent(next)}`);
 }
 
 export async function login(formData: FormData) {
@@ -138,16 +194,36 @@ export async function login(formData: FormData) {
     return redirectInvalid(next, email);
   }
 
+  const membership = user.memberships[0];
+  const recentFailedAttempts = await countRecentFailedLoginAttempts({
+    organizationId: membership.organizationId,
+    userId: user.id,
+  });
+
+  if (recentFailedAttempts >= MAX_FAILED_LOGIN_ATTEMPTS) {
+    return redirectBlocked(next, email);
+  }
+
   const passwordMatches = await verifyPassword(password, user.passwordHash);
 
   if (!passwordMatches) {
+    await recordFailedLoginAttempt({
+      organizationId: membership.organizationId,
+      reason: "invalid_password",
+      userId: user.id,
+    });
+
+    if (recentFailedAttempts + 1 >= MAX_FAILED_LOGIN_ATTEMPTS) {
+      return redirectBlocked(next, email);
+    }
+
     return redirectInvalid(next, email);
   }
 
   await clearFailedLoginAttempts();
-  const organization = user.memberships[0].organization;
+  const organization = membership.organization;
   const challenge = await createEmailVerificationChallenge({
-    organizationId: user.memberships[0].organizationId,
+    organizationId: membership.organizationId,
     organizationName: organization.name,
     purpose: AuthVerificationPurpose.LOGIN,
     userEmail: user.email,
@@ -157,7 +233,7 @@ export async function login(formData: FormData) {
   await setPendingAuthCookie({
     mode: "login",
     nextPath: next,
-    organizationId: user.memberships[0].organizationId,
+    organizationId: membership.organizationId,
     preferredAuthFactor: AuthFactorMethod.EMAIL_CODE,
     userId: user.id,
     verificationChallengeId: challenge.challengeId,

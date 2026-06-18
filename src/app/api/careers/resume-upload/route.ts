@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
@@ -6,6 +7,7 @@ import { MAX_RESUME_FILE_SIZE_BYTES, RESUME_FILE_TOO_LARGE_MESSAGE } from "@/lib
 
 export const runtime = "nodejs";
 
+const SIGNED_UPLOAD_MAX_REQUESTS_PER_HOUR = 30;
 const allowedResumeMimeTypes = new Set([
   "application/pdf",
   "text/csv",
@@ -30,7 +32,51 @@ function isAllowedResumeFile(fileName: string, mimeType: string) {
   return allowedResumeMimeTypes.has(mimeType) || allowedResumeExtensions.test(fileName);
 }
 
+function getHostname(value?: string | null) {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    return new URL(value).hostname.toLowerCase();
+  } catch {
+    return value.split(",")[0]?.trim().split(":")[0]?.toLowerCase() || null;
+  }
+}
+
+function requestHasAllowedOrigin(request: Request) {
+  const host = getHostname(request.headers.get("x-forwarded-host") ?? request.headers.get("host"));
+  const origin = getHostname(request.headers.get("origin"));
+  const referer = getHostname(request.headers.get("referer"));
+
+  if (!host) {
+    return false;
+  }
+
+  if (origin && origin !== host) {
+    return false;
+  }
+
+  if (referer && referer !== host) {
+    return false;
+  }
+
+  return true;
+}
+
+function getClientIpHash(request: Request) {
+  const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  const realIp = request.headers.get("x-real-ip")?.trim();
+  const ip = forwardedFor || realIp || "unknown";
+
+  return createHash("sha256").update(ip).digest("hex");
+}
+
 export async function POST(request: Request) {
+  if (!requestHasAllowedOrigin(request)) {
+    return NextResponse.json({ error: "Forbidden upload origin." }, { status: 403 });
+  }
+
   let input: z.infer<typeof signedUploadSchema>;
 
   try {
@@ -63,6 +109,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "This job is not accepting applications." }, { status: 404 });
   }
 
+  const ipHash = getClientIpHash(request);
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+  const recentUploadRequests = await prisma.auditEvent.count({
+    where: {
+      action: "public_resume_upload.signed",
+      entityId: ipHash,
+      entityType: "public_resume_upload_ip",
+      organizationId: job.organizationId,
+      createdAt: {
+        gte: oneHourAgo,
+      },
+    },
+  });
+
+  if (recentUploadRequests >= SIGNED_UPLOAD_MAX_REQUESTS_PER_HOUR) {
+    return NextResponse.json({ error: "Too many resume upload requests. Try again later." }, { status: 429 });
+  }
+
   const target = await createSignedPublicResumeUploadTarget({
     fileName: input.fileName,
     mimeType,
@@ -78,6 +142,19 @@ export async function POST(request: Request) {
       { status: 503 },
     );
   }
+
+  await prisma.auditEvent.create({
+    data: {
+      action: "public_resume_upload.signed",
+      entityId: ipHash,
+      entityType: "public_resume_upload_ip",
+      metadata: {
+        fileName: input.fileName,
+        sizeBytes: input.sizeBytes,
+      },
+      organizationId: job.organizationId,
+    },
+  });
 
   return NextResponse.json({
     ...target,

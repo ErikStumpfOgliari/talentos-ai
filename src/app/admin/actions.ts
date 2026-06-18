@@ -59,6 +59,12 @@ function revalidateAdmin() {
   revalidatePath("/email-automation");
 }
 
+function assertCanAssignRole(currentRole: MembershipRole, nextRole: MembershipRole) {
+  if (nextRole === MembershipRole.OWNER && currentRole !== MembershipRole.OWNER) {
+    throw new Error("Only workspace owners can assign the owner role.");
+  }
+}
+
 async function assertOwnerCoverage({
   membershipId,
   nextRole,
@@ -117,7 +123,8 @@ export async function updateOrganizationSettings(formData: FormData) {
   const organization = session.organization;
   const name = readString(formData, "name");
   const timezone = readString(formData, "timezone");
-  const plan = readEnum(Plan, readString(formData, "plan"), Plan.PRO);
+  const requestedPlan = readEnum(Plan, readString(formData, "plan"), organization.plan);
+  const plan = session.membership.role === MembershipRole.OWNER ? requestedPlan : organization.plan;
   const redirectTo = getSafeRedirect(readOptionalString(formData, "redirectTo"), "/admin?settings=1");
 
   if (!name || !timezone) {
@@ -145,6 +152,7 @@ export async function updateOrganizationSettings(formData: FormData) {
       metadata: {
         name,
         plan,
+        requestedPlan,
         timezone,
       },
     },
@@ -167,30 +175,40 @@ export async function upsertWorkspaceMember(formData: FormData) {
     throw new Error("Name and email are required.");
   }
 
-  const passwordHash = password ? await hashPassword(password) : undefined;
+  assertCanAssignRole(session.membership.role, role);
 
-  const user = await prisma.user.upsert({
+  const passwordHash = password ? await hashPassword(password) : undefined;
+  const imageUrl = readOptionalString(formData, "imageUrl");
+  const existingUser = await prisma.user.findUnique({
     where: {
       email,
     },
-    update: {
-      name,
-      imageUrl: readOptionalString(formData, "imageUrl"),
-      passwordHash,
-    },
-    create: {
-      name,
-      email,
-      imageUrl: readOptionalString(formData, "imageUrl"),
-      passwordHash,
+    select: {
+      id: true,
     },
   });
+
+  const createdUser = existingUser
+    ? null
+    : await prisma.user.create({
+        data: {
+          name,
+          email,
+          imageUrl,
+          passwordHash,
+        },
+      });
+  const userId = existingUser?.id ?? createdUser?.id;
+
+  if (!userId) {
+    throw new Error("Unable to resolve workspace user.");
+  }
 
   const membership = await prisma.membership.upsert({
     where: {
       organizationId_userId: {
         organizationId: organization.id,
-        userId: user.id,
+        userId,
       },
     },
     update: {
@@ -201,7 +219,7 @@ export async function upsertWorkspaceMember(formData: FormData) {
     },
     create: {
       organizationId: organization.id,
-      userId: user.id,
+      userId,
       role,
       status,
       invitedAt: status === MembershipStatus.INVITED ? new Date() : null,
@@ -218,6 +236,7 @@ export async function upsertWorkspaceMember(formData: FormData) {
       entityId: membership.id,
       metadata: {
         email,
+        existingUser: Boolean(existingUser),
         role,
         status,
       },
@@ -239,7 +258,13 @@ export async function updateWorkspaceMember(formData: FormData) {
     throw new Error("Membership id is required.");
   }
 
-  await requireWorkspaceMembership(membershipId, organization.id);
+  const currentMembership = await requireWorkspaceMembership(membershipId, organization.id);
+
+  assertCanAssignRole(session.membership.role, role);
+
+  if (currentMembership.role === MembershipRole.OWNER && session.membership.role !== MembershipRole.OWNER) {
+    throw new Error("Only workspace owners can change another owner.");
+  }
 
   await assertOwnerCoverage({
     organizationId: organization.id,
