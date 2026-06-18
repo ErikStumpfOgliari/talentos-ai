@@ -20,6 +20,8 @@ import {
   readResumeReviewSelectedFields,
 } from "@/lib/resume-review";
 import { saveResumeFile } from "@/lib/resume-storage";
+import { MAX_RESUME_FILE_SIZE_BYTES } from "@/lib/resume-upload-limits";
+import { limitText } from "@/lib/text-limits";
 
 function readString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -37,10 +39,19 @@ function readNumber(formData: FormData, key: string) {
 }
 
 function readLines(formData: FormData, key: string) {
-  return readString(formData, key)
+  return limitText(readString(formData, key))
     .split(/\r?\n|,/)
     .map((line) => line.trim())
     .filter(Boolean);
+}
+
+function readLongString(formData: FormData, key: string) {
+  return limitText(readString(formData, key));
+}
+
+function readOptionalLongString(formData: FormData, key: string) {
+  const value = readLongString(formData, key);
+  return value.length > 0 ? value : null;
 }
 
 function readEnum<T extends Record<string, string>>(enumObject: T, value: string, fallback: T[keyof T]) {
@@ -261,7 +272,7 @@ export async function createCandidate(formData: FormData) {
     availability: readOptionalString(formData, "availability"),
     salaryExpectation: readNumber(formData, "salaryExpectation"),
     currency: readOptionalString(formData, "currency") ?? "USD",
-    summary: readOptionalString(formData, "summary"),
+    summary: readOptionalLongString(formData, "summary"),
   };
 
   const existingCandidate = email
@@ -308,7 +319,7 @@ export async function createCandidate(formData: FormData) {
     candidateId: candidate.id,
     organizationId: organization.id,
     resumeFileName: readOptionalString(formData, "resumeFileName"),
-    resumeText: readOptionalString(formData, "resumeText"),
+    resumeText: readOptionalLongString(formData, "resumeText"),
     skills: skillNames,
   });
 
@@ -362,7 +373,7 @@ export async function updateCandidateProfile(formData: FormData) {
       availability: readOptionalString(formData, "availability"),
       salaryExpectation: readNumber(formData, "salaryExpectation"),
       currency: readOptionalString(formData, "currency") ?? "USD",
-      summary: readOptionalString(formData, "summary"),
+      summary: readOptionalLongString(formData, "summary"),
     },
   });
 
@@ -623,7 +634,7 @@ export async function parseResumeUpload(formData: FormData) {
   const session = await requireRole(recruitingRoles);
   const organization = session.organization;
   const resumeFile = getFileFromFormData(formData, "resumeFile");
-  const pastedResumeText = readOptionalString(formData, "resumeText");
+  const pastedResumeText = readOptionalLongString(formData, "resumeText");
   const jobId = readOptionalString(formData, "jobId");
   const source = readEnum(CandidateSource, readString(formData, "source"), CandidateSource.MANUAL);
 
@@ -636,7 +647,7 @@ export async function parseResumeUpload(formData: FormData) {
   const isPdf = mimeType === "application/pdf" || fileName.toLowerCase().endsWith(".pdf");
   const isText = mimeType.startsWith("text/") || /\.(txt|md|csv)$/i.test(fileName);
 
-  if (resumeFile && resumeFile.size > 10 * 1024 * 1024) {
+  if (resumeFile && resumeFile.size > MAX_RESUME_FILE_SIZE_BYTES) {
     redirect("/candidates?resume=too-large");
   }
 
@@ -696,7 +707,7 @@ export async function attachCandidateResume(formData: FormData) {
   const organization = session.organization;
   const candidateId = readString(formData, "candidateId");
   const resumeFile = getFileFromFormData(formData, "resumeFile");
-  const pastedResumeText = readOptionalString(formData, "resumeText");
+  const pastedResumeText = readOptionalLongString(formData, "resumeText");
 
   if (!candidateId) {
     throw new Error("Candidate id is required.");
@@ -717,7 +728,7 @@ export async function attachCandidateResume(formData: FormData) {
     redirect(`/candidates/${candidate.id}?resume=missing`);
   }
 
-  if (resumeFile && resumeFile.size > 10 * 1024 * 1024) {
+  if (resumeFile && resumeFile.size > MAX_RESUME_FILE_SIZE_BYTES) {
     redirect(`/candidates/${candidate.id}?resume=too-large`);
   }
 
@@ -874,7 +885,7 @@ export async function addCandidateNote(formData: FormData) {
   const organization = session.organization;
   const candidateId = readString(formData, "candidateId");
   const applicationId = readOptionalString(formData, "applicationId");
-  const body = readString(formData, "body");
+  const body = readLongString(formData, "body");
   const visibility = readEnum(NoteVisibility, readString(formData, "visibility"), NoteVisibility.TEAM);
 
   if (!candidateId || !body) {

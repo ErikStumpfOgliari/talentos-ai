@@ -21,6 +21,8 @@ import {
   type ParsedResume,
 } from "@/lib/resume-parser";
 import { saveResumeFile } from "@/lib/resume-storage";
+import { MAX_RESUME_FILE_SIZE_BYTES } from "@/lib/resume-upload-limits";
+import { limitText } from "@/lib/text-limits";
 
 export type PublicApplicationResult =
   | {
@@ -47,6 +49,11 @@ function readString(formData: FormData, key: string) {
 
 function readOptionalString(formData: FormData, key: string) {
   const value = readString(formData, key);
+  return value.length > 0 ? value : null;
+}
+
+function readOptionalLongString(formData: FormData, key: string) {
+  const value = limitText(readString(formData, key));
   return value.length > 0 ? value : null;
 }
 
@@ -472,8 +479,8 @@ export async function submitPublicJobApplication({
   const submittedEmail = readString(formData, "email").toLowerCase();
   const submittedPhone = readOptionalString(formData, "phone");
   const resumeFile = getFileFromFormData(formData, "resumeFile");
-  const pastedResumeText = readOptionalString(formData, "resumeText");
-  const coverLetter = readOptionalString(formData, "coverLetter");
+  const pastedResumeText = readOptionalLongString(formData, "resumeText");
+  const coverLetter = readOptionalLongString(formData, "coverLetter");
   const submittedSkills = readLines(formData, "skills");
 
   if (!submittedName || !submittedEmail) {
@@ -490,7 +497,7 @@ export async function submitPublicJobApplication({
     };
   }
 
-  if (resumeFile && resumeFile.size > 10 * 1024 * 1024) {
+  if (resumeFile && resumeFile.size > MAX_RESUME_FILE_SIZE_BYTES) {
     return {
       error: "resume_too_large",
       ok: false,

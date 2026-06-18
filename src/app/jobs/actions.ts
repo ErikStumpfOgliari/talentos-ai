@@ -9,6 +9,7 @@ import {
 } from "@/generated/prisma/client";
 import { recruitingRoles, requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { limitText } from "@/lib/text-limits";
 
 function readString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -26,10 +27,14 @@ function readNumber(formData: FormData, key: string) {
 }
 
 function readLines(formData: FormData, key: string) {
-  return readString(formData, key)
+  return limitText(readString(formData, key))
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter(Boolean);
+}
+
+function readLongString(formData: FormData, key: string) {
+  return limitText(readString(formData, key));
 }
 
 function readEnum<T extends Record<string, string>>(enumObject: T, value: string, fallback: T[keyof T]) {
@@ -40,7 +45,7 @@ export async function createJob(formData: FormData) {
   const session = await requireRole(recruitingRoles);
   const organization = session.organization;
   const title = readString(formData, "title");
-  const description = readString(formData, "description");
+  const description = readLongString(formData, "description");
 
   if (!title || !description) {
     throw new Error("Title and description are required to create a job.");

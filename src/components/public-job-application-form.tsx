@@ -4,8 +4,8 @@ import { useRef, useState, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 import { AlertCircle, CheckCircle2, FileText, Loader2, Send, UploadCloud, X } from "lucide-react";
 import { submitCareersApplication } from "@/app/careers/[jobId]/actions";
-
-const maxResumeFileSizeBytes = 10 * 1024 * 1024;
+import { MAX_RESUME_FILE_SIZE_BYTES, RESUME_FILE_TOO_LARGE_MESSAGE } from "@/lib/resume-upload-limits";
+import { LONG_TEXT_LIMIT_HINT, TEXT_LIMITS } from "@/lib/text-limits";
 
 const inputClass =
   "h-11 w-full min-w-0 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400";
@@ -75,8 +75,8 @@ export function PublicJobApplicationForm({
 
     setFileName(file.name);
 
-    if (file.size > maxResumeFileSizeBytes) {
-      setFileError("Resume file must be 10 MB or smaller.");
+    if (file.size > MAX_RESUME_FILE_SIZE_BYTES) {
+      setFileError(RESUME_FILE_TOO_LARGE_MESSAGE);
       return;
     }
 
@@ -191,13 +191,25 @@ export function PublicJobApplicationForm({
           hint="Use this field for scanned PDFs, image-only resumes, or when file upload is not available on your device."
           label="Resume text"
         >
-          <textarea className={textareaClass} name="resumeText" placeholder="Paste resume text if you cannot upload a file." />
+          <textarea
+            className={textareaClass}
+            maxLength={TEXT_LIMITS.longText}
+            name="resumeText"
+            placeholder="Paste resume text if you cannot upload a file."
+          />
+          <span className="text-xs text-slate-500">{LONG_TEXT_LIMIT_HINT}</span>
         </Field>
       </section>
 
       <section className="grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
         <Field label="Note to hiring team">
-          <textarea className={textareaClass} name="coverLetter" placeholder="Share context, availability, or why this role fits." />
+          <textarea
+            className={textareaClass}
+            maxLength={TEXT_LIMITS.longText}
+            name="coverLetter"
+            placeholder="Share context, availability, or why this role fits."
+          />
+          <span className="text-xs text-slate-500">{LONG_TEXT_LIMIT_HINT}</span>
         </Field>
       </section>
 

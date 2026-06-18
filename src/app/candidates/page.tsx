@@ -18,6 +18,8 @@ import { ResumeParserForm } from "@/components/resume-parser-form";
 import { WorkspacePageShell } from "@/components/workspace-page-shell";
 import { recruitingRoles, requireRole } from "@/lib/auth";
 import { getCandidatesPageData, type CandidatesPageJob } from "@/lib/candidates-data";
+import { RESUME_FILE_UNDER_LIMIT_MESSAGE } from "@/lib/resume-upload-limits";
+import { LONG_TEXT_LIMIT_HINT, TEXT_LIMITS } from "@/lib/text-limits";
 
 export const dynamic = "force-dynamic";
 
@@ -87,10 +89,12 @@ function AddCandidateForm({ jobs }: { jobs: CandidatesPageJob[] }) {
         </select>
       </Field>
       <Field label="Summary">
-        <textarea className={textareaClass} name="summary" placeholder="Short recruiter-facing profile summary." />
+        <textarea className={textareaClass} maxLength={TEXT_LIMITS.longText} name="summary" placeholder="Short recruiter-facing profile summary." />
+        <span className="text-xs text-slate-500">{LONG_TEXT_LIMIT_HINT}</span>
       </Field>
       <Field label="Skills">
-        <textarea className={textareaClass} name="skills" placeholder={"CRM\nNegotiation\nCustomer service\nReporting"} />
+        <textarea className={textareaClass} maxLength={TEXT_LIMITS.longText} name="skills" placeholder={"CRM\nNegotiation\nCustomer service\nReporting"} />
+        <span className="text-xs text-slate-500">{LONG_TEXT_LIMIT_HINT}</span>
       </Field>
       <div className="grid gap-3">
         <Field label="Degree">
@@ -109,9 +113,11 @@ function AddCandidateForm({ jobs }: { jobs: CandidatesPageJob[] }) {
       <Field label="Resume text">
         <textarea
           className={textareaClass}
+          maxLength={TEXT_LIMITS.longText}
           name="resumeText"
           placeholder="Paste extracted resume text here for now. The resume upload parser can fill this automatically."
         />
+        <span className="text-xs text-slate-500">{LONG_TEXT_LIMIT_HINT}</span>
       </Field>
       <button
         className="mt-1 inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:scale-[1.03] hover:bg-slate-800 active:scale-[0.98]"
@@ -187,7 +193,7 @@ function getResumeMessage(status?: string) {
   if (status === "too-large") {
     return {
       tone: "border-rose-200 bg-rose-50 text-rose-800",
-      message: "Resume is too large. Upload a file under 10 MB.",
+      message: RESUME_FILE_UNDER_LIMIT_MESSAGE,
     };
   }
 

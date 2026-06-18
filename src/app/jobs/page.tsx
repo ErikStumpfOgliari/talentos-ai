@@ -16,6 +16,7 @@ import { archiveJob, createJob, updateJobStatus } from "@/app/jobs/actions";
 import { WorkspacePageShell } from "@/components/workspace-page-shell";
 import { recruitingRoles, requireRole } from "@/lib/auth";
 import { getJobsPageData, type JobsPageManager } from "@/lib/jobs-data";
+import { LONG_TEXT_LIMIT_HINT, TEXT_LIMITS } from "@/lib/text-limits";
 
 export const dynamic = "force-dynamic";
 
@@ -129,16 +130,25 @@ function CreateJobForm({ managers }: { managers: JobsPageManager[] }) {
       <Field label="Description">
         <textarea
           className={textareaClass}
+          maxLength={TEXT_LIMITS.longText}
           name="description"
           placeholder="Describe the role, seniority, team, and hiring goals."
           required
         />
+        <span className="text-xs text-slate-500">{LONG_TEXT_LIMIT_HINT}</span>
       </Field>
       <Field label="Requirements">
-        <textarea className={textareaClass} name="requirements" placeholder={"Customer service\nScheduling\nExcel"} />
+        <textarea className={textareaClass} maxLength={TEXT_LIMITS.longText} name="requirements" placeholder={"Customer service\nScheduling\nExcel"} />
+        <span className="text-xs text-slate-500">{LONG_TEXT_LIMIT_HINT}</span>
       </Field>
       <Field label="Responsibilities">
-        <textarea className={textareaClass} name="responsibilities" placeholder={"Coordinate daily workflows\nSupport hiring managers\nTrack operational KPIs"} />
+        <textarea
+          className={textareaClass}
+          maxLength={TEXT_LIMITS.longText}
+          name="responsibilities"
+          placeholder={"Coordinate daily workflows\nSupport hiring managers\nTrack operational KPIs"}
+        />
+        <span className="text-xs text-slate-500">{LONG_TEXT_LIMIT_HINT}</span>
       </Field>
       <button
         className="mt-1 inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:scale-[1.03] hover:bg-slate-800 active:scale-[0.98]"

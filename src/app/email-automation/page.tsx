@@ -22,6 +22,7 @@ import { WorkspacePanelTabs } from "@/components/workspace-panel-tabs";
 import { WorkspacePageShell } from "@/components/workspace-page-shell";
 import { automationRoles, requireRole } from "@/lib/auth";
 import { getEmailAutomationPageData } from "@/lib/email-automation-data";
+import { LONG_TEXT_LIMIT_HINT, TEXT_LIMITS } from "@/lib/text-limits";
 
 export const dynamic = "force-dynamic";
 
@@ -52,10 +53,12 @@ function CreateTemplateForm() {
       <Field label="Body">
         <textarea
           className={textareaClass}
+          maxLength={TEXT_LIMITS.longText}
           name="body"
           placeholder="Hi {{candidateName}}, your interview for {{jobTitle}} is scheduled for {{interviewTime}}."
           required
         />
+        <span className="text-xs text-slate-500">{LONG_TEXT_LIMIT_HINT}</span>
       </Field>
       <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
         <input className="h-4 w-4 rounded border-slate-300" defaultChecked name="active" type="checkbox" />

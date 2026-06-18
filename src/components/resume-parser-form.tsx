@@ -10,6 +10,7 @@ import {
   Sparkles,
   UploadCloud,
 } from "lucide-react";
+import { LONG_TEXT_LIMIT_HINT, TEXT_LIMITS } from "@/lib/text-limits";
 
 type JobOption = {
   id: string;
@@ -116,9 +117,11 @@ export function ResumeParserForm({ action, jobs }: ResumeParserFormProps) {
         <Field label="Optional text for scanned PDF">
           <textarea
             className={textareaClass}
+            maxLength={TEXT_LIMITS.longText}
             name="resumeText"
             placeholder="Paste the resume text only if the PDF is scanned, image-only, or the local reader cannot extract text."
           />
+          <span className="text-xs text-slate-500">{LONG_TEXT_LIMIT_HINT}</span>
         </Field>
 
         <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-600">

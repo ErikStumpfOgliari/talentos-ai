@@ -9,6 +9,7 @@ import {
 import { PublicJobApplicationForm } from "@/components/public-job-application-form";
 import { PublicSiteFooter, PublicSiteHeader } from "@/components/public-site-shell";
 import { getPublicJobApplicationData } from "@/lib/careers-data";
+import { RESUME_FILE_TOO_LARGE_MESSAGE } from "@/lib/resume-upload-limits";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +23,7 @@ function getErrorMessage(error?: string) {
   }
 
   if (error === "resume_too_large") {
-    return "Resume file must be 10 MB or smaller.";
+    return RESUME_FILE_TOO_LARGE_MESSAGE;
   }
 
   if (error === "job_unavailable") {

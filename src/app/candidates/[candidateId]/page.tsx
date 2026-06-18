@@ -31,6 +31,8 @@ import { DeleteCandidateForm } from "@/components/delete-candidate-form";
 import { WorkspacePageShell } from "@/components/workspace-page-shell";
 import { recruitingRoles, requireRole } from "@/lib/auth";
 import { getCandidateDetailData } from "@/lib/candidate-detail-data";
+import { RESUME_FILE_UNDER_LIMIT_MESSAGE } from "@/lib/resume-upload-limits";
+import { LONG_TEXT_LIMIT_HINT, TEXT_LIMITS } from "@/lib/text-limits";
 
 export const dynamic = "force-dynamic";
 
@@ -202,7 +204,7 @@ export default async function CandidateDetailPage({
               : query?.resume === "missing"
               ? "Attach a resume file or paste resume text before reprocessing."
               : query?.resume === "too-large"
-              ? "Resume is too large. Upload a file under 10 MB."
+              ? RESUME_FILE_UNDER_LIMIT_MESSAGE
               : query?.resume === "email-conflict"
               ? "Parsed email already belongs to another candidate."
               : query?.resume === "parse-failed"
@@ -558,10 +560,12 @@ export default async function CandidateDetailPage({
                   </Field>
                 </div>
                 <Field label="Summary">
-                  <textarea className={textareaClass} defaultValue={data.candidate.editable.summary} name="summary" />
+                  <textarea className={textareaClass} defaultValue={data.candidate.editable.summary} maxLength={TEXT_LIMITS.longText} name="summary" />
+                  <span className="text-xs text-slate-500">{LONG_TEXT_LIMIT_HINT}</span>
                 </Field>
                 <Field label="Skills">
-                  <textarea className={textareaClass} defaultValue={data.skills.join("\n")} name="skills" />
+                  <textarea className={textareaClass} defaultValue={data.skills.join("\n")} maxLength={TEXT_LIMITS.longText} name="skills" />
+                  <span className="text-xs text-slate-500">{LONG_TEXT_LIMIT_HINT}</span>
                 </Field>
                 <button
                   className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800"
@@ -615,7 +619,14 @@ export default async function CandidateDetailPage({
                   </select>
                 </Field>
                 <Field label="Note">
-                  <textarea className={textareaClass} name="body" placeholder="Add recruiter context, screening notes, or next steps." required />
+                  <textarea
+                    className={textareaClass}
+                    maxLength={TEXT_LIMITS.longText}
+                    name="body"
+                    placeholder="Add recruiter context, screening notes, or next steps."
+                    required
+                  />
+                  <span className="text-xs text-slate-500">{LONG_TEXT_LIMIT_HINT}</span>
                 </Field>
                 <button
                   className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800"

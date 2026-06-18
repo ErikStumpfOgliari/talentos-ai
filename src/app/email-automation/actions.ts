@@ -12,6 +12,7 @@ import {
 import { automationRoles, requireRole } from "@/lib/auth";
 import { deliverEmailMessage, queueTemplateEmail } from "@/lib/email-automation";
 import { prisma } from "@/lib/prisma";
+import { limitText } from "@/lib/text-limits";
 
 function readString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -21,6 +22,10 @@ function readString(formData: FormData, key: string) {
 function readOptionalString(formData: FormData, key: string) {
   const value = readString(formData, key);
   return value.length > 0 ? value : null;
+}
+
+function readLongString(formData: FormData, key: string) {
+  return limitText(readString(formData, key));
 }
 
 function readNumber(formData: FormData, key: string) {
@@ -44,7 +49,7 @@ export async function createEmailTemplate(formData: FormData) {
   const organization = session.organization;
   const name = readString(formData, "name");
   const subject = readString(formData, "subject");
-  const body = readString(formData, "body");
+  const body = readLongString(formData, "body");
 
   if (!name || !subject || !body) {
     throw new Error("Name, subject, and body are required.");

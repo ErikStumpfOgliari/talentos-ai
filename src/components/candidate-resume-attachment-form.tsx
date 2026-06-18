@@ -8,6 +8,7 @@ import {
   Sparkles,
   UploadCloud,
 } from "lucide-react";
+import { LONG_TEXT_LIMIT_HINT, TEXT_LIMITS } from "@/lib/text-limits";
 
 type CandidateResumeAttachmentFormProps = {
   action: (formData: FormData) => void | Promise<void>;
@@ -89,9 +90,11 @@ export function CandidateResumeAttachmentForm({
           <span className="text-xs font-semibold uppercase text-slate-500">Optional text for scanned PDF</span>
           <textarea
             className={textareaClass}
+            maxLength={TEXT_LIMITS.longText}
             name="resumeText"
             placeholder="Paste the resume text only if the PDF is scanned, image-only, or the local reader cannot extract text."
           />
+          <span className="text-xs text-slate-500">{LONG_TEXT_LIMIT_HINT}</span>
         </label>
 
         <button
