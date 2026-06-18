@@ -83,6 +83,8 @@ export const ENGLISH_TO_PORTUGUESE: Record<string, string> = {
   "Address line": "Endere\u00e7o",
   "AI recruiting for modern hiring teams.": "Recrutamento com IA para equipes modernas.",
   "AI recruiting CRM for every hiring team.": "CRM de recrutamento com IA para qualquer equipe de contrata\u00e7\u00e3o.",
+  "Meet Aptelys": "Conhe\u00e7a a Aptelys",
+  "Aptelys is an intelligent recruiting platform developed by Interellis to connect companies with the right talent more precisely.": "Aptelys \u00e9 uma plataforma de recrutamento inteligente desenvolvida pela Interellis para conectar empresas aos talentos certos com mais precis\u00e3o.",
   "Back to account": "Voltar para dados da conta",
   "Back to address": "Voltar para endere\u00e7o",
   "Back to login details": "Voltar para dados de login",

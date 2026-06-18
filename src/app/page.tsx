@@ -124,13 +124,13 @@ export default function LandingPage() {
         <div className="relative mx-auto grid max-w-7xl gap-8 px-4 pb-8 pt-28 md:pb-10 lg:min-h-[100svh] lg:grid-cols-[minmax(0,0.82fr)_minmax(360px,0.9fr)] lg:items-center lg:px-6 lg:pb-6 lg:pt-24">
           <div className="min-w-0">
             <p className="inline-flex rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-xs font-semibold text-emerald-200 sm:text-sm">
-              Aptelys by Interellis
+              Aptelys
             </p>
             <h1 className="mt-5 max-w-xl text-4xl font-semibold leading-[1.08] tracking-normal sm:text-5xl lg:text-[2.75rem] xl:text-[3rem]">
-              AI recruiting CRM for every hiring team.
+              Meet Aptelys
             </h1>
             <p className="mt-5 max-w-xl text-sm leading-6 text-slate-300 sm:text-base sm:leading-7">
-              Aptelys helps companies, agencies, and independent recruiters manage roles, resumes, interviews, and hiring analytics across any industry.
+              Aptelys is an intelligent recruiting platform developed by Interellis to connect companies with the right talent more precisely.
             </p>
 
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">

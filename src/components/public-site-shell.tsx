@@ -45,13 +45,12 @@ export function PublicSiteHeader({ className = "", floating = false, variant = "
   return (
     <header className={headerClass}>
       <div className={`mx-auto flex max-w-full items-center justify-between gap-3 px-3 py-2.5 lg:px-4 ${headerShellClass}`}>
-        <Link className="flex min-w-0 items-center gap-3" href="/">
-          <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${isDark ? "bg-white text-slate-950" : "bg-slate-950 text-white"}`}>
-            <InterellisMark className="h-5 w-5" />
+        <Link className="flex min-w-0 items-center gap-2.5" href="/">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center">
+            <InterellisMark className="h-9 w-9 drop-shadow-[0_10px_22px_rgba(37,99,235,0.35)]" />
           </div>
           <div className="min-w-0">
             <p className={`truncate text-sm font-semibold ${isDark ? "text-white" : "text-slate-950"}`}>Aptelys</p>
-            <p className={`truncate text-xs ${isDark ? "text-slate-300" : "text-slate-500"}`}>by Interellis</p>
           </div>
         </Link>
 
