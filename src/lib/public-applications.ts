@@ -346,7 +346,7 @@ async function createResumeSnapshot({
   return prisma.resumeDocument.create({
     data: {
       candidateId,
-      fileKey: fileKey ?? `public/${candidateId}/${normalizeFileName(fileName)}`,
+      fileKey: fileKey ?? (rawText ? `public/${candidateId}/${normalizeFileName(fileName)}` : null),
       fileName,
       fileUrl,
       mimeType,
@@ -482,6 +482,10 @@ export async function submitPublicJobApplication({
   const pastedResumeText = readOptionalLongString(formData, "resumeText");
   const coverLetter = readOptionalLongString(formData, "coverLetter");
   const submittedSkills = readLines(formData, "skills");
+  const submittedResumeFileName = readOptionalString(formData, "resumeFileName");
+  const submittedResumeSizeBytes = readNumber(formData, "resumeFileSizeBytes");
+  const resumeUploadMode = readOptionalString(formData, "resumeUploadMode");
+  const isDeferredLargeFile = resumeUploadMode === "deferred_large_file" && Boolean(submittedResumeFileName) && !resumeFile;
 
   if (!submittedName || !submittedEmail) {
     return {
@@ -490,7 +494,7 @@ export async function submitPublicJobApplication({
     };
   }
 
-  if (!resumeFile && !pastedResumeText) {
+  if (!resumeFile && !pastedResumeText && !submittedResumeFileName) {
     return {
       error: "missing_resume",
       ok: false,
@@ -504,12 +508,12 @@ export async function submitPublicJobApplication({
     };
   }
 
-  const fileName = resumeFile?.name ?? "pasted-resume.txt";
+  const fileName = resumeFile?.name ?? submittedResumeFileName ?? "pasted-resume.txt";
   const mimeType = inferMimeType(fileName, resumeFile?.type ?? "");
   const isTextFile = mimeType.startsWith("text/") || /\.(txt|md|csv)$/i.test(fileName);
   const resumeBytes = resumeFile ? Buffer.from(await resumeFile.arrayBuffer()) : null;
   const rawText = pastedResumeText ?? (resumeBytes && isTextFile ? resumeBytes.toString("utf8") : null);
-  const { parsed, parsedData, parserStatus } = await parsePublicResume({
+  const { parsed, parserStatus, ...parseResult } = await parsePublicResume({
     coverLetter,
     email: submittedEmail,
     fileName,
@@ -520,6 +524,17 @@ export async function submitPublicJobApplication({
     resumeBytes,
     skills: submittedSkills,
   });
+  let parsedData = parseResult.parsedData;
+
+  if (isDeferredLargeFile && !rawText) {
+    parsedData = {
+      fileName,
+      message:
+        "Large resume file recorded for recruiter review. The candidate should paste resume text or send a smaller readable attachment if structured parsing is required.",
+      sizeBytes: submittedResumeSizeBytes,
+      source: "public-application-deferred-large-file",
+    } satisfies Prisma.InputJsonValue;
+  }
   const existingCandidate = await prisma.candidate.findUnique({
     where: {
       organizationId_email: {
@@ -558,13 +573,14 @@ export async function submitPublicJobApplication({
   await syncCandidateSkills(organization.id, candidate.id, unique([...parsed.skills, ...submittedSkills]));
   await createParsedProfileDetails(candidate.id, parsed, Boolean(existingCandidate));
 
+  const shouldSaveResumeFile = Boolean(resumeBytes || (!isDeferredLargeFile && rawText));
   const storedFile =
-    resumeBytes || rawText
+    shouldSaveResumeFile
       ? await saveResumeFile({
           bytes: resumeBytes ?? Buffer.from(rawText ?? "", "utf8"),
           candidateId: candidate.id,
           fileName,
-          mimeType,
+          mimeType: resumeBytes ? mimeType : "text/plain",
           organizationId: organization.id,
         })
       : null;
@@ -580,7 +596,7 @@ export async function submitPublicJobApplication({
     parsedData,
     parserStatus,
     rawText,
-    sizeBytes: storedFile?.sizeBytes ?? (rawText ? Buffer.byteLength(rawText, "utf8") : null),
+    sizeBytes: storedFile?.sizeBytes ?? (rawText ? Buffer.byteLength(rawText, "utf8") : submittedResumeSizeBytes),
   });
   const existingApplication = await prisma.application.findUnique({
     where: {
@@ -680,6 +696,7 @@ export async function submitPublicJobApplication({
         matchScore: match.score,
         parserStatus,
         resumeId: resume.id,
+        resumeUploadMode,
         source: "careers_page",
         updatedExistingApplication: Boolean(existingApplication),
       },

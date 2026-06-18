@@ -4,7 +4,12 @@ import { useRef, useState, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 import { AlertCircle, CheckCircle2, FileText, Loader2, Send, UploadCloud, X } from "lucide-react";
 import { submitCareersApplication } from "@/app/careers/[jobId]/actions";
-import { MAX_RESUME_FILE_SIZE_BYTES, RESUME_FILE_TOO_LARGE_MESSAGE } from "@/lib/resume-upload-limits";
+import {
+  MAX_RESUME_FILE_SIZE_BYTES,
+  RESUME_FILE_DEFERRED_MESSAGE,
+  RESUME_FILE_TOO_LARGE_MESSAGE,
+  SERVER_ACTION_SAFE_RESUME_FILE_SIZE_BYTES,
+} from "@/lib/resume-upload-limits";
 import { LONG_TEXT_LIMIT_HINT, TEXT_LIMITS } from "@/lib/text-limits";
 
 const inputClass =
@@ -55,7 +60,9 @@ export function PublicJobApplicationForm({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [fileName, setFileName] = useState("");
   const [fileError, setFileError] = useState("");
+  const [fileSizeBytes, setFileSizeBytes] = useState(0);
   const hasSelectedFile = fileName.length > 0;
+  const shouldDeferFileUpload = fileSizeBytes > SERVER_ACTION_SAFE_RESUME_FILE_SIZE_BYTES && fileSizeBytes <= MAX_RESUME_FILE_SIZE_BYTES;
 
   function clearSelectedFile() {
     if (fileInputRef.current) {
@@ -64,16 +71,19 @@ export function PublicJobApplicationForm({
 
     setFileName("");
     setFileError("");
+    setFileSizeBytes(0);
   }
 
   function handleFileChange(file: File | undefined) {
     if (!file) {
       setFileName("");
       setFileError("");
+      setFileSizeBytes(0);
       return;
     }
 
     setFileName(file.name);
+    setFileSizeBytes(file.size);
 
     if (file.size > MAX_RESUME_FILE_SIZE_BYTES) {
       setFileError(RESUME_FILE_TOO_LARGE_MESSAGE);
@@ -83,9 +93,18 @@ export function PublicJobApplicationForm({
     setFileError("");
   }
 
+  function handleSubmit() {
+    if (shouldDeferFileUpload && fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }
+
   return (
-    <form action={submitCareersApplication} className="grid gap-4" data-public-application-form>
+    <form action={submitCareersApplication} className="grid gap-4" data-public-application-form onSubmit={handleSubmit}>
       <input name="jobId" type="hidden" value={jobId} />
+      <input name="resumeFileName" type="hidden" value={fileName} />
+      <input name="resumeFileSizeBytes" type="hidden" value={fileSizeBytes ? String(fileSizeBytes) : ""} />
+      <input name="resumeUploadMode" type="hidden" value={shouldDeferFileUpload ? "deferred_large_file" : "attached"} />
 
       {errorMessage ? (
         <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800" role="alert">
@@ -183,6 +202,12 @@ export function PublicJobApplicationForm({
           {fileError ? (
             <p className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold leading-5 text-rose-800">
               {fileError}
+            </p>
+          ) : null}
+
+          {shouldDeferFileUpload && !fileError ? (
+            <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold leading-5 text-amber-800">
+              {RESUME_FILE_DEFERRED_MESSAGE}
             </p>
           ) : null}
         </div>

@@ -31,7 +31,7 @@ function getErrorMessage(error?: string) {
   }
 
   if (error === "submit_failed") {
-    return "We could not submit this application. Try again with a smaller PDF or paste your resume text.";
+    return "We could not submit this application. Try again or paste your resume text.";
   }
 
   return null;
