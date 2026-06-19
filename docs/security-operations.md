@@ -24,6 +24,7 @@ Use this checklist after code-level hardening is deployed.
 - Prefer S3-compatible private storage for production resumes.
 - Use signed upload URLs for large files and keep buckets private.
 - Do not expose raw bucket URLs unless the object is intentionally public.
+- Follow `docs/resume-storage-setup.md` and run `npm run storage:check` after configuring storage variables.
 - Add malware scanning before enterprise/customer production use.
 
 ## DNS And Email

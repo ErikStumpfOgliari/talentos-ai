@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "eslint",
     "smoke": "tsx scripts/smoke.ts",
+    "storage:check": "tsx scripts/check-resume-storage.ts",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
