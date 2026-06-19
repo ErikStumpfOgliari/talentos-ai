@@ -12,6 +12,10 @@ import {
   PENDING_SIGNUP_MAX_AGE_SECONDS,
 } from "@/lib/pending-signup";
 import { prisma } from "@/lib/prisma";
+import {
+  checkSecurityRateLimit,
+  isSecurityRateLimitError,
+} from "@/lib/security-rate-limit";
 
 function readString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -38,6 +42,26 @@ export async function createWorkspaceSignup(formData: FormData) {
   const region = readString(formData, "region");
   const postalCode = readString(formData, "postalCode");
   const country = readString(formData, "country");
+
+  try {
+    await checkSecurityRateLimit({
+      action: "auth.signup.submit",
+      identityParts: [email || "missing-email", organizationName || "missing-organization"],
+      limit: 6,
+      metadata: {
+        countryPresent: Boolean(country),
+        emailPresent: Boolean(email),
+        organizationPresent: Boolean(organizationName),
+      },
+      windowSeconds: 60 * 60,
+    });
+  } catch (error) {
+    if (isSecurityRateLimitError(error)) {
+      redirectWithError("rate_limited");
+    }
+
+    throw error;
+  }
 
   if (!name || !email || !phone || !password || !organizationName || !addressLine1 || !city || !region || !postalCode || !country) {
     redirectWithError("missing");

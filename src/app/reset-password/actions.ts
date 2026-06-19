@@ -9,6 +9,10 @@ import {
   hashPasswordResetToken,
 } from "@/lib/password-reset";
 import { prisma } from "@/lib/prisma";
+import {
+  checkSecurityRateLimit,
+  isSecurityRateLimitError,
+} from "@/lib/security-rate-limit";
 
 function readString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -39,6 +43,24 @@ export async function resetPassword(formData: FormData) {
 
   if (!token) {
     redirect("/reset-password?error=invalid");
+  }
+
+  try {
+    await checkSecurityRateLimit({
+      action: "password_recovery.reset",
+      identityParts: [token],
+      limit: 10,
+      metadata: {
+        tokenPresent: true,
+      },
+      windowSeconds: 60 * 60,
+    });
+  } catch (error) {
+    if (isSecurityRateLimitError(error)) {
+      redirect(getResetPath(token, "rate_limited"));
+    }
+
+    throw error;
   }
 
   if (password.length < 8) {

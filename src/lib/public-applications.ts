@@ -26,6 +26,10 @@ import {
   saveResumeFile,
 } from "@/lib/resume-storage";
 import { DIRECT_STORAGE_RESUME_PARSE_FILE_SIZE_BYTES, MAX_RESUME_FILE_SIZE_BYTES } from "@/lib/resume-upload-limits";
+import {
+  checkSecurityRateLimit,
+  isSecurityRateLimitError,
+} from "@/lib/security-rate-limit";
 import { limitText } from "@/lib/text-limits";
 
 export type PublicApplicationResult =
@@ -34,6 +38,7 @@ export type PublicApplicationResult =
         | "job_unavailable"
         | "missing_candidate"
         | "missing_resume"
+        | "rate_limited"
         | "resume_too_large";
       ok: false;
     }
@@ -501,6 +506,39 @@ export async function submitPublicJobApplication({
   const submittedDirectResumeFileKey = readOptionalString(formData, "directResumeFileKey");
   const submittedDirectResumeMimeType = readOptionalString(formData, "directResumeMimeType");
   const isDeferredLargeFile = resumeUploadMode === "deferred_large_file" && Boolean(submittedResumeFileName) && !resumeFile;
+
+  try {
+    await checkSecurityRateLimit({
+      action: "public_application.submit_ip",
+      identityParts: [jobId],
+      limit: 40,
+      metadata: {
+        jobId,
+      },
+      organizationId: organization.id,
+      windowSeconds: 60 * 60,
+    });
+    await checkSecurityRateLimit({
+      action: "public_application.submit_identity",
+      identityParts: [jobId, submittedEmail || "missing-email"],
+      limit: 8,
+      metadata: {
+        emailPresent: Boolean(submittedEmail),
+        jobId,
+      },
+      organizationId: organization.id,
+      windowSeconds: 60 * 60,
+    });
+  } catch (error) {
+    if (isSecurityRateLimitError(error)) {
+      return {
+        error: "rate_limited",
+        ok: false,
+      };
+    }
+
+    throw error;
+  }
 
   if (!submittedName || !submittedEmail) {
     return {

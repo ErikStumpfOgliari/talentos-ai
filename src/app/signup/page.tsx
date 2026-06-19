@@ -23,6 +23,10 @@ function getErrorMessage(error?: string) {
     return "Fill every required field to create your workspace.";
   }
 
+  if (error === "rate_limited") {
+    return "Too many workspace creation attempts from this device. Wait a few minutes and try again.";
+  }
+
   return null;
 }
 

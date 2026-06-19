@@ -11,6 +11,10 @@ import { createEmailVerificationChallenge } from "@/lib/auth-verification";
 import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "@/lib/passwords";
 import { setPendingAuthCookie } from "@/lib/pending-auth";
+import {
+  checkSecurityRateLimit,
+  isSecurityRateLimitError,
+} from "@/lib/security-rate-limit";
 
 const MAX_FAILED_LOGIN_ATTEMPTS = 5;
 
@@ -161,10 +165,32 @@ async function redirectBlocked(next: string, email: string): Promise<never> {
   redirect(`/forgot-password?reason=attempts&email=${encodeURIComponent(email)}&next=${encodeURIComponent(next)}`);
 }
 
+function redirectRateLimited(next: string): never {
+  redirect(`/login?error=rate_limited&next=${encodeURIComponent(next)}`);
+}
+
 export async function login(formData: FormData) {
   const email = normalizeEmail(readString(formData, "email"));
   const password = readString(formData, "password");
   const next = getSafeNext(readString(formData, "next"));
+
+  try {
+    await checkSecurityRateLimit({
+      action: "auth.login.submit",
+      identityParts: [email || "missing-email"],
+      limit: 20,
+      metadata: {
+        emailPresent: Boolean(email),
+      },
+      windowSeconds: 15 * 60,
+    });
+  } catch (error) {
+    if (isSecurityRateLimitError(error)) {
+      redirectRateLimited(next);
+    }
+
+    throw error;
+  }
 
   if (!email || !password) {
     return redirectInvalid(next, email);

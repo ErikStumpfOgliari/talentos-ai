@@ -13,10 +13,15 @@ import { verifyEmailCode } from "@/lib/auth-verification";
 import { clearPendingAuthCookie, getPendingAuth } from "@/lib/pending-auth";
 import {
   clearPendingSignupCookie,
+  getPendingSignup,
   verifyPendingSignupCode,
   type PendingSignupPayload,
 } from "@/lib/pending-signup";
 import { prisma } from "@/lib/prisma";
+import {
+  checkSecurityRateLimit,
+  isSecurityRateLimitError,
+} from "@/lib/security-rate-limit";
 
 function readString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -187,6 +192,26 @@ export async function completeLoginVerification(formData: FormData) {
 
   const nextPath = getSafeNext(pendingAuth.nextPath);
   const code = readString(formData, "code");
+
+  try {
+    await checkSecurityRateLimit({
+      action: "auth.verification.login",
+      identityParts: [pendingAuth.userId, pendingAuth.verificationChallengeId],
+      limit: 12,
+      metadata: {
+        mode: "login",
+      },
+      organizationId: pendingAuth.organizationId,
+      windowSeconds: 10 * 60,
+    });
+  } catch (error) {
+    if (isSecurityRateLimitError(error)) {
+      redirect(getVerificationPath(nextPath, "rate_limited"));
+    }
+
+    throw error;
+  }
+
   const verification = await verifyEmailCode({
     challengeId: pendingAuth.verificationChallengeId ?? "",
     code,
@@ -223,6 +248,31 @@ export async function completeLoginVerification(formData: FormData) {
 export async function completeSignupVerification(formData: FormData) {
   const nextPath = getSafeNext(readString(formData, "next"));
   const code = readString(formData, "code");
+
+  const pendingSignup = await getPendingSignup();
+
+  if (!pendingSignup) {
+    redirect(getVerificationPath(nextPath, "expired"));
+  }
+
+  try {
+    await checkSecurityRateLimit({
+      action: "auth.verification.signup",
+      identityParts: [pendingSignup.email, pendingSignup.organizationName],
+      limit: 12,
+      metadata: {
+        mode: "signup",
+      },
+      windowSeconds: 10 * 60,
+    });
+  } catch (error) {
+    if (isSecurityRateLimitError(error)) {
+      redirect(getVerificationPath(nextPath, "rate_limited"));
+    }
+
+    throw error;
+  }
+
   const verification = await verifyPendingSignupCode(code);
 
   if (!verification.ok) {

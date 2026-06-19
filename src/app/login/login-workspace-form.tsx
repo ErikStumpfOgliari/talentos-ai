@@ -132,6 +132,12 @@ export function LoginWorkspaceForm({
         </div>
       ) : null}
 
+      {error === "rate_limited" ? (
+        <div className="mt-5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900">
+          Too many sign-in attempts from this device. Wait a few minutes and try again.
+        </div>
+      ) : null}
+
       {reset === "success" ? (
         <div className="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-900">
           Password updated. Sign in with your new password.

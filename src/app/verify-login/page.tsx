@@ -55,6 +55,10 @@ function getErrorMessage(error?: string) {
     return "Too many incorrect attempts. Start the sign-in again to receive a new code.";
   }
 
+  if (error === "rate_limited") {
+    return "Too many verification attempts from this device. Wait a few minutes and try again.";
+  }
+
   return null;
 }
 

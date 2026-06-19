@@ -11,6 +11,10 @@ import {
   PASSWORD_RESET_MAX_AGE_MINUTES,
 } from "@/lib/password-reset";
 import { prisma } from "@/lib/prisma";
+import {
+  checkSecurityRateLimit,
+  isSecurityRateLimitError,
+} from "@/lib/security-rate-limit";
 
 function readString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -39,6 +43,24 @@ export async function requestPasswordRecovery(formData: FormData) {
 
   if (!email) {
     redirect("/forgot-password?error=missing");
+  }
+
+  try {
+    await checkSecurityRateLimit({
+      action: "password_recovery.request",
+      identityParts: [email],
+      limit: 5,
+      metadata: {
+        emailPresent: true,
+      },
+      windowSeconds: 60 * 60,
+    });
+  } catch (error) {
+    if (isSecurityRateLimitError(error)) {
+      redirect(`/forgot-password?error=rate_limited&email=${encodeURIComponent(email)}`);
+    }
+
+    throw error;
   }
 
   const user = await prisma.user.findUnique({

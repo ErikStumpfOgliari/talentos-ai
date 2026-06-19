@@ -1,9 +1,12 @@
-import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { createSignedPublicResumeUploadTarget } from "@/lib/resume-storage";
 import { MAX_RESUME_FILE_SIZE_BYTES, RESUME_FILE_TOO_LARGE_MESSAGE } from "@/lib/resume-upload-limits";
+import {
+  checkSecurityRateLimitForRequest,
+  isSecurityRateLimitError,
+} from "@/lib/security-rate-limit";
 
 export const runtime = "nodejs";
 
@@ -64,14 +67,6 @@ function requestHasAllowedOrigin(request: Request) {
   return true;
 }
 
-function getClientIpHash(request: Request) {
-  const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-  const realIp = request.headers.get("x-real-ip")?.trim();
-  const ip = forwardedFor || realIp || "unknown";
-
-  return createHash("sha256").update(ip).digest("hex");
-}
-
 export async function POST(request: Request) {
   if (!requestHasAllowedOrigin(request)) {
     return NextResponse.json({ error: "Forbidden upload origin." }, { status: 403 });
@@ -109,22 +104,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "This job is not accepting applications." }, { status: 404 });
   }
 
-  const ipHash = getClientIpHash(request);
-  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-  const recentUploadRequests = await prisma.auditEvent.count({
-    where: {
+  try {
+    await checkSecurityRateLimitForRequest(request, {
       action: "public_resume_upload.signed",
-      entityId: ipHash,
-      entityType: "public_resume_upload_ip",
-      organizationId: job.organizationId,
-      createdAt: {
-        gte: oneHourAgo,
+      identityParts: [input.jobId],
+      limit: SIGNED_UPLOAD_MAX_REQUESTS_PER_HOUR,
+      metadata: {
+        fileName: input.fileName,
+        sizeBytes: input.sizeBytes,
       },
-    },
-  });
+      organizationId: job.organizationId,
+      windowSeconds: 60 * 60,
+    });
+  } catch (error) {
+    if (isSecurityRateLimitError(error)) {
+      return NextResponse.json({ error: "Too many resume upload requests. Try again later." }, { status: 429 });
+    }
 
-  if (recentUploadRequests >= SIGNED_UPLOAD_MAX_REQUESTS_PER_HOUR) {
-    return NextResponse.json({ error: "Too many resume upload requests. Try again later." }, { status: 429 });
+    throw error;
   }
 
   const target = await createSignedPublicResumeUploadTarget({
@@ -142,19 +139,6 @@ export async function POST(request: Request) {
       { status: 503 },
     );
   }
-
-  await prisma.auditEvent.create({
-    data: {
-      action: "public_resume_upload.signed",
-      entityId: ipHash,
-      entityType: "public_resume_upload_ip",
-      metadata: {
-        fileName: input.fileName,
-        sizeBytes: input.sizeBytes,
-      },
-      organizationId: job.organizationId,
-    },
-  });
 
   return NextResponse.json({
     ...target,

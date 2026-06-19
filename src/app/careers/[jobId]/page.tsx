@@ -34,6 +34,10 @@ function getErrorMessage(error?: string) {
     return "We could not submit this application. Try again or paste your resume text.";
   }
 
+  if (error === "rate_limited") {
+    return "Too many application attempts from this device. Wait a few minutes and try again.";
+  }
+
   return null;
 }
 

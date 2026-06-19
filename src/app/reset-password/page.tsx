@@ -46,6 +46,10 @@ function getErrorMessage(error?: string) {
     return "Open the secure link from your recovery email to reset your password.";
   }
 
+  if (error === "rate_limited") {
+    return "Too many reset attempts from this device. Wait a few minutes and open the recovery link again.";
+  }
+
   return null;
 }
 

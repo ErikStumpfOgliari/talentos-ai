@@ -97,6 +97,12 @@ export default async function ForgotPasswordPage({
                 </div>
               ) : null}
 
+              {params?.error === "rate_limited" ? (
+                <div className="mt-5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900">
+                  Too many recovery requests from this device. Wait a few minutes and try again.
+                </div>
+              ) : null}
+
               {requested ? (
                 <div className="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-900">
                   If this email belongs to an Aptelys workspace, recovery instructions will be sent or routed to the workspace owner.
