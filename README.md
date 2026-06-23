@@ -216,6 +216,12 @@ npm run lint
 npm run build
 ```
 
+Apply Supabase RLS hardening after database changes:
+
+```bash
+npm run db:rls
+```
+
 Run the local smoke test against the dev server:
 
 ```bash
@@ -252,6 +258,7 @@ Before deploying a portfolio demo:
 - Configure `RESEND_WEBHOOK_SECRET` and the `/api/webhooks/resend` endpoint.
 - Configure Google OAuth client credentials and callback URL.
 - Configure S3-compatible resume storage for persistent production uploads, then run `npm run storage:check`.
+- Run `npm run db:rls` so Supabase Advisor does not expose public tables without Row Level Security.
 - Run `npm run lint`, `npm run build`, and a smoke check against the deployed URL with `SMOKE_APP_URL`.
 - Confirm `/admin` shows the expected readiness and integration statuses.
 

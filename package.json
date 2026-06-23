@@ -12,6 +12,7 @@
     "storage:check": "tsx scripts/check-resume-storage.ts",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
+    "db:rls": "prisma db execute --file prisma/rls-hardening.sql",
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio"

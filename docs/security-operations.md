@@ -9,7 +9,8 @@ Use this checklist after code-level hardening is deployed.
 - Enable point-in-time recovery or scheduled backups for production data.
 - Rotate the database password after sharing access, changing vendors, or exposing local `.env` files.
 - Keep public API keys out of the app unless Supabase client-side access is intentionally introduced.
-- If client-side Supabase is introduced later, enable Row Level Security before shipping any browser database calls.
+- Keep Row Level Security enabled on all tables in the exposed `public` schema. Run `npm run db:rls` after new tables are added.
+- If client-side Supabase is introduced later, add explicit tenant-scoped policies before shipping any browser database calls.
 
 ## Vercel
 
