@@ -166,7 +166,25 @@ export function getPublicApplicationStatusPath(publicToken: string) {
   return `/careers/applications/${publicToken}`;
 }
 
-function getPublicApplicationBaseUrl() {
+function normalizeBaseUrl(value: string | null | undefined) {
+  const configuredUrl = value?.trim();
+
+  if (!configuredUrl) {
+    return null;
+  }
+
+  const normalizedUrl = /^https?:\/\//i.test(configuredUrl) ? configuredUrl : `https://${configuredUrl}`;
+
+  return normalizedUrl.replace(/\/+$/, "");
+}
+
+function getPublicApplicationBaseUrl(requestBaseUrl?: string | null) {
+  const requestUrl = normalizeBaseUrl(requestBaseUrl);
+
+  if (requestUrl) {
+    return requestUrl;
+  }
+
   const configuredUrl =
     process.env.NEXT_PUBLIC_APP_URL?.trim() ||
     process.env.APP_URL?.trim() ||
@@ -176,13 +194,11 @@ function getPublicApplicationBaseUrl() {
     return "http://127.0.0.1:3000";
   }
 
-  const normalizedUrl = /^https?:\/\//i.test(configuredUrl) ? configuredUrl : `https://${configuredUrl}`;
-
-  return normalizedUrl.replace(/\/+$/, "");
+  return normalizeBaseUrl(configuredUrl) ?? "http://127.0.0.1:3000";
 }
 
-export function getPublicApplicationStatusUrl(publicToken: string) {
-  return `${getPublicApplicationBaseUrl()}${getPublicApplicationStatusPath(publicToken)}`;
+export function getPublicApplicationStatusUrl(publicToken: string, requestBaseUrl?: string | null) {
+  return `${getPublicApplicationBaseUrl(requestBaseUrl)}${getPublicApplicationStatusPath(publicToken)}`;
 }
 
 async function syncCandidateSkills(organizationId: string, candidateId: string, skillNames: string[]) {
@@ -422,10 +438,12 @@ async function sendApplicationReceivedEmail({
   applicationId,
   organizationId,
   publicToken,
+  requestBaseUrl,
 }: {
   applicationId: string;
   organizationId: string;
   publicToken: string;
+  requestBaseUrl?: string | null;
 }) {
   const application = await prisma.application.findFirst({
     where: {
@@ -443,7 +461,7 @@ async function sendApplicationReceivedEmail({
     return null;
   }
 
-  const statusUrl = getPublicApplicationStatusUrl(publicToken);
+  const statusUrl = getPublicApplicationStatusUrl(publicToken, requestBaseUrl);
   const message = await prisma.emailMessage.create({
     data: {
       applicationId: application.id,
@@ -518,9 +536,11 @@ async function runPublicApplicationSideEffect({
 export async function submitPublicJobApplication({
   formData,
   jobId,
+  requestBaseUrl,
 }: {
   formData: FormData;
   jobId: string;
+  requestBaseUrl?: string | null;
 }): Promise<PublicApplicationResult> {
   const job = await prisma.job.findFirst({
     where: {
@@ -977,6 +997,7 @@ export async function submitPublicJobApplication({
         applicationId: application.id,
         organizationId: organization.id,
         publicToken: applicationToken,
+        requestBaseUrl,
       }),
     organizationId: organization.id,
   });
