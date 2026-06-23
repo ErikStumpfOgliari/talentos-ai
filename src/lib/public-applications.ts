@@ -14,13 +14,13 @@ import { deliverEmailMessage, queueAutomationEmails } from "@/lib/email-automati
 import { prisma } from "@/lib/prisma";
 import {
   canUseOpenAIResumeParser,
-  extractTextFromPdfBuffer,
   hasUsefulLocalResumeParse,
   parseResumeLocally,
   parseResumeWithOpenAI,
   type ParsedResume,
 } from "@/lib/resume-parser";
 import {
+  getResumeStorageStatus,
   isPublicDirectResumeFileKeyForOrganization,
   readResumeFile,
   saveResumeFile,
@@ -278,15 +278,6 @@ async function parsePublicResume({
   let parsed: ParsedResume | null = null;
   let parsedData: Prisma.InputJsonValue | null = null;
   let parserStatus: ParserStatus = ParserStatus.NEEDS_REVIEW;
-  let localExtractionError: string | null = null;
-
-  if (resumeBytes && isPdf && !rawText) {
-    try {
-      rawText = await extractTextFromPdfBuffer(resumeBytes);
-    } catch (error) {
-      localExtractionError = error instanceof Error ? error.message : "Local PDF text extraction failed.";
-    }
-  }
 
   try {
     if (canUseOpenAIResumeParser() && resumeBytes && isPdf) {
@@ -320,7 +311,6 @@ async function parsePublicResume({
     parsedData = {
       ...parsed,
       source: canUseOpenAIResumeParser() ? "public-local-fallback-after-ai-failure" : "public-smart-local-parser",
-      ...(localExtractionError ? { localExtractionError } : {}),
     };
     parserStatus = hasUsefulLocalResumeParse(parsed)
       ? ParserStatus.PARSED
@@ -341,7 +331,10 @@ async function parsePublicResume({
     parsedData =
       parsedData ??
       ({
-        message: "Resume stored and waiting for recruiter review.",
+        message:
+          isPdf && !rawText
+            ? "PDF resume received for recruiter review. Public submissions skip local PDF extraction to keep mobile applications reliable."
+            : "Resume received and waiting for recruiter review.",
         source: "public-application-fallback",
       } satisfies Prisma.InputJsonValue);
   }
@@ -766,24 +759,43 @@ export async function submitPublicJobApplication({
   let fileStorageError: string | null = null;
 
   if (uploadedResumeBytes) {
-    try {
-      storedFile = await saveResumeFile({
-        bytes: uploadedResumeBytes,
-        candidateId: candidate.id,
-        fileName,
-        mimeType,
-        organizationId: organization.id,
-      });
-    } catch (error) {
-      fileStorageError = getErrorMessage(error, "Resume file storage failed.");
-      console.error("Public application resume storage failed", error);
+    const resumeStorageStatus = getResumeStorageStatus();
+
+    if (!resumeStorageStatus.configured) {
+      fileStorageError = resumeStorageStatus.detail;
       parsedData = mergeParsedDataMessage(parsedData, {
         fileStorageError,
         fileStorageMessage:
-          "The application was received, but the uploaded resume file could not be persisted. Recruiters should review extracted or pasted resume text.",
-        source: "public-application-storage-fallback",
+          "The application was received, but production resume storage is not configured. Recruiters should review extracted or pasted resume text.",
+        source: "public-application-storage-not-configured",
       });
+    } else {
+      try {
+        storedFile = await saveResumeFile({
+          bytes: uploadedResumeBytes,
+          candidateId: candidate.id,
+          fileName,
+          mimeType,
+          organizationId: organization.id,
+        });
+      } catch (error) {
+        fileStorageError = getErrorMessage(error, "Resume file storage failed.");
+        console.error("Public application resume storage failed", error);
+        parsedData = mergeParsedDataMessage(parsedData, {
+          fileStorageError,
+          fileStorageMessage:
+            "The application was received, but the uploaded resume file could not be persisted. Recruiters should review extracted or pasted resume text.",
+          source: "public-application-storage-fallback",
+        });
+      }
     }
+  } else if (isDeferredLargeFile && submittedResumeSizeBytes !== null && !hasDirectResume) {
+    parsedData = mergeParsedDataMessage(parsedData, {
+      fileStorageMessage:
+        "The candidate selected a large PDF, but secure direct upload was unavailable. Ask for the resume file again or request pasted resume text.",
+      sizeBytes: submittedResumeSizeBytes,
+      source: "public-application-deferred-without-storage",
+    });
   }
 
   const resume = await createResumeSnapshot({
