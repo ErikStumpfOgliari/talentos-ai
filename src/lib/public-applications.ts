@@ -85,6 +85,24 @@ function readNumber(formData: FormData, key: string) {
   return Number.isFinite(value) ? value : null;
 }
 
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
+
+function mergeParsedDataMessage(
+  parsedData: Prisma.InputJsonValue | null,
+  details: Record<string, Prisma.JsonValue>,
+): Prisma.InputJsonValue {
+  if (parsedData && typeof parsedData === "object" && !Array.isArray(parsedData)) {
+    return {
+      ...(parsedData as Record<string, Prisma.JsonValue>),
+      ...details,
+    };
+  }
+
+  return details;
+}
+
 function readLines(formData: FormData, key: string) {
   return readString(formData, key)
     .split(/\r?\n|,/)
@@ -744,16 +762,29 @@ export async function submitPublicJobApplication({
     organizationId: organization.id,
   });
 
-  const storedFile =
-    uploadedResumeBytes
-      ? await saveResumeFile({
-          bytes: uploadedResumeBytes,
-          candidateId: candidate.id,
-          fileName,
-          mimeType,
-          organizationId: organization.id,
-        })
-      : null;
+  let storedFile: Awaited<ReturnType<typeof saveResumeFile>> | null = null;
+  let fileStorageError: string | null = null;
+
+  if (uploadedResumeBytes) {
+    try {
+      storedFile = await saveResumeFile({
+        bytes: uploadedResumeBytes,
+        candidateId: candidate.id,
+        fileName,
+        mimeType,
+        organizationId: organization.id,
+      });
+    } catch (error) {
+      fileStorageError = getErrorMessage(error, "Resume file storage failed.");
+      console.error("Public application resume storage failed", error);
+      parsedData = mergeParsedDataMessage(parsedData, {
+        fileStorageError,
+        fileStorageMessage:
+          "The application was received, but the uploaded resume file could not be persisted. Recruiters should review extracted or pasted resume text.",
+        source: "public-application-storage-fallback",
+      });
+    }
+  }
 
   const resume = await createResumeSnapshot({
     candidateId: candidate.id,
@@ -884,6 +915,7 @@ export async function submitPublicJobApplication({
             resumeId: resume.id,
             resumeUploadMode,
             usedDirectResumeStorage: hasDirectResume,
+            ...(fileStorageError ? { fileStorageError } : {}),
             source: "careers_page",
             updatedExistingApplication: Boolean(existingApplication),
           },

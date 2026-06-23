@@ -46,6 +46,10 @@ const LOCAL_STORAGE_PREFIX = "local:";
 const S3_STORAGE_PREFIX = "s3:";
 const DIRECT_UPLOAD_EXPIRES_IN_SECONDS = 10 * 60;
 
+function canUseLocalResumeStorage() {
+  return process.env.NODE_ENV !== "production" && process.env.VERCEL !== "1";
+}
+
 export function getResumeStorageStatus() {
   const bucket = process.env.RESUME_STORAGE_S3_BUCKET?.trim();
   const accessKeyId = process.env.RESUME_STORAGE_S3_ACCESS_KEY_ID?.trim();
@@ -62,12 +66,22 @@ export function getResumeStorageStatus() {
     };
   }
 
+  if (canUseLocalResumeStorage()) {
+    return {
+      configured: true,
+      detail: "Local development storage is active under storage/resumes.",
+      label: "Local resume storage",
+      provider: "local" as const,
+      status: "Local storage",
+    };
+  }
+
   return {
-    configured: true,
-    detail: "Local development storage is active under storage/resumes.",
-    label: "Local resume storage",
-    provider: "local" as const,
-    status: "Local storage",
+    configured: false,
+    detail: "Production resume storage is not configured. Set the RESUME_STORAGE_S3_* variables.",
+    label: "Production resume storage",
+    provider: "s3" as const,
+    status: "Storage missing",
   };
 }
 
@@ -229,6 +243,10 @@ export async function saveResumeFile(input: SaveResumeFileInput): Promise<Stored
       sizeBytes: input.bytes.byteLength,
       storageProvider: "s3",
     };
+  }
+
+  if (!canUseLocalResumeStorage()) {
+    throw new Error("Production resume storage is not configured. Set the RESUME_STORAGE_S3_* variables.");
   }
 
   const localRoot = getLocalStorageRoot();
