@@ -3,6 +3,7 @@ import {
   BadgeCheck,
   BriefcaseBusiness,
   ChevronRight,
+  ExternalLink,
   FileText,
   Mail,
   MapPin,
@@ -355,6 +356,21 @@ export default async function CandidatesPage({
                           candidateName={candidate.name}
                         />
                       </div>
+                      {candidate.latestResumeDownloadUrl ? (
+                        <a
+                          className="inline-flex h-10 min-w-0 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                          href={candidate.latestResumeDownloadUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <ExternalLink className="h-4 w-4" aria-hidden="true" />
+                          Open resume
+                        </a>
+                      ) : candidate.resumeCount > 0 ? (
+                        <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium leading-5 text-amber-800">
+                          Original file unavailable. Use the profile resume history to review extracted text.
+                        </p>
+                      ) : null}
                       <div className="grid grid-cols-2 gap-2">
                         {[
                           ["Experience", candidate.yearsExperience],

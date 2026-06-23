@@ -580,6 +580,30 @@ export default async function ApplicationsInboxPage({
                                 ? `Parsed ${application.latestResume.parsedAt}`
                                 : "No upload"}
                         </p>
+                        {application.latestResume?.downloadUrl ? (
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            <a
+                              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                              href={application.latestResume.downloadUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                              Open resume
+                            </a>
+                            <a
+                              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                              href={`${application.latestResume.downloadUrl}?download=1`}
+                            >
+                              <FileSearch className="h-3.5 w-3.5" aria-hidden="true" />
+                              Download file
+                            </a>
+                          </div>
+                        ) : application.latestResume ? (
+                          <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-xs font-medium leading-5 text-amber-800">
+                            Original file unavailable. Review extracted text in the candidate profile.
+                          </p>
+                        ) : null}
                       </div>
                       <div className="rounded-lg bg-slate-50 p-3">
                         <p className="text-xs font-semibold uppercase text-slate-500">Confirmation</p>

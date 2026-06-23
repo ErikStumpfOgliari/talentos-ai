@@ -10,6 +10,7 @@ import {
   buildResumeProfileUpdatePreview,
   type ResumeProfileUpdatePreview,
 } from "@/lib/resume-review";
+import { canDownloadStoredResume } from "@/lib/resume-storage";
 
 export type ApplicationsInboxFilters = {
   jobId?: string;
@@ -40,6 +41,7 @@ export type ApplicationsInboxItem = {
     title: string;
   };
   latestResume: {
+    downloadUrl: string | null;
     fileName: string;
     id: string;
     needsManualReview: boolean;
@@ -494,6 +496,9 @@ export async function getApplicationsInboxData({
       latestResume:
         latestResume && preview
           ? {
+              downloadUrl: canDownloadStoredResume(latestResume.fileKey, latestResume.fileUrl)
+                ? `/candidates/${application.candidateId}/resumes/${latestResume.id}`
+                : null,
               fileName: latestResume.fileName,
               id: latestResume.id,
               needsManualReview: needsManualReview(latestResume),

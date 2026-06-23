@@ -10,7 +10,7 @@ function buildDownloadFileName(fileName: string) {
 }
 
 export async function GET(
-  _request: Request,
+  request: Request,
   {
     params,
   }: {
@@ -50,6 +50,9 @@ export async function GET(
   }
 
   try {
+    const url = new URL(request.url);
+    const forceDownload = url.searchParams.get("download") === "1";
+    const disposition = forceDownload ? "attachment" : "inline";
     const storedFile = await readResumeFile({
       fileKey: resume.fileKey,
       fileUrl: resume.fileUrl,
@@ -62,8 +65,10 @@ export async function GET(
 
     return new NextResponse(body, {
       headers: {
-        "Content-Disposition": `attachment; filename="${buildDownloadFileName(resume.fileName)}"`,
+        "Cache-Control": "private, no-store",
+        "Content-Disposition": `${disposition}; filename="${buildDownloadFileName(resume.fileName)}"`,
         "Content-Type": resume.mimeType ?? "application/octet-stream",
+        "X-Content-Type-Options": "nosniff",
       },
     });
   } catch {

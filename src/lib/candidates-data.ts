@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { defaultOrganizationSlug } from "@/lib/organization";
+import { canDownloadStoredResume } from "@/lib/resume-storage";
 
 export type CandidatesPageApplication = {
   id: string;
@@ -25,6 +26,8 @@ export type CandidatesPageCandidate = {
   education: string;
   resumeStatus: string;
   resumeCount: number;
+  latestResumeDownloadUrl: string | null;
+  latestResumeFileName: string | null;
   applications: CandidatesPageApplication[];
   latestScore: number;
   createdAt: string;
@@ -172,6 +175,10 @@ export async function getCandidatesPageData(organizationId?: string): Promise<Ca
       matchScore: application.matchScore ?? 0,
     }));
     const latestResume = candidate.resumes[0];
+    const latestResumeDownloadUrl =
+      latestResume && canDownloadStoredResume(latestResume.fileKey, latestResume.fileUrl)
+        ? `/candidates/${candidate.id}/resumes/${latestResume.id}`
+        : null;
     const latestScore = applications[0]?.matchScore ?? 0;
 
     return {
@@ -190,6 +197,8 @@ export async function getCandidatesPageData(organizationId?: string): Promise<Ca
       education: formatEducation(candidate.education),
       resumeStatus: latestResume ? formatEnum(latestResume.parserStatus) : "No resume",
       resumeCount: candidate.resumes.length,
+      latestResumeDownloadUrl,
+      latestResumeFileName: latestResume?.fileName ?? null,
       applications,
       latestScore,
       createdAt: formatDate(candidate.createdAt),
