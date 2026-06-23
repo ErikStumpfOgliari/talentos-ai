@@ -127,8 +127,8 @@ export default async function PublicApplicationStatusPage({
                 <h2 className="mt-2 text-2xl font-semibold">{application.statusLabel}</h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 opacity-90">{application.statusDescription}</p>
               </div>
-              <div className="rounded-lg bg-white/70 p-3 text-sm text-slate-800">
-                <p className="text-xs font-semibold uppercase text-slate-500">Stage</p>
+              <div className="rounded-lg border border-current/15 bg-black/10 p-3 text-sm text-current shadow-sm">
+                <p className="text-xs font-semibold uppercase opacity-65">Stage</p>
                 <p className="mt-1 font-semibold">{application.stageName}</p>
               </div>
             </div>
