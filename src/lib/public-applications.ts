@@ -142,6 +142,8 @@ function generatePublicApplicationToken() {
   return randomBytes(24).toString("base64url");
 }
 
+const PRODUCTION_PUBLIC_APP_URL = "https://aptelys.com";
+
 async function generateUniquePublicApplicationToken() {
   for (let attempt = 0; attempt < 5; attempt += 1) {
     const publicToken = generatePublicApplicationToken();
@@ -178,10 +180,18 @@ function normalizeBaseUrl(value: string | null | undefined) {
   return normalizedUrl.replace(/\/+$/, "");
 }
 
+function isVercelDeploymentUrl(value: string) {
+  try {
+    return new URL(value).hostname.toLowerCase().endsWith(".vercel.app");
+  } catch {
+    return value.toLowerCase().includes("vercel.app");
+  }
+}
+
 function getPublicApplicationBaseUrl(requestBaseUrl?: string | null) {
   const requestUrl = normalizeBaseUrl(requestBaseUrl);
 
-  if (requestUrl) {
+  if (requestUrl && (process.env.NODE_ENV !== "production" || !isVercelDeploymentUrl(requestUrl))) {
     return requestUrl;
   }
 
@@ -194,7 +204,13 @@ function getPublicApplicationBaseUrl(requestBaseUrl?: string | null) {
     return "http://127.0.0.1:3000";
   }
 
-  return normalizeBaseUrl(configuredUrl) ?? "http://127.0.0.1:3000";
+  const normalizedConfiguredUrl = normalizeBaseUrl(configuredUrl);
+
+  if (normalizedConfiguredUrl && process.env.NODE_ENV === "production" && isVercelDeploymentUrl(normalizedConfiguredUrl)) {
+    return PRODUCTION_PUBLIC_APP_URL;
+  }
+
+  return normalizedConfiguredUrl ?? "http://127.0.0.1:3000";
 }
 
 export function getPublicApplicationStatusUrl(publicToken: string, requestBaseUrl?: string | null) {
