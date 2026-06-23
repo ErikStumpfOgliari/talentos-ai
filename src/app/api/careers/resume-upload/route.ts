@@ -11,14 +11,9 @@ import {
 export const runtime = "nodejs";
 
 const SIGNED_UPLOAD_MAX_REQUESTS_PER_HOUR = 30;
-const allowedResumeMimeTypes = new Set([
-  "application/pdf",
-  "text/csv",
-  "text/markdown",
-  "text/plain",
-]);
+const allowedResumeMimeTypes = new Set(["application/pdf"]);
 
-const allowedResumeExtensions = /\.(csv|md|pdf|txt)$/i;
+const allowedResumeExtensions = /\.pdf$/i;
 
 const signedUploadSchema = z.object({
   fileName: z.string().trim().min(1).max(255),
@@ -83,7 +78,7 @@ export async function POST(request: Request) {
   const mimeType = normalizeMimeType(input.mimeType);
 
   if (!isAllowedResumeFile(input.fileName, mimeType)) {
-    return NextResponse.json({ error: "Unsupported resume file type." }, { status: 400 });
+    return NextResponse.json({ error: "Upload a PDF resume file or paste resume text in the form." }, { status: 400 });
   }
 
   if (input.sizeBytes > MAX_RESUME_FILE_SIZE_BYTES) {

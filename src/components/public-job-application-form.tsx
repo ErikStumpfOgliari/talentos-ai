@@ -331,14 +331,14 @@ export function PublicJobApplicationForm({
           <div className="min-w-0">
             <p className="text-sm font-semibold text-slate-950">Resume</p>
             <p className="mt-1 text-xs leading-5 text-slate-500">
-              Upload a PDF or text file, or paste readable resume text.
+              Upload a PDF file, or paste readable resume text.
             </p>
           </div>
         </div>
 
         <div className="grid gap-2">
           <input
-            accept=".pdf,.txt,.md,.csv,application/pdf,text/plain,text/markdown,text/csv"
+            accept=".pdf,application/pdf"
             className="sr-only"
             id="public-resume-file"
             name="resumeFile"
@@ -352,7 +352,7 @@ export function PublicJobApplicationForm({
           >
             <UploadCloud className="h-5 w-5 text-slate-700 transition group-hover:-translate-y-0.5" aria-hidden="true" />
             <span className="text-sm font-semibold text-slate-950">
-              {hasSelectedFile ? "Change resume file" : "Choose resume file"}
+              {hasSelectedFile ? "Change PDF resume" : "Choose PDF resume"}
             </span>
             <span className="max-w-full truncate text-xs text-slate-500">
               {hasSelectedFile ? fileName : "No file selected yet."}

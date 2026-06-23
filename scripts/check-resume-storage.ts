@@ -59,8 +59,8 @@ async function main() {
   }
 
   const target = await createSignedPublicResumeUploadTarget({
-    fileName: "aptelys-storage-check.txt",
-    mimeType: "text/plain",
+    fileName: "aptelys-storage-check.pdf",
+    mimeType: "application/pdf",
     organizationId: "diagnostic",
   });
 
@@ -70,15 +70,16 @@ async function main() {
   }
 
   const uploadResponse = await fetch(target.uploadUrl, {
-    body: "Aptelys resume storage diagnostic file.\n",
+    body: new TextEncoder().encode("%PDF-1.4\n1 0 obj\n<< /Type /Catalog >>\nendobj\ntrailer\n<< /Root 1 0 R >>\n%%EOF\n"),
     headers: {
-      "Content-Type": "text/plain",
+      "Content-Type": "application/pdf",
     },
     method: "PUT",
   });
 
   if (!uploadResponse.ok) {
     console.error(`Signed upload failed with HTTP ${uploadResponse.status}.`);
+    console.error((await uploadResponse.text()).slice(0, 1000));
     console.error("Check bucket name, endpoint, region, access keys, and storage CORS settings.");
     process.exit(1);
   }

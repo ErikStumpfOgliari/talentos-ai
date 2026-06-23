@@ -688,14 +688,13 @@ export async function submitPublicJobApplication({
   }
   await createParsedProfileDetails(candidate.id, parsed, Boolean(existingCandidate));
 
-  const shouldSaveResumeFile = Boolean(uploadedResumeBytes || (!isDeferredLargeFile && !hasDirectResume && rawText));
   const storedFile =
-    shouldSaveResumeFile
+    uploadedResumeBytes
       ? await saveResumeFile({
-          bytes: uploadedResumeBytes ?? Buffer.from(rawText ?? "", "utf8"),
+          bytes: uploadedResumeBytes,
           candidateId: candidate.id,
           fileName,
-          mimeType: uploadedResumeBytes ? mimeType : "text/plain",
+          mimeType,
           organizationId: organization.id,
         })
       : null;

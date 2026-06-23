@@ -21,6 +21,14 @@ Create a private bucket, for example:
 aptelys-resumes
 ```
 
+If you restrict allowed MIME types on the bucket, include:
+
+```text
+application/pdf
+```
+
+The public application form stores resume files as PDFs. Candidates can still paste resume text in the form when they do not have a PDF.
+
 Then open the Supabase Storage S3 settings and generate:
 
 - Access Key ID
