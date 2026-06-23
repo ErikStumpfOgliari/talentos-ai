@@ -460,6 +460,50 @@ async function sendApplicationReceivedEmail({
   });
 }
 
+async function runPublicApplicationSideEffect({
+  action,
+  applicationId,
+  candidateId,
+  jobId,
+  operation,
+  organizationId,
+}: {
+  action: string;
+  applicationId?: string | null;
+  candidateId?: string | null;
+  jobId?: string | null;
+  operation: () => Promise<unknown>;
+  organizationId: string;
+}) {
+  try {
+    await operation();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown public application side-effect error.";
+
+    console.error(`Public application side effect failed: ${action}`, error);
+
+    try {
+      await prisma.auditEvent.create({
+        data: {
+          action: "public_application.side_effect_failed",
+          applicationId: applicationId ?? undefined,
+          candidateId: candidateId ?? undefined,
+          entityId: applicationId ?? candidateId ?? jobId ?? organizationId,
+          entityType: applicationId ? "application" : candidateId ? "candidate" : "organization",
+          jobId: jobId ?? undefined,
+          metadata: {
+            error: message,
+            failedAction: action,
+          },
+          organizationId,
+        },
+      });
+    } catch (auditError) {
+      console.error(`Could not record public application side-effect failure: ${action}`, auditError);
+    }
+  }
+}
+
 export async function submitPublicJobApplication({
   formData,
   jobId,
@@ -684,9 +728,21 @@ export async function submitPublicJobApplication({
       });
 
   if (!existingCandidate) {
-    await syncCandidateSkills(organization.id, candidate.id, unique([...parsed.skills, ...submittedSkills]));
+    await runPublicApplicationSideEffect({
+      action: "public_application.sync_candidate_skills",
+      candidateId: candidate.id,
+      jobId: job.id,
+      operation: () => syncCandidateSkills(organization.id, candidate.id, unique([...parsed.skills, ...submittedSkills])),
+      organizationId: organization.id,
+    });
   }
-  await createParsedProfileDetails(candidate.id, parsed, Boolean(existingCandidate));
+  await runPublicApplicationSideEffect({
+    action: "public_application.create_profile_details",
+    candidateId: candidate.id,
+    jobId: job.id,
+    operation: () => createParsedProfileDetails(candidate.id, parsed, Boolean(existingCandidate)),
+    organizationId: organization.id,
+  });
 
   const storedFile =
     uploadedResumeBytes
@@ -788,75 +844,98 @@ export async function submitPublicJobApplication({
   });
 
   if (coverLetter) {
-    await prisma.candidateNote.create({
-      data: {
-        applicationId: application.id,
-        body: coverLetter,
-        candidateId: candidate.id,
-        organizationId: organization.id,
-        visibility: "TEAM",
-      },
+    await runPublicApplicationSideEffect({
+      action: "public_application.create_candidate_note",
+      applicationId: application.id,
+      candidateId: candidate.id,
+      jobId: job.id,
+      operation: () =>
+        prisma.candidateNote.create({
+          data: {
+            applicationId: application.id,
+            body: coverLetter,
+            candidateId: candidate.id,
+            organizationId: organization.id,
+            visibility: "TEAM",
+          },
+        }),
+      organizationId: organization.id,
     });
   }
 
-  await prisma.auditEvent.create({
-    data: {
-      action: "public_application.submitted",
-      applicationId: application.id,
-      candidateId: candidate.id,
-      entityId: application.id,
-      entityType: "application",
-      jobId: job.id,
-      metadata: {
-        matchMode: match.explanation.mode,
-        matchScore: match.score,
-        parserStatus,
-        resumeId: resume.id,
-        resumeUploadMode,
-        usedDirectResumeStorage: hasDirectResume,
-        source: "careers_page",
-        updatedExistingApplication: Boolean(existingApplication),
-      },
-      organizationId: organization.id,
-    },
+  await runPublicApplicationSideEffect({
+    action: "public_application.submitted_audit",
+    applicationId: application.id,
+    candidateId: candidate.id,
+    jobId: job.id,
+    operation: () =>
+      prisma.auditEvent.create({
+        data: {
+          action: "public_application.submitted",
+          applicationId: application.id,
+          candidateId: candidate.id,
+          entityId: application.id,
+          entityType: "application",
+          jobId: job.id,
+          metadata: {
+            matchMode: match.explanation.mode,
+            matchScore: match.score,
+            parserStatus,
+            resumeId: resume.id,
+            resumeUploadMode,
+            usedDirectResumeStorage: hasDirectResume,
+            source: "careers_page",
+            updatedExistingApplication: Boolean(existingApplication),
+          },
+          organizationId: organization.id,
+        },
+      }),
+    organizationId: organization.id,
   });
 
   if (!existingCandidate) {
-    await queueAutomationEmails({
+    await runPublicApplicationSideEffect({
+      action: "public_application.queue_candidate_created_automations",
       applicationId: application.id,
+      candidateId: candidate.id,
+      jobId: job.id,
+      operation: () =>
+        queueAutomationEmails({
+          applicationId: application.id,
+          organizationId: organization.id,
+          trigger: AutomationTrigger.CANDIDATE_CREATED,
+        }),
       organizationId: organization.id,
-      trigger: AutomationTrigger.CANDIDATE_CREATED,
     });
   }
 
-  await queueAutomationEmails({
+  await runPublicApplicationSideEffect({
+    action: "public_application.queue_score_updated_automations",
     applicationId: application.id,
+    candidateId: candidate.id,
+    jobId: job.id,
+    operation: () =>
+      queueAutomationEmails({
+        applicationId: application.id,
+        organizationId: organization.id,
+        trigger: AutomationTrigger.SCORE_UPDATED,
+      }),
     organizationId: organization.id,
-    trigger: AutomationTrigger.SCORE_UPDATED,
   });
 
-  try {
-    await sendApplicationReceivedEmail({
-      applicationId: application.id,
-      organizationId: organization.id,
-      publicToken: applicationToken,
-    });
-  } catch (error) {
-    await prisma.auditEvent.create({
-      data: {
-        action: "application_received_email.failed",
+  await runPublicApplicationSideEffect({
+    action: "public_application.send_application_received_email",
+    applicationId: application.id,
+    candidateId: candidate.id,
+    jobId: job.id,
+    operation: () =>
+      sendApplicationReceivedEmail({
         applicationId: application.id,
-        candidateId: candidate.id,
-        entityId: application.id,
-        entityType: "application",
-        jobId: job.id,
-        metadata: {
-          error: error instanceof Error ? error.message : "Unknown application received email error.",
-        },
         organizationId: organization.id,
-      },
-    });
-  }
+        publicToken: applicationToken,
+      }),
+    organizationId: organization.id,
+  });
 
   return {
     applicationId: application.id,
