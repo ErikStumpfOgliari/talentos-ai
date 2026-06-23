@@ -69,16 +69,19 @@ function ProductPreview() {
           <span className="rounded-full bg-sky-400/15 px-2 py-1 text-sky-200">Calendar ready</span>
         </div>
       </div>
-      <div className="mt-3 grid grid-cols-4 gap-2">
+      <div className="mt-3 flex snap-x gap-2 overflow-x-auto pb-1 [scrollbar-width:none] sm:grid sm:grid-cols-4 sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden">
         {boardStages.map((stage, index) => (
-          <div className="min-h-[14rem] rounded-lg border border-white/10 bg-slate-950/35 p-2.5" key={stage}>
+          <div
+            className="min-h-[13rem] w-[9.6rem] shrink-0 snap-start rounded-lg border border-white/10 bg-slate-950/35 p-2.5 sm:min-h-[14rem] sm:w-auto"
+            key={stage}
+          >
             <div className="flex items-center justify-between gap-2">
-              <p className="truncate text-xs font-semibold text-white sm:text-sm">{stage}</p>
+              <p className="min-w-0 truncate text-xs font-semibold text-white sm:text-sm">{stage}</p>
               <span className="rounded-full bg-white/10 px-2 py-0.5 text-[0.68rem] text-slate-300">{index + 1}</span>
             </div>
             <div className="mt-3 space-y-2">
               <div className="rounded-lg border border-white/10 bg-white/[0.08] p-2.5">
-                <div className="flex items-start justify-between gap-2">
+                <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
                   <div className="min-w-0">
                     <p className="truncate text-xs font-semibold text-white sm:text-sm">
                       {previewCandidates[index]?.name}
@@ -87,13 +90,13 @@ function ProductPreview() {
                       {previewCandidates[index]?.title}
                     </p>
                   </div>
-                  <span className="rounded-full bg-emerald-300 px-2 py-1 text-xs font-semibold text-slate-950">
+                  <span className="shrink-0 rounded-full bg-emerald-300 px-2 py-1 text-xs font-semibold text-slate-950">
                     {[78, 91, 96, 92][index]}
                   </span>
                 </div>
-                <div className="mt-2 flex flex-wrap gap-1.5">
+                <div className="mt-2 grid min-w-0 gap-1.5">
                   {(previewCandidates[index]?.skills ?? []).map((skill) => (
-                    <span className="rounded-md bg-white/10 px-2 py-1 text-xs text-slate-200" key={skill}>
+                    <span className="block max-w-full truncate rounded-md bg-white/10 px-2 py-1 text-xs text-slate-200" key={skill}>
                       {skill}
                     </span>
                   ))}
@@ -121,15 +124,15 @@ export default function LandingPage() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(45,212,191,0.16),transparent_32%),linear-gradient(135deg,#020617_0%,#0f172a_58%,#111827_100%)]" />
         <PublicSiteHeader floating variant="dark" />
 
-        <div className="relative mx-auto grid max-w-7xl gap-8 px-4 pb-8 pt-28 md:pb-10 lg:min-h-[100svh] lg:grid-cols-[minmax(0,0.82fr)_minmax(360px,0.9fr)] lg:items-center lg:px-6 lg:pb-6 lg:pt-24">
+        <div className="relative mx-auto grid max-w-7xl gap-7 px-4 pb-8 pt-24 sm:pt-28 md:pb-10 lg:min-h-[100svh] lg:grid-cols-[minmax(0,0.82fr)_minmax(360px,0.9fr)] lg:items-center lg:px-6 lg:pb-6 lg:pt-24">
           <div className="min-w-0">
-            <p className="inline-flex rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-xs font-semibold text-emerald-200 sm:text-sm">
+            <p className="inline-flex rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-xs font-semibold text-emerald-200 sm:text-sm" data-no-translate>
               Aptelys
             </p>
-            <h1 className="mt-5 max-w-xl text-4xl font-semibold leading-[1.08] tracking-normal sm:text-5xl lg:text-[2.75rem] xl:text-[3rem]">
+            <h1 className="mt-5 max-w-xl text-[clamp(2.25rem,10vw,3rem)] font-semibold leading-[1.08] tracking-normal lg:text-[2.75rem] xl:text-[3rem]" data-i18n-key="landing.meetAptelys">
               Meet Aptelys
             </h1>
-            <p className="mt-5 max-w-xl text-sm leading-6 text-slate-300 sm:text-base sm:leading-7">
+            <p className="mt-5 max-w-xl text-sm leading-6 text-slate-300 sm:text-base sm:leading-7" data-i18n-key="landing.heroDescription">
               Aptelys is an intelligent recruiting platform developed by Interellis to connect companies with the right talent more precisely.
             </p>
 
@@ -139,14 +142,14 @@ export default function LandingPage() {
                 href="/signup"
               >
                 <Building2 className="h-4 w-4" aria-hidden="true" />
-                Create workspace
+                <span data-i18n-key="landing.createWorkspace">Create workspace</span>
               </Link>
               <Link
                 className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-white/15 bg-white/5 px-4 text-sm font-semibold text-white transition hover:scale-[1.03] hover:bg-white/10 active:scale-[0.98]"
                 href="/careers"
               >
                 <UserRound className="h-4 w-4" aria-hidden="true" />
-                View open roles
+                <span data-i18n-key="landing.viewOpenRoles">View open roles</span>
               </Link>
             </div>
           </div>

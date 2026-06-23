@@ -100,16 +100,12 @@ export function WorkspacePageShell({
         ) : null}
         <aside
           aria-hidden={!navigationOpen}
-          className={`fixed inset-y-0 left-0 z-40 shrink-0 overflow-hidden border-r border-slate-200 bg-white shadow-xl transition-[width] duration-300 ease-out md:relative md:z-auto md:shadow-none ${
-            navigationOpen ? "w-[min(20rem,calc(100vw-2rem))] md:w-[264px]" : "w-0"
+          className={`fixed inset-y-0 left-0 z-40 w-[min(20rem,calc(100dvw-1rem))] shrink-0 overflow-hidden border-r border-slate-200 bg-white shadow-xl transition-transform duration-300 ease-out will-change-transform md:relative md:z-auto md:w-[264px] md:shadow-none ${
+            navigationOpen ? "translate-x-0 md:w-[264px]" : "-translate-x-[105%] md:w-0 md:-translate-x-full"
           }`}
           data-workspace-sidebar
         >
-          <div
-            className={`h-screen w-[min(20rem,calc(100vw-2rem))] transition duration-300 ease-out md:w-[264px] ${
-              navigationOpen ? "translate-x-0 opacity-100" : "-translate-x-10 opacity-0"
-            }`}
-          >
+          <div className="h-dvh w-full overflow-hidden">
             <AppNavigationPanelContent />
           </div>
         </aside>

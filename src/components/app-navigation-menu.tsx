@@ -53,7 +53,7 @@ function NavigationBrand({ copy }: { copy?: NavigationCopy }) {
         <InterellisMark className="h-4 w-4" />
       </div>
       <div className="min-w-0">
-        <p className="truncate text-sm font-semibold text-slate-950">Aptelys</p>
+        <p className="truncate text-sm font-semibold text-slate-950" data-no-translate>Aptelys</p>
         <p className="truncate text-xs text-slate-500" data-i18n-key="nav.recruitmentCrm">
           {getCopy(copy, "nav.recruitmentCrm", "by Interellis")}
         </p>
@@ -179,7 +179,7 @@ function NavigationFooter({
           <p className="text-xs font-semibold uppercase text-slate-500" data-i18n-key="nav.organization">
             {getCopy(copy, "nav.organization", "Organization")}
           </p>
-          <p className="mt-1 truncate text-sm font-semibold text-slate-950">Aptelys</p>
+          <p className="mt-1 truncate text-sm font-semibold text-slate-950" data-no-translate>Aptelys</p>
           <p className="mt-1 truncate text-xs text-slate-500" data-i18n-key="nav.workspaceUsers">
             {getCopy(copy, "nav.workspaceUsers", "Pro workspace")}
           </p>
@@ -290,7 +290,7 @@ export function AppNavigationMenu({ className = "", copy }: { className?: string
         <aside
           aria-label="Site navigation"
           aria-modal="true"
-          className="relative flex h-full w-full max-w-80 -translate-x-full flex-col border-r border-slate-200 bg-white shadow-xl transition-transform duration-300 ease-out"
+          className="relative flex h-dvh w-[min(20rem,calc(100dvw-0.75rem))] max-w-full -translate-x-full flex-col overflow-hidden border-r border-slate-200 bg-white shadow-xl transition-transform duration-300 ease-out will-change-transform"
           data-app-mobile-nav-drawer
           id={drawerId}
           role="dialog"
@@ -301,7 +301,7 @@ export function AppNavigationMenu({ className = "", copy }: { className?: string
                 <InterellisMark className="h-4 w-4" />
               </div>
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-slate-950">Aptelys</p>
+                <p className="truncate text-sm font-semibold text-slate-950" data-no-translate>Aptelys</p>
                 <p className="truncate text-xs text-slate-500" data-i18n-key="nav.recruitmentCrm">
                   {getCopy(resolvedCopy, "nav.recruitmentCrm", "by Interellis")}
                 </p>

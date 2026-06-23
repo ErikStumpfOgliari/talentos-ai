@@ -718,6 +718,7 @@ body.theme-dark [data-public-theme-scope] .text-rose-800 {
 
 [data-app-mobile-nav-overlay] {
   visibility: hidden;
+  overscroll-behavior: contain;
 }
 
 input[data-testid="app-navigation-trigger"]:checked ~ [data-app-mobile-nav-overlay] {
@@ -730,6 +731,17 @@ input[data-testid="app-navigation-trigger"]:checked ~ [data-app-mobile-nav-overl
 
 input[data-testid="app-navigation-trigger"]:checked ~ [data-app-mobile-nav-overlay] [data-app-mobile-nav-drawer] {
   transform: translateX(0);
+}
+
+[data-app-mobile-nav-drawer],
+[data-workspace-sidebar],
+[data-workspace-right-panel] {
+  touch-action: pan-y;
+}
+
+body:has(input[data-testid="app-navigation-trigger"]:checked) {
+  overflow: hidden;
+  overscroll-behavior: none;
 }
 
 [data-workspace-right-panel],
@@ -907,6 +919,28 @@ body.theme-dark .route-loading-line::after {
     0 16px 34px rgb(15 23 42 / 0.18),
     0 0 0 1px rgb(226 232 240 / 0.9);
   backdrop-filter: blur(12px);
+}
+
+@media (max-width: 640px) {
+  .global-language-toggle {
+    right: max(0.75rem, env(safe-area-inset-right));
+    bottom: max(0.75rem, env(safe-area-inset-bottom));
+    border-radius: 0.75rem;
+  }
+
+  [data-public-theme-scope] h1,
+  [data-public-theme-scope] h2,
+  [data-app-theme-scope] h1,
+  [data-app-theme-scope] h2 {
+    overflow-wrap: anywhere;
+  }
+
+  [data-public-theme-scope] a,
+  [data-public-theme-scope] button,
+  [data-app-theme-scope] a,
+  [data-app-theme-scope] button {
+    min-width: 0;
+  }
 }
 
 @keyframes language-slide-out {

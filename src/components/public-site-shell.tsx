@@ -41,23 +41,23 @@ export function PublicSiteHeader({
     ? "bg-white text-slate-950 hover:bg-slate-100"
     : "bg-slate-950 text-white hover:bg-slate-800";
   const headerClass = floating
-    ? `pointer-events-none fixed left-1/2 top-3 z-50 w-fit max-w-[calc(100%-1.5rem)] -translate-x-1/2 ${className}`
+    ? `pointer-events-none fixed left-0 right-0 top-3 z-50 px-3 sm:left-1/2 sm:right-auto sm:w-fit sm:max-w-[calc(100%-1.5rem)] sm:-translate-x-1/2 sm:px-0 ${className}`
     : `relative z-20 ${className}`;
   const headerShellClass = floating
     ? isDark
-      ? "pointer-events-auto rounded-lg border border-white/10 bg-slate-950/60 shadow-2xl shadow-slate-950/25 backdrop-blur-xl"
-      : "pointer-events-auto rounded-lg border border-slate-200/80 bg-white/85 shadow-lg shadow-slate-200/60 backdrop-blur-xl"
+      ? "pointer-events-auto rounded-lg border border-white/10 bg-slate-950/70 shadow-2xl shadow-slate-950/25 backdrop-blur-xl"
+      : "pointer-events-auto rounded-lg border border-slate-200/80 bg-white/90 shadow-lg shadow-slate-200/60 backdrop-blur-xl"
     : "";
 
   return (
     <header className={headerClass}>
-      <div className={`mx-auto flex max-w-full items-center justify-between gap-3 px-3 py-2.5 lg:px-4 ${headerShellClass}`}>
+      <div className={`mx-auto flex max-w-full items-center justify-between gap-2 px-3 py-2.5 sm:gap-3 lg:px-4 ${headerShellClass}`}>
         <Link className="flex min-w-0 items-center gap-2.5" href="/">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center">
             <InterellisMark className="h-9 w-9 drop-shadow-[0_10px_22px_rgba(37,99,235,0.35)]" />
           </div>
           <div className="min-w-0">
-            <p className={`truncate text-sm font-semibold ${isDark ? "text-white" : "text-slate-950"}`}>Aptelys</p>
+            <p className={`truncate text-sm font-semibold ${isDark ? "text-white" : "text-slate-950"}`} data-no-translate>Aptelys</p>
           </div>
         </Link>
 
@@ -79,11 +79,11 @@ export function PublicSiteHeader({
             Open roles
           </Link>
           <Link
-            className={`inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-lg px-3 text-sm font-semibold transition hover:scale-[1.03] active:scale-[0.98] ${primaryButtonClass}`}
+            className={`inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-lg px-3 text-sm font-semibold transition hover:scale-[1.03] active:scale-[0.98] sm:px-4 ${primaryButtonClass}`}
             href="/login"
           >
             <LogIn className="h-4 w-4" aria-hidden="true" />
-            Sign in
+            <span data-i18n-key="nav.signIn">Sign in</span>
           </Link>
         </div>
       </div>
