@@ -46,6 +46,24 @@ export function WorkspacePageShell({
     ? translateText(rightPanelButtonLabel, language)
     : panelTitle ?? translateText("Open", language);
 
+  function toggleNavigationPanel() {
+    const nextNavigationOpen = !navigationOpen;
+    setNavigationOpen(nextNavigationOpen);
+
+    if (nextNavigationOpen) {
+      setRightPanelOpen(false);
+    }
+  }
+
+  function toggleRightPanel() {
+    const nextRightPanelOpen = !rightPanelOpen;
+    setRightPanelOpen(nextRightPanelOpen);
+
+    if (nextRightPanelOpen) {
+      setNavigationOpen(false);
+    }
+  }
+
   useEffect(() => {
     const navigationQuery = window.matchMedia("(max-width: 767px)");
     const rightPanelQuery = window.matchMedia("(max-width: 1279px)");
@@ -122,7 +140,7 @@ export function WorkspacePageShell({
                     aria-pressed={navigationOpen}
                     className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 transition hover:scale-[1.03] hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98]"
                     data-workspace-menu-button
-                    onClick={() => setNavigationOpen((isOpen) => !isOpen)}
+                    onClick={toggleNavigationPanel}
                     type="button"
                   >
                     {navigationOpen ? <X className="h-5 w-5" aria-hidden="true" /> : <Menu className="h-5 w-5" aria-hidden="true" />}
@@ -145,7 +163,7 @@ export function WorkspacePageShell({
                     aria-pressed={rightPanelOpen}
                     className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:scale-[1.03] hover:bg-slate-800 active:scale-[0.98] sm:w-auto"
                     data-workspace-panel-button
-                    onClick={() => setRightPanelOpen((isOpen) => !isOpen)}
+                    onClick={toggleRightPanel}
                     type="button"
                   >
                     {rightPanelButtonIcon}
