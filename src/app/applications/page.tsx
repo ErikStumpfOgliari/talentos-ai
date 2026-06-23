@@ -600,8 +600,8 @@ export default async function ApplicationsInboxPage({
                             </a>
                           </div>
                         ) : application.latestResume ? (
-                          <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-xs font-medium leading-5 text-amber-800">
-                            Original file unavailable. Review extracted text in the candidate profile.
+                          <p className="mt-2 rounded-md border border-slate-200 bg-white/70 px-2 py-1 text-xs font-medium leading-5 text-slate-500">
+                            Only extracted text is available. Open the profile to review it.
                           </p>
                         ) : null}
                       </div>

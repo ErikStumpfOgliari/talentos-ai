@@ -358,8 +358,8 @@ export default async function CandidateDetailPage({
                             </a>
                           </>
                         ) : (
-                          <span className="rounded-lg border border-amber-200 bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800">
-                            Original file unavailable
+                          <span className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-500">
+                            Text-only review
                           </span>
                         )}
                         <span className={`w-fit rounded-full px-2 py-1 text-xs font-semibold ring-1 ${getStatusTone(resume.parserStatus)}`}>

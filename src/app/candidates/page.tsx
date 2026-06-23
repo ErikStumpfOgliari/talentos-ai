@@ -366,10 +366,6 @@ export default async function CandidatesPage({
                           <ExternalLink className="h-4 w-4" aria-hidden="true" />
                           Open resume
                         </a>
-                      ) : candidate.resumeCount > 0 ? (
-                        <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium leading-5 text-amber-800">
-                          Original file unavailable. Use the profile resume history to review extracted text.
-                        </p>
                       ) : null}
                       <div className="grid grid-cols-2 gap-2">
                         {[
