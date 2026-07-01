@@ -21,6 +21,14 @@ const contentSecurityPolicy = [
   "worker-src 'self' blob:",
 ].join("; ");
 
+// Resume file route needs to allow same-origin framing so the viewer page
+// can embed the PDF in an iframe. All other pages keep frame-ancestors 'none'.
+const resumeFileContentSecurityPolicy = [
+  "default-src 'self'",
+  "object-src 'self'",
+  "frame-ancestors 'self'",
+].join("; ");
+
 const nextConfig: NextConfig = {
   allowedDevOrigins: ["127.0.0.1"],
   poweredByHeader: false,
@@ -61,6 +69,21 @@ const nextConfig: NextConfig = {
           {
             key: "Content-Security-Policy",
             value: contentSecurityPolicy,
+          },
+        ],
+      },
+      {
+        // Resume file endpoint is loaded inside an iframe on the viewer page.
+        // Override framing headers to allow same-origin embedding only.
+        source: "/candidates/:candidateId/resumes/:resumeId",
+        headers: [
+          {
+            key: "X-Frame-Options",
+            value: "SAMEORIGIN",
+          },
+          {
+            key: "Content-Security-Policy",
+            value: resumeFileContentSecurityPolicy,
           },
         ],
       },
