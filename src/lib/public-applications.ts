@@ -460,6 +460,7 @@ async function runAiAnalysisBackground({
   jobDescription,
   jobTitle,
   resumeFileKey,
+  resumeFileName,
   resumeFileUrl,
   resumeMimeType,
   resumeRawText,
@@ -469,6 +470,7 @@ async function runAiAnalysisBackground({
   jobDescription: string;
   jobTitle: string;
   resumeFileKey: string | null;
+  resumeFileName: string;
   resumeFileUrl: string | null;
   resumeMimeType: string | null;
   resumeRawText: string | null;
@@ -484,7 +486,7 @@ async function runAiAnalysisBackground({
     if (resumeFileKey && resumeMimeType) {
       try {
         const { bytes } = await readResumeFile({ fileKey: resumeFileKey, fileUrl: resumeFileUrl });
-        resumeText = await extractResumeText(bytes, resumeMimeType);
+        resumeText = await extractResumeText(bytes, resumeMimeType, resumeFileName);
       } catch {
         // fall through to rawText
       }
@@ -1148,6 +1150,7 @@ export async function submitPublicJobApplication({
       jobDescription: job.description,
       jobTitle: job.title,
       resumeFileKey: resume.fileKey,
+      resumeFileName: resume.fileName,
       resumeFileUrl: resume.fileUrl,
       resumeMimeType: resume.mimeType,
       resumeRawText: rawText,

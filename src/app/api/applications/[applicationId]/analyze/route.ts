@@ -106,7 +106,7 @@ export async function POST(
       const { bytes } = await readResumeFile({ fileKey: resume.fileKey, fileUrl: resume.fileUrl });
 
       stage = "extract_text";
-      resumeText = await extractResumeText(bytes, resume.mimeType);
+      resumeText = await extractResumeText(bytes, resume.mimeType, resume.fileName);
     }
 
     // Fall back to stored rawText
