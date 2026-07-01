@@ -122,15 +122,29 @@ export async function POST(
     }
 
     stage = "validate_text";
-    const validation = validateResumeText(resumeText);
 
-    if (!validation.valid) {
+    // Profile data can be short (just a name/title); any non-empty text is enough.
+    // Only enforce the 300-char minimum when we're working from the actual resume file.
+    const isTextUsable =
+      textSource === "profile"
+        ? resumeText.trim().length > 0
+        : validateResumeText(resumeText).valid;
+
+    if (!isTextUsable) {
       await prisma.application.update({
         where: { id: applicationId },
         data: { aiAnalysisStatus: AiAnalysisStatus.FAILED },
       });
 
-      return NextResponse.json({ error: validation.reason }, { status: 422 });
+      return NextResponse.json(
+        {
+          error:
+            textSource === "profile"
+              ? "No candidate data found. Complete the candidate profile before running analysis."
+              : validateResumeText(resumeText).reason,
+        },
+        { status: 422 },
+      );
     }
 
     stage = "groq_analyze";

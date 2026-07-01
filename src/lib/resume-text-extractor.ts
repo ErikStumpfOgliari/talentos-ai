@@ -18,29 +18,48 @@ async function extractTextWithOpenAIVision(
 
   const client = new OpenAI({ apiKey });
   const model = process.env.OPENAI_RESUME_PARSER_MODEL ?? "gpt-4.1-mini";
-  const base64 = buffer.toString("base64");
 
-  const response = await client.responses.create({
-    model,
-    input: [
-      {
-        role: "user",
-        content: [
-          {
-            type: "input_file" as const,
-            filename: fileName,
-            file_data: `data:${mimeType};base64,${base64}`,
-          },
-          {
-            type: "input_text" as const,
-            text: "Extract all text from this document exactly as it appears. Return only the raw text content, preserving line breaks. Do not add explanations, headers, or formatting of your own.",
-          },
-        ],
-      },
-    ],
-  });
+  // Upload to OpenAI Files API so the model can process it as a native file
+  // (inline base64 via file_data is less reliable for image-based PDFs)
+  // Uint8Array.from creates a fresh ArrayBuffer (not SharedArrayBuffer) — required for Blob
+  const uint8 = Uint8Array.from(buffer);
+  const blob = new Blob([uint8], { type: mimeType });
+  const file = new File([blob], fileName, { type: mimeType });
 
-  return response.output_text ?? "";
+  let uploadedFileId: string | null = null;
+
+  try {
+    const uploaded = await client.files.create({ file, purpose: "user_data" });
+    uploadedFileId = uploaded.id;
+
+    const response = await client.responses.create({
+      model,
+      input: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "input_file" as const,
+              file_id: uploadedFileId,
+            },
+            {
+              type: "input_text" as const,
+              text: "Extract all text from this document exactly as it appears. Return only the raw text content, preserving line breaks. Do not add explanations, headers, or any formatting of your own.",
+            },
+          ],
+        },
+      ],
+    });
+
+    return response.output_text ?? "";
+  } finally {
+    // Always clean up the uploaded file regardless of success or failure
+    if (uploadedFileId) {
+      await client.files.delete(uploadedFileId).catch((err: unknown) => {
+        console.warn("Failed to delete OpenAI file:", err instanceof Error ? err.message : String(err));
+      });
+    }
+  }
 }
 
 export async function extractResumeText(
