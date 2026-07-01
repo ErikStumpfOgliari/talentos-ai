@@ -99,6 +99,7 @@ export type CandidateDetailData = {
     notes: string[];
     appliedAt: string;
     stageEnteredAt: string;
+    aiAnalysisStatus: string;
   }[];
   resumes: {
     downloadUrl: string | null;
@@ -641,6 +642,7 @@ export async function getCandidateDetailData({
         notes: readStringArray(explanation.notes),
         appliedAt: formatDate(application.appliedAt),
         stageEnteredAt: formatDate(application.stageEnteredAt),
+        aiAnalysisStatus: application.aiAnalysisStatus,
       };
     }),
     resumes: candidate.resumes.map((resume) => ({

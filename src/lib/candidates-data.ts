@@ -8,6 +8,7 @@ export type CandidatesPageApplication = {
   stage: string;
   status: string;
   matchScore: number;
+  aiAnalysisStatus: string;
 };
 
 export type CandidatesPageCandidate = {
@@ -174,6 +175,7 @@ export async function getCandidatesPageData(organizationId?: string): Promise<Ca
       stage: application.stage?.name ?? "Unassigned",
       status: formatEnum(application.status),
       matchScore: application.matchScore ?? 0,
+      aiAnalysisStatus: application.aiAnalysisStatus,
     }));
     const latestResume = candidate.resumes[0];
     const latestResumeDownloadUrl =

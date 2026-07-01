@@ -1,6 +1,8 @@
 import { Buffer } from "node:buffer";
 import { randomBytes } from "node:crypto";
+import { after } from "next/server";
 import {
+  AiAnalysisStatus,
   AutomationTrigger,
   CandidateSource,
   EmailStatus,
@@ -9,6 +11,8 @@ import {
   PipelineCategory,
   type Prisma,
 } from "@/generated/prisma/client";
+import { analyzeResumeWithGroq } from "@/lib/resume-ai-analyzer";
+import { extractResumeText, validateResumeText } from "@/lib/resume-text-extractor";
 import { scoreCandidateForJob } from "@/lib/candidate-matching";
 import { deliverEmailMessage, queueAutomationEmails } from "@/lib/email-automation";
 import { prisma } from "@/lib/prisma";
@@ -447,6 +451,94 @@ async function createParsedProfileDetails(candidateId: string, parsed: ParsedRes
         title: experience.title,
       })),
     });
+  }
+}
+
+async function runAiAnalysisBackground({
+  applicationId,
+  jobDescription,
+  jobTitle,
+  resumeFileKey,
+  resumeFileUrl,
+  resumeMimeType,
+  resumeRawText,
+}: {
+  applicationId: string;
+  jobDescription: string;
+  jobTitle: string;
+  resumeFileKey: string | null;
+  resumeFileUrl: string | null;
+  resumeMimeType: string | null;
+  resumeRawText: string | null;
+}) {
+  try {
+    await prisma.application.update({
+      where: { id: applicationId },
+      data: { aiAnalysisStatus: AiAnalysisStatus.PROCESSING },
+    });
+
+    let resumeText: string | null = null;
+
+    if (resumeFileKey && resumeMimeType) {
+      try {
+        const { bytes } = await readResumeFile({ fileKey: resumeFileKey, fileUrl: resumeFileUrl });
+        resumeText = await extractResumeText(bytes, resumeMimeType);
+      } catch {
+        // fall through to rawText
+      }
+    }
+
+    if (!resumeText && resumeRawText) {
+      resumeText = resumeRawText;
+    }
+
+    if (!resumeText) {
+      await prisma.application.update({
+        where: { id: applicationId },
+        data: { aiAnalysisStatus: AiAnalysisStatus.FAILED },
+      });
+      return;
+    }
+
+    const validation = validateResumeText(resumeText);
+
+    if (!validation.valid) {
+      await prisma.application.update({
+        where: { id: applicationId },
+        data: { aiAnalysisStatus: AiAnalysisStatus.FAILED },
+      });
+      return;
+    }
+
+    const result = await analyzeResumeWithGroq({ jobDescription, jobTitle, resumeText });
+
+    await prisma.application.update({
+      where: { id: applicationId },
+      data: {
+        aiAnalysisStatus: AiAnalysisStatus.SUCCESS,
+        aiRecommendation: result.recommendation,
+        aiFitLevel: result.fit_level,
+        aiMatchedRequirements: result.matched_requirements,
+        aiMissingRequirements: result.missing_requirements,
+        aiSkillsFound: result.skills_found,
+        aiExperienceSummary: result.experience_summary,
+        aiRiskPoints: result.risk_points,
+        aiSummary: result.short_summary,
+        matchScore: result.score,
+        matchExplanation: result,
+        aiAnalyzedAt: new Date(),
+      },
+    });
+  } catch (error) {
+    console.error("Background AI analysis failed for application:", applicationId, error);
+    try {
+      await prisma.application.update({
+        where: { id: applicationId },
+        data: { aiAnalysisStatus: AiAnalysisStatus.FAILED },
+      });
+    } catch {
+      // ignore secondary failure
+    }
   }
 }
 
@@ -1017,6 +1109,21 @@ export async function submitPublicJobApplication({
       }),
     organizationId: organization.id,
   });
+
+  // Trigger AI resume analysis in the background after the response is sent
+  if (resume.fileKey || rawText) {
+    after(() =>
+      runAiAnalysisBackground({
+        applicationId: application.id,
+        jobDescription: job.description,
+        jobTitle: job.title,
+        resumeFileKey: resume.fileKey,
+        resumeFileUrl: resume.fileUrl,
+        resumeMimeType: resume.mimeType,
+        resumeRawText: rawText,
+      }),
+    );
+  }
 
   return {
     applicationId: application.id,

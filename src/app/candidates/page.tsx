@@ -14,6 +14,7 @@ import {
   Users,
 } from "lucide-react";
 import { createCandidate, deleteCandidate, parseResumeUpload } from "@/app/candidates/actions";
+import { AiAnalyzeButton } from "@/components/ai-analyze-button";
 import { CandidateQuickActionsMenu } from "@/components/candidate-quick-actions-menu";
 import { ResumeParserForm } from "@/components/resume-parser-form";
 import { WorkspacePageShell } from "@/components/workspace-page-shell";
@@ -364,6 +365,9 @@ export default async function CandidatesPage({
                           <ExternalLink className="h-4 w-4" aria-hidden="true" />
                           View resume
                         </Link>
+                      ) : null}
+                      {candidate.applications[0] ? (
+                        <AiAnalyzeButton applicationId={candidate.applications[0].id} />
                       ) : null}
                       <div className="grid grid-cols-2 gap-2">
                         {[

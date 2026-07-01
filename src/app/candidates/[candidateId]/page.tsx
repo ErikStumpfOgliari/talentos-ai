@@ -27,6 +27,7 @@ import {
   deleteCandidate,
   updateCandidateProfile,
 } from "@/app/candidates/actions";
+import { AiAnalyzeButton } from "@/components/ai-analyze-button";
 import { CandidateResumeAttachmentForm } from "@/components/candidate-resume-attachment-form";
 import { DeleteCandidateForm } from "@/components/delete-candidate-form";
 import { WorkspacePageShell } from "@/components/workspace-page-shell";
@@ -281,9 +282,12 @@ export default async function CandidateDetailPage({
                           <span className="rounded-full bg-slate-100 px-2 py-1 font-semibold text-slate-600">{application.source}</span>
                         </div>
                       </div>
-                      <span className={`w-fit rounded-full px-2 py-1 text-xs font-semibold ring-1 ${getScoreTone(application.matchScore)}`}>
-                        {application.matchScore > 0 ? `${application.matchScore}% match` : "Not ranked"}
-                      </span>
+                      <div className="flex shrink-0 flex-col items-end gap-2">
+                        <span className={`w-fit rounded-full px-2 py-1 text-xs font-semibold ring-1 ${getScoreTone(application.matchScore)}`}>
+                          {application.matchScore > 0 ? `${application.matchScore}% match` : "Not ranked"}
+                        </span>
+                        <AiAnalyzeButton applicationId={application.id} />
+                      </div>
                     </div>
                     <div className="mt-4 grid gap-3 md:grid-cols-2">
                       <div className="rounded-lg bg-slate-50 p-3">
