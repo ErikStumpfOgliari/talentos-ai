@@ -104,6 +104,7 @@ export type CandidateDetailData = {
     downloadUrl: string | null;
     id: string;
     fileName: string;
+    viewerUrl: string;
     parserStatus: string;
     mimeType: string;
     size: string;
@@ -648,6 +649,7 @@ export async function getCandidateDetailData({
         : null,
       id: resume.id,
       fileName: resume.fileName,
+      viewerUrl: `/candidates/${candidate.id}/resumes/${resume.id}/viewer`,
       parserStatus: formatEnum(resume.parserStatus),
       mimeType: resume.mimeType ?? "Unknown",
       size: formatBytes(resume.sizeBytes),

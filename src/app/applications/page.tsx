@@ -1,5 +1,6 @@
 import Link from "next/link";
 import {
+  BrainCircuit,
   BriefcaseBusiness,
   CalendarClock,
   CheckCircle2,
@@ -14,6 +15,7 @@ import {
   Sparkles,
   UserRound,
 } from "lucide-react";
+import { AiAnalyzeButton } from "@/components/ai-analyze-button";
 import {
   advanceApplicationToScreening,
   applyResumeParsedDataFromInbox,
@@ -567,6 +569,87 @@ export default async function ApplicationsInboxPage({
                       </div>
                     ) : null}
 
+                    {application.aiAnalysis ? (
+                      <div className="mt-4 rounded-lg border border-violet-200 bg-violet-50 p-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <BrainCircuit className="h-4 w-4 text-violet-700" aria-hidden="true" />
+                            <p className="text-xs font-semibold uppercase text-violet-700">AI Analysis</p>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <span className={`rounded-full px-2 py-1 text-xs font-semibold ring-1 ${getScoreTone(application.aiAnalysis.score)}`}>
+                              {application.aiAnalysis.score}/100
+                            </span>
+                            <span className={`rounded-full px-2 py-1 text-xs font-semibold ring-1 ${
+                              application.aiAnalysis.recommendation === "avancar"
+                                ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+                                : application.aiAnalysis.recommendation === "talvez"
+                                  ? "bg-sky-50 text-sky-700 ring-sky-200"
+                                  : "bg-rose-50 text-rose-700 ring-rose-200"
+                            }`}>
+                              {application.aiAnalysis.recommendation === "avancar"
+                                ? "Advance"
+                                : application.aiAnalysis.recommendation === "talvez"
+                                  ? "Maybe"
+                                  : "Low fit"}
+                            </span>
+                          </div>
+                        </div>
+                        {application.aiAnalysis.summary ? (
+                          <p className="mt-2 text-sm leading-6 text-slate-700">{application.aiAnalysis.summary}</p>
+                        ) : null}
+                        {application.aiAnalysis.experienceSummary ? (
+                          <p className="mt-1 text-xs text-slate-600">{application.aiAnalysis.experienceSummary}</p>
+                        ) : null}
+                        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                          {application.aiAnalysis.matchedRequirements.length > 0 ? (
+                            <div>
+                              <p className="text-xs font-semibold uppercase text-emerald-700">Matched</p>
+                              <ul className="mt-1 space-y-0.5">
+                                {application.aiAnalysis.matchedRequirements.slice(0, 4).map((req) => (
+                                  <li className="text-xs text-slate-700" key={req}>
+                                    + {req}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ) : null}
+                          {application.aiAnalysis.missingRequirements.length > 0 ? (
+                            <div>
+                              <p className="text-xs font-semibold uppercase text-rose-700">Missing</p>
+                              <ul className="mt-1 space-y-0.5">
+                                {application.aiAnalysis.missingRequirements.slice(0, 4).map((req) => (
+                                  <li className="text-xs text-slate-700" key={req}>
+                                    - {req}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          ) : null}
+                        </div>
+                        {application.aiAnalysis.skillsFound.length > 0 ? (
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            {application.aiAnalysis.skillsFound.slice(0, 8).map((skill) => (
+                              <span className="rounded-md bg-white px-2 py-0.5 text-xs font-medium text-violet-700 ring-1 ring-violet-200" key={skill}>
+                                {skill}
+                              </span>
+                            ))}
+                          </div>
+                        ) : null}
+                        <p className="mt-2 text-xs text-slate-400">Analyzed {application.aiAnalysis.analyzedAt}</p>
+                      </div>
+                    ) : application.aiAnalysisStatus === "FAILED" ? (
+                      <div className="mt-4 rounded-lg border border-rose-200 bg-rose-50 p-3">
+                        <div className="flex items-center gap-2">
+                          <BrainCircuit className="h-4 w-4 text-rose-700" aria-hidden="true" />
+                          <p className="text-xs font-semibold uppercase text-rose-700">AI Analysis failed</p>
+                        </div>
+                        <p className="mt-1 text-xs text-slate-600">
+                          Could not read the resume. Ask the candidate to upload a PDF or DOCX with selectable text.
+                        </p>
+                      </div>
+                    ) : null}
+
                     <div className="mt-4 grid gap-2 text-sm sm:grid-cols-2 xl:grid-cols-4">
                       <div className="rounded-lg bg-slate-50 p-3">
                         <p className="text-xs font-semibold uppercase text-slate-500">Resume</p>
@@ -582,6 +665,13 @@ export default async function ApplicationsInboxPage({
                         </p>
                         {application.latestResume?.downloadUrl ? (
                           <div className="mt-2 flex flex-wrap gap-2">
+                            <Link
+                              className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-slate-950 px-2 text-xs font-semibold text-white transition hover:bg-slate-800"
+                              href={application.latestResume.viewerUrl}
+                            >
+                              <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                              View resume
+                            </Link>
                             <a
                               className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
                               href={application.latestResume.downloadUrl}
@@ -600,9 +690,18 @@ export default async function ApplicationsInboxPage({
                             </a>
                           </div>
                         ) : application.latestResume ? (
-                          <p className="mt-2 rounded-md border border-slate-200 bg-white/70 px-2 py-1 text-xs font-medium leading-5 text-slate-500">
-                            Only extracted text is available. Open the profile to review it.
-                          </p>
+                          <div className="mt-2 grid gap-2">
+                            <Link
+                              className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg bg-slate-950 px-2 text-xs font-semibold text-white transition hover:bg-slate-800"
+                              href={application.latestResume.viewerUrl}
+                            >
+                              <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                              View resume
+                            </Link>
+                            <p className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-xs font-medium leading-5 text-amber-700">
+                              Original file unavailable. Review extracted text in the viewer.
+                            </p>
+                          </div>
                         ) : null}
                       </div>
                       <div className="rounded-lg bg-slate-50 p-3">
@@ -700,6 +799,8 @@ export default async function ApplicationsInboxPage({
                         </button>
                       </form>
                     )}
+
+                    <AiAnalyzeButton applicationId={application.id} />
 
                     <form action={rejectApplicationFromInbox} className="grid gap-2 rounded-lg border border-rose-100 bg-rose-50 p-2">
                       <input name="applicationId" type="hidden" value={application.id} />

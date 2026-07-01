@@ -39,11 +39,14 @@ function isActiveSchedulingData(
 
 export default async function SelfSchedulingPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ token: string }>;
+  searchParams?: Promise<{ error?: string }>;
 }) {
-  const { token } = await params;
+  const [{ token }, query] = await Promise.all([params, searchParams]);
   const data = await getSchedulingPageData(token);
+  const rateLimited = query?.error === "rate_limited";
 
   if (data.status === "not_found") {
     return <EmptyState body="Please ask the recruiting team for a fresh scheduling link." title="Scheduling link not found" />;
@@ -114,6 +117,12 @@ export default async function SelfSchedulingPage({
 
       <div className="mx-auto grid max-w-5xl gap-5 px-4 py-6 lg:grid-cols-[1fr_320px]">
         <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          {rateLimited ? (
+            <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              Too many scheduling attempts were made from this device. Please wait a few minutes and try again.
+            </div>
+          ) : null}
+
           <div className="mb-4 flex items-center justify-between gap-3">
             <div>
               <p className="text-sm font-semibold">Available times</p>

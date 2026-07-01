@@ -28,6 +28,7 @@ export type CandidatesPageCandidate = {
   resumeCount: number;
   latestResumeDownloadUrl: string | null;
   latestResumeFileName: string | null;
+  latestResumeViewerUrl: string | null;
   applications: CandidatesPageApplication[];
   latestScore: number;
   createdAt: string;
@@ -199,6 +200,7 @@ export async function getCandidatesPageData(organizationId?: string): Promise<Ca
       resumeCount: candidate.resumes.length,
       latestResumeDownloadUrl,
       latestResumeFileName: latestResume?.fileName ?? null,
+      latestResumeViewerUrl: latestResume ? `/candidates/${candidate.id}/resumes/${latestResume.id}/viewer` : null,
       applications,
       latestScore,
       createdAt: formatDate(candidate.createdAt),

@@ -338,28 +338,24 @@ export default async function CandidateDetailPage({
                         </p>
                       </div>
                       <div className="flex shrink-0 flex-wrap items-center gap-2">
+                        <Link
+                          className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-slate-950 px-2 text-xs font-semibold text-white transition hover:bg-slate-800"
+                          href={resume.viewerUrl}
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                          View resume
+                        </Link>
                         {resume.downloadUrl ? (
-                          <>
-                            <a
-                              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-                              href={resume.downloadUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                            >
-                              <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
-                              Open resume
-                            </a>
-                            <a
-                              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-                              href={`${resume.downloadUrl}?download=1`}
-                            >
-                              <Download className="h-3.5 w-3.5" aria-hidden="true" />
-                              Download file
-                            </a>
-                          </>
+                          <a
+                            className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                            href={`${resume.downloadUrl}?download=1`}
+                          >
+                            <Download className="h-3.5 w-3.5" aria-hidden="true" />
+                            Download file
+                          </a>
                         ) : (
-                          <span className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-500">
-                            Text-only review
+                          <span className="rounded-lg border border-amber-200 bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700">
+                            Original file unavailable
                           </span>
                         )}
                         <span className={`w-fit rounded-full px-2 py-1 text-xs font-semibold ring-1 ${getStatusTone(resume.parserStatus)}`}>

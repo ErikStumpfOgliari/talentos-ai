@@ -356,16 +356,14 @@ export default async function CandidatesPage({
                           candidateName={candidate.name}
                         />
                       </div>
-                      {candidate.latestResumeDownloadUrl ? (
-                        <a
+                      {candidate.latestResumeViewerUrl ? (
+                        <Link
                           className="inline-flex h-10 min-w-0 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-                          href={candidate.latestResumeDownloadUrl}
-                          target="_blank"
-                          rel="noreferrer"
+                          href={candidate.latestResumeViewerUrl}
                         >
                           <ExternalLink className="h-4 w-4" aria-hidden="true" />
-                          Open resume
-                        </a>
+                          View resume
+                        </Link>
                       ) : null}
                       <div className="grid grid-cols-2 gap-2">
                         {[

@@ -20,8 +20,23 @@ export type ApplicationsInboxFilters = {
   stageId?: string;
 };
 
+export type AiAnalysis = {
+  analyzedAt: string;
+  experienceSummary: string | null;
+  fitLevel: string;
+  matchedRequirements: string[];
+  missingRequirements: string[];
+  recommendation: string;
+  riskPoints: string[];
+  score: number;
+  skillsFound: string[];
+  summary: string | null;
+};
+
 export type ApplicationsInboxItem = {
   id: string;
+  aiAnalysis: AiAnalysis | null;
+  aiAnalysisStatus: string;
   appliedAt: string;
   candidate: {
     email: string;
@@ -59,6 +74,7 @@ export type ApplicationsInboxItem = {
     profileUpdate: ResumeProfileUpdatePreview | null;
     status: string;
     tone: string;
+    viewerUrl: string;
   } | null;
   matchScore: number;
   publicStatusPath: string | null;
@@ -513,8 +529,25 @@ export async function getApplicationsInboxData({
               reviewedBy: latestResume.reviewedBy?.name ?? null,
               status: formatEnum(latestResume.parserStatus),
               tone: getParserTone(latestResume.parserStatus, latestResume.reviewedAt),
+              viewerUrl: `/candidates/${application.candidateId}/resumes/${latestResume.id}/viewer`,
             }
           : null,
+      aiAnalysis:
+        application.aiAnalysisStatus === "SUCCESS" && application.aiRecommendation
+          ? {
+              analyzedAt: formatOptionalDateTime(application.aiAnalyzedAt, timezone),
+              experienceSummary: application.aiExperienceSummary ?? null,
+              fitLevel: application.aiFitLevel ?? "baixo",
+              matchedRequirements: readStringArray(application.aiMatchedRequirements),
+              missingRequirements: readStringArray(application.aiMissingRequirements),
+              recommendation: application.aiRecommendation,
+              riskPoints: readStringArray(application.aiRiskPoints),
+              score: application.matchScore ?? 0,
+              skillsFound: readStringArray(application.aiSkillsFound),
+              summary: application.aiSummary ?? null,
+            }
+          : null,
+      aiAnalysisStatus: application.aiAnalysisStatus,
       matchScore: application.matchScore ?? 0,
       publicStatusPath: application.publicToken ? `/careers/applications/${application.publicToken}` : null,
       schedulingPath: latestSchedulingLink ? `/schedule/${latestSchedulingLink.token}` : null,

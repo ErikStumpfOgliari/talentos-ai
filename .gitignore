@@ -51,3 +51,6 @@ next-env.d.ts
 
 # local Codex/dev scratch files
 /tmp/
+
+.vercel
+.env*
