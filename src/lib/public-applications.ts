@@ -456,6 +456,7 @@ async function createParsedProfileDetails(candidateId: string, parsed: ParsedRes
 
 async function runAiAnalysisBackground({
   applicationId,
+  candidateId,
   jobDescription,
   jobTitle,
   resumeFileKey,
@@ -464,6 +465,7 @@ async function runAiAnalysisBackground({
   resumeRawText,
 }: {
   applicationId: string;
+  candidateId: string;
   jobDescription: string;
   jobTitle: string;
   resumeFileKey: string | null;
@@ -477,7 +479,7 @@ async function runAiAnalysisBackground({
       data: { aiAnalysisStatus: AiAnalysisStatus.PROCESSING },
     });
 
-    let resumeText: string | null = null;
+    let resumeText = "";
 
     if (resumeFileKey && resumeMimeType) {
       try {
@@ -488,16 +490,44 @@ async function runAiAnalysisBackground({
       }
     }
 
-    if (!resumeText && resumeRawText) {
+    if (!validateResumeText(resumeText).valid && resumeRawText) {
       resumeText = resumeRawText;
     }
 
-    if (!resumeText) {
-      await prisma.application.update({
-        where: { id: applicationId },
-        data: { aiAnalysisStatus: AiAnalysisStatus.FAILED },
+    // Fall back to candidate's structured profile from DB
+    if (!validateResumeText(resumeText).valid) {
+      const candidate = await prisma.candidate.findUnique({
+        where: { id: candidateId },
+        include: {
+          education: true,
+          experience: true,
+          skills: { include: { skill: true }, orderBy: { createdAt: "asc" } },
+        },
       });
-      return;
+
+      if (candidate) {
+        const lines: string[] = [];
+        if (candidate.currentTitle) lines.push(`Title: ${candidate.currentTitle}`);
+        if (candidate.yearsExperience) lines.push(`Experience: ${candidate.yearsExperience} years`);
+        if (candidate.summary) lines.push("", "Summary:", candidate.summary);
+        if (candidate.skills.length > 0) {
+          lines.push("", `Skills: ${candidate.skills.map((s) => s.skill.name).join(", ")}`);
+        }
+        if (candidate.experience.length > 0) {
+          lines.push("", "Experience:");
+          for (const exp of candidate.experience) {
+            lines.push(`- ${exp.title} at ${exp.company}`);
+            if (exp.description) lines.push(`  ${exp.description}`);
+          }
+        }
+        if (candidate.education.length > 0) {
+          lines.push("", "Education:");
+          for (const edu of candidate.education) {
+            lines.push(`- ${[edu.degree, edu.field, edu.institution].filter(Boolean).join(", ")}`);
+          }
+        }
+        resumeText = lines.join("\n");
+      }
     }
 
     const validation = validateResumeText(resumeText);
@@ -1111,19 +1141,18 @@ export async function submitPublicJobApplication({
   });
 
   // Trigger AI resume analysis in the background after the response is sent
-  if (resume.fileKey || rawText) {
-    after(() =>
-      runAiAnalysisBackground({
-        applicationId: application.id,
-        jobDescription: job.description,
-        jobTitle: job.title,
-        resumeFileKey: resume.fileKey,
-        resumeFileUrl: resume.fileUrl,
-        resumeMimeType: resume.mimeType,
-        resumeRawText: rawText,
-      }),
-    );
-  }
+  after(() =>
+    runAiAnalysisBackground({
+      applicationId: application.id,
+      candidateId: candidate.id,
+      jobDescription: job.description,
+      jobTitle: job.title,
+      resumeFileKey: resume.fileKey,
+      resumeFileUrl: resume.fileUrl,
+      resumeMimeType: resume.mimeType,
+      resumeRawText: rawText,
+    }),
+  );
 
   return {
     applicationId: application.id,

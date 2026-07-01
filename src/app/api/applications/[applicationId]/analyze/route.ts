@@ -6,6 +6,50 @@ import { analyzeResumeWithGroq } from "@/lib/resume-ai-analyzer";
 import { extractResumeText, validateResumeText } from "@/lib/resume-text-extractor";
 import { readResumeFile } from "@/lib/resume-storage";
 
+function buildCandidateProfileText(candidate: {
+  name: string;
+  currentTitle: string | null;
+  location: string | null;
+  yearsExperience: number | null;
+  summary: string | null;
+  skills: { skill: { name: string } }[];
+  experience: { title: string; company: string; description: string | null }[];
+  education: { degree: string | null; field: string | null; institution: string }[];
+}): string {
+  const lines: string[] = [];
+
+  lines.push(`Candidate: ${candidate.name}`);
+  if (candidate.currentTitle) lines.push(`Title: ${candidate.currentTitle}`);
+  if (candidate.location) lines.push(`Location: ${candidate.location}`);
+  if (candidate.yearsExperience) lines.push(`Experience: ${candidate.yearsExperience} years`);
+
+  if (candidate.summary) {
+    lines.push("", "Summary:", candidate.summary);
+  }
+
+  if (candidate.skills.length > 0) {
+    lines.push("", `Skills: ${candidate.skills.map((s) => s.skill.name).join(", ")}`);
+  }
+
+  if (candidate.experience.length > 0) {
+    lines.push("", "Experience:");
+    for (const exp of candidate.experience) {
+      lines.push(`- ${exp.title} at ${exp.company}`);
+      if (exp.description) lines.push(`  ${exp.description}`);
+    }
+  }
+
+  if (candidate.education.length > 0) {
+    lines.push("", "Education:");
+    for (const edu of candidate.education) {
+      const label = [edu.degree, edu.field, edu.institution].filter(Boolean).join(", ");
+      lines.push(`- ${label}`);
+    }
+  }
+
+  return lines.join("\n");
+}
+
 export async function POST(
   _request: NextRequest,
   { params }: { params: Promise<{ applicationId: string }> },
@@ -24,9 +68,15 @@ export async function POST(
     include: {
       candidate: {
         include: {
+          education: true,
+          experience: true,
           resumes: {
             orderBy: { createdAt: "desc" },
             take: 1,
+          },
+          skills: {
+            include: { skill: true },
+            orderBy: { createdAt: "asc" },
           },
         },
       },
@@ -38,16 +88,6 @@ export async function POST(
     return NextResponse.json({ error: "Application not found." }, { status: 404 });
   }
 
-  const resume = application.candidate.resumes[0];
-
-  if (!resume) {
-    return NextResponse.json({ error: "No resume found for this candidate." }, { status: 422 });
-  }
-
-  if (!resume.mimeType) {
-    return NextResponse.json({ error: "Resume file type is unknown." }, { status: 422 });
-  }
-
   await prisma.application.update({
     where: { id: applicationId },
     data: { aiAnalysisStatus: AiAnalysisStatus.PROCESSING },
@@ -56,11 +96,30 @@ export async function POST(
   let stage = "init";
 
   try {
-    stage = "read_file";
-    const { bytes } = await readResumeFile({ fileKey: resume.fileKey, fileUrl: resume.fileUrl });
+    const resume = application.candidate.resumes[0];
+    let resumeText = "";
+    let textSource = "pdf";
 
-    stage = "extract_text";
-    const resumeText = await extractResumeText(bytes, resume.mimeType);
+    // Try to extract text from the resume file
+    if (resume?.fileKey && resume.mimeType) {
+      stage = "read_file";
+      const { bytes } = await readResumeFile({ fileKey: resume.fileKey, fileUrl: resume.fileUrl });
+
+      stage = "extract_text";
+      resumeText = await extractResumeText(bytes, resume.mimeType);
+    }
+
+    // Fall back to stored rawText
+    if (!validateResumeText(resumeText).valid && resume?.rawText) {
+      resumeText = resume.rawText;
+      textSource = "raw_text";
+    }
+
+    // Fall back to candidate's structured profile
+    if (!validateResumeText(resumeText).valid) {
+      resumeText = buildCandidateProfileText(application.candidate);
+      textSource = "profile";
+    }
 
     stage = "validate_text";
     const validation = validateResumeText(resumeText);
@@ -95,7 +154,7 @@ export async function POST(
         aiRiskPoints: result.risk_points,
         aiSummary: result.short_summary,
         matchScore: result.score,
-        matchExplanation: result,
+        matchExplanation: { ...result, textSource },
         aiAnalyzedAt: new Date(),
       },
     });
