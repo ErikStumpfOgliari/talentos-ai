@@ -53,9 +53,16 @@ export async function POST(
     data: { aiAnalysisStatus: AiAnalysisStatus.PROCESSING },
   });
 
+  let stage = "init";
+
   try {
+    stage = "read_file";
     const { bytes } = await readResumeFile({ fileKey: resume.fileKey, fileUrl: resume.fileUrl });
+
+    stage = "extract_text";
     const resumeText = await extractResumeText(bytes, resume.mimeType);
+
+    stage = "validate_text";
     const validation = validateResumeText(resumeText);
 
     if (!validation.valid) {
@@ -67,12 +74,14 @@ export async function POST(
       return NextResponse.json({ error: validation.reason }, { status: 422 });
     }
 
+    stage = "groq_analyze";
     const result = await analyzeResumeWithGroq({
       jobDescription: application.job.description,
       jobTitle: application.job.title,
       resumeText,
     });
 
+    stage = "save_result";
     await prisma.application.update({
       where: { id: applicationId },
       data: {
@@ -96,9 +105,10 @@ export async function POST(
     await prisma.application.update({
       where: { id: applicationId },
       data: { aiAnalysisStatus: AiAnalysisStatus.FAILED },
-    });
+    }).catch(() => null);
 
-    console.error("AI analysis failed:", error);
-    return NextResponse.json({ error: "Analysis failed. Please try again." }, { status: 500 });
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`AI analysis failed at stage [${stage}]: ${message}`, error);
+    return NextResponse.json({ error: `Analysis failed at ${stage}: ${message}` }, { status: 500 });
   }
 }

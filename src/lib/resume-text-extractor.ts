@@ -6,13 +6,23 @@ const MIN_RESUME_TEXT_LENGTH = 300;
 
 export async function extractResumeText(buffer: Buffer, mimeType: string): Promise<string> {
   if (mimeType === MIME_PDF) {
-    return extractTextFromPdfBuffer(buffer);
+    try {
+      return await extractTextFromPdfBuffer(buffer);
+    } catch (error) {
+      console.warn("PDF text extraction failed, treating as empty:", error instanceof Error ? error.message : String(error));
+      return "";
+    }
   }
 
   if (mimeType === MIME_DOCX) {
-    const mammoth = await import("mammoth");
-    const result = await mammoth.extractRawText({ buffer });
-    return result.value;
+    try {
+      const mammoth = await import("mammoth");
+      const result = await mammoth.extractRawText({ buffer });
+      return result.value;
+    } catch (error) {
+      console.warn("DOCX text extraction failed, treating as empty:", error instanceof Error ? error.message : String(error));
+      return "";
+    }
   }
 
   throw new Error(`Unsupported resume file type: ${mimeType}. Only PDF and DOCX are supported.`);

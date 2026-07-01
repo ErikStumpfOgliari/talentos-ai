@@ -1,17 +1,31 @@
 import Groq from "groq-sdk";
 import { z } from "zod";
 
+function normalizeRecommendation(v: unknown): "avancar" | "talvez" | "rejeitar" {
+  const s = String(v).toLowerCase().trim();
+  if (s === "avancar" || s === "advance" || s === "yes" || s === "proceed") return "avancar";
+  if (s === "talvez" || s === "maybe" || s === "consider") return "talvez";
+  return "rejeitar";
+}
+
+function normalizeFitLevel(v: unknown): "baixo" | "medio" | "alto" {
+  const s = String(v).toLowerCase().trim();
+  if (s === "alto" || s === "high") return "alto";
+  if (s === "medio" || s === "medium" || s === "moderate") return "medio";
+  return "baixo";
+}
+
 const AiAnalysisSchema = z.object({
   score: z.number().int().min(0).max(100),
-  recommendation: z.enum(["avancar", "talvez", "rejeitar"]),
-  fit_level: z.enum(["baixo", "medio", "alto"]),
-  matched_requirements: z.array(z.string()),
-  missing_requirements: z.array(z.string()),
-  skills_found: z.array(z.string()),
-  experience_summary: z.string(),
-  risk_points: z.array(z.string()),
-  short_summary: z.string(),
-  recruiter_explanation: z.string(),
+  recommendation: z.preprocess(normalizeRecommendation, z.enum(["avancar", "talvez", "rejeitar"])),
+  fit_level: z.preprocess(normalizeFitLevel, z.enum(["baixo", "medio", "alto"])),
+  matched_requirements: z.array(z.string()).default([]),
+  missing_requirements: z.array(z.string()).default([]),
+  skills_found: z.array(z.string()).default([]),
+  experience_summary: z.string().default(""),
+  risk_points: z.array(z.string()).default([]),
+  short_summary: z.string().default(""),
+  recruiter_explanation: z.string().default(""),
 });
 
 export type AiAnalysisResult = z.infer<typeof AiAnalysisSchema>;
