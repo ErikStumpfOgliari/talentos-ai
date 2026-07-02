@@ -570,22 +570,22 @@ export default async function ApplicationsInboxPage({
                     ) : null}
 
                     {application.aiAnalysis ? (
-                      <div className="mt-4 rounded-lg border border-violet-300 bg-violet-700 p-3">
+                      <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <div className="flex items-center gap-2">
-                            <BrainCircuit className="h-4 w-4 text-violet-200" aria-hidden="true" />
-                            <p className="text-xs font-semibold uppercase text-violet-200">AI Analysis</p>
+                            <BrainCircuit className="h-4 w-4 text-violet-700" aria-hidden="true" />
+                            <p className="text-xs font-semibold uppercase text-violet-700">AI Analysis</p>
                           </div>
                           <div className="flex flex-wrap gap-2">
-                            <span className="rounded-full bg-white/15 px-2 py-1 text-xs font-semibold text-white ring-1 ring-white/20">
+                            <span className={`rounded-full px-2 py-1 text-xs font-semibold ring-1 ${getScoreTone(application.aiAnalysis.score)}`}>
                               {application.aiAnalysis.score}/100
                             </span>
                             <span className={`rounded-full px-2 py-1 text-xs font-semibold ring-1 ${
                               application.aiAnalysis.recommendation === "avancar"
-                                ? "bg-emerald-400/20 text-emerald-200 ring-emerald-400/30"
+                                ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
                                 : application.aiAnalysis.recommendation === "talvez"
-                                  ? "bg-amber-400/20 text-amber-200 ring-amber-400/30"
-                                  : "bg-rose-400/20 text-rose-200 ring-rose-400/30"
+                                  ? "bg-amber-50 text-amber-700 ring-amber-200"
+                                  : "bg-rose-50 text-rose-700 ring-rose-200"
                             }`}>
                               {application.aiAnalysis.recommendation === "avancar"
                                 ? "Advance"
@@ -596,18 +596,18 @@ export default async function ApplicationsInboxPage({
                           </div>
                         </div>
                         {application.aiAnalysis.summary ? (
-                          <p className="mt-2 text-sm leading-6 text-violet-100">{application.aiAnalysis.summary}</p>
+                          <p className="mt-2 text-sm leading-6 text-slate-700">{application.aiAnalysis.summary}</p>
                         ) : null}
                         {application.aiAnalysis.experienceSummary ? (
-                          <p className="mt-1 text-xs text-violet-200">{application.aiAnalysis.experienceSummary}</p>
+                          <p className="mt-1 text-xs text-slate-600">{application.aiAnalysis.experienceSummary}</p>
                         ) : null}
                         <div className="mt-3 grid gap-2 sm:grid-cols-2">
                           {application.aiAnalysis.matchedRequirements.length > 0 ? (
                             <div>
-                              <p className="text-xs font-semibold uppercase text-emerald-300">Matched</p>
+                              <p className="text-xs font-semibold uppercase text-emerald-700">Matched</p>
                               <ul className="mt-1 space-y-0.5">
                                 {application.aiAnalysis.matchedRequirements.slice(0, 4).map((req) => (
-                                  <li className="text-xs text-violet-100" key={req}>
+                                  <li className="text-xs text-slate-700" key={req}>
                                     + {req}
                                   </li>
                                 ))}
@@ -616,10 +616,10 @@ export default async function ApplicationsInboxPage({
                           ) : null}
                           {application.aiAnalysis.missingRequirements.length > 0 ? (
                             <div>
-                              <p className="text-xs font-semibold uppercase text-rose-300">Missing</p>
+                              <p className="text-xs font-semibold uppercase text-rose-700">Missing</p>
                               <ul className="mt-1 space-y-0.5">
                                 {application.aiAnalysis.missingRequirements.slice(0, 4).map((req) => (
-                                  <li className="text-xs text-violet-100" key={req}>
+                                  <li className="text-xs text-slate-700" key={req}>
                                     - {req}
                                   </li>
                                 ))}
@@ -630,13 +630,13 @@ export default async function ApplicationsInboxPage({
                         {application.aiAnalysis.skillsFound.length > 0 ? (
                           <div className="mt-2 flex flex-wrap gap-1.5">
                             {application.aiAnalysis.skillsFound.slice(0, 8).map((skill) => (
-                              <span className="rounded-md bg-white/15 px-2 py-0.5 text-xs font-medium text-violet-100 ring-1 ring-white/20" key={skill}>
+                              <span className="rounded-md bg-white px-2 py-0.5 text-xs font-medium text-violet-700 ring-1 ring-violet-200" key={skill}>
                                 {skill}
                               </span>
                             ))}
                           </div>
                         ) : null}
-                        <p className="mt-2 text-xs text-violet-300">Analyzed {application.aiAnalysis.analyzedAt}</p>
+                        <p className="mt-2 text-xs text-slate-400">Analyzed {application.aiAnalysis.analyzedAt}</p>
                       </div>
                     ) : application.aiAnalysisStatus === "FAILED" ? (
                       <div className="mt-4 rounded-lg border border-rose-200 bg-rose-50 p-3">
