@@ -147,7 +147,7 @@ function formatEnum(value: string) {
 }
 
 function formatDateTime(date: Date, timezone = "America/Sao_Paulo") {
-  return new Intl.DateTimeFormat("en", {
+  return new Intl.DateTimeFormat("pt-BR", {
     dateStyle: "medium",
     timeStyle: "short",
     timeZone: timezone,

@@ -12,15 +12,16 @@ type SiteLanguageContextValue = {
 };
 
 const SiteLanguageContext = createContext<SiteLanguageContextValue>({
-  copy: SITE_COPY.en,
-  language: "en",
+  copy: SITE_COPY.pt,
+  language: "pt",
   setLanguage: () => undefined,
-  t: (key) => getLanguageCopy("en", key),
+  t: (key) => getLanguageCopy("pt", key),
   toggleLanguage: () => undefined,
 });
 
 const ORIGINAL_TEXT = new WeakMap<Text, string>();
 const ORIGINAL_ATTRIBUTES = new WeakMap<Element, Map<string, string>>();
+const LANGUAGE_STORAGE_KEY = "aptelys-language-v2";
 const TRANSLATABLE_ATTRIBUTES = ["aria-label", "placeholder", "title"] as const;
 
 function splitTextNodeValue(value: string) {
@@ -154,7 +155,7 @@ function applySiteLanguage(language: SiteLanguage) {
 }
 
 export function SiteLanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<SiteLanguage>("en");
+  const [language, setLanguageState] = useState<SiteLanguage>("pt");
 
   const setLanguage = useCallback((nextLanguage: SiteLanguage) => {
     setLanguageState(nextLanguage);
@@ -167,7 +168,7 @@ export function SiteLanguageProvider({ children }: { children: React.ReactNode }
   const t = useCallback((key: string) => getLanguageCopy(language, key), [language]);
 
   useEffect(() => {
-    const storedLanguage = window.localStorage.getItem("aptelys-language");
+    const storedLanguage = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
 
     if (storedLanguage === "en" || storedLanguage === "pt") {
       const timeout = window.setTimeout(() => setLanguageState(storedLanguage), 0);
@@ -178,7 +179,7 @@ export function SiteLanguageProvider({ children }: { children: React.ReactNode }
   }, []);
 
   useEffect(() => {
-    window.localStorage.setItem("aptelys-language", language);
+    window.localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
   }, [language]);
 
   useEffect(() => {

@@ -5,8 +5,8 @@ import { SiteThemeProvider } from "@/components/site-theme-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Aptelys by Interellis | AI Recruitment CRM",
-  description: "AI-powered recruitment CRM and ATS SaaS platform by Interellis.",
+  title: "Aptelys by Interellis | CRM de recrutamento com IA",
+  description: "CRM de recrutamento e plataforma ATS SaaS com IA da Interellis.",
 };
 
 export default function RootLayout({
@@ -15,7 +15,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full antialiased">
+    <html lang="pt-BR" className="h-full antialiased">
       <body className="min-h-full flex flex-col">
         <SiteLanguageProvider>
           <SiteThemeProvider>
