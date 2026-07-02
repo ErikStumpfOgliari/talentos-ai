@@ -12,6 +12,7 @@ import {
   Search,
   Sparkles,
   Users,
+  Wrench,
 } from "lucide-react";
 import { createCandidate, deleteCandidate, parseResumeUpload } from "@/app/candidates/actions";
 import { AiAnalyzeButton } from "@/components/ai-analyze-button";
@@ -258,15 +259,47 @@ export default async function CandidatesPage({
       }
       icon={<Users className="h-5 w-5" aria-hidden="true" />}
       organizationName={data.organizationName}
-      rightPanel={<AddCandidateForm jobs={data.jobs} />}
-      rightPanelButtonIcon={<Plus className="h-4 w-4" aria-hidden="true" />}
-      rightPanelButtonLabel="Candidate"
-      rightPanelDescription="Add a manual profile to the CRM."
-      rightPanelTitle="Add candidate"
+      rightPanel={
+        <div className="space-y-4">
+          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="mb-4 flex items-center gap-2">
+              <Plus className="h-4 w-4 text-emerald-700" aria-hidden="true" />
+              <p className="text-sm font-semibold text-slate-950">Add candidate</p>
+            </div>
+            <AddCandidateForm jobs={data.jobs} />
+          </section>
+          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm" id="resume-parser">
+            <div className="mb-4 flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-violet-700" aria-hidden="true" />
+              <p className="text-sm font-semibold text-slate-950">Smart resume parser</p>
+            </div>
+            <ResumeParserForm action={parseResumeUpload} jobs={data.jobs} />
+          </section>
+          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="mb-4 flex items-center gap-2">
+              <BadgeCheck className="h-4 w-4 text-sky-700" aria-hidden="true" />
+              <p className="text-sm font-semibold text-slate-950">CRM readiness</p>
+            </div>
+            <div className="grid gap-3 text-sm">
+              <div className="rounded-lg bg-slate-50 p-3">
+                <p className="text-xs font-semibold uppercase text-slate-500">Structured profile</p>
+                <p className="mt-1 text-slate-600">Candidate, skills, education, resume document, and applications persist separately.</p>
+              </div>
+              <div className="rounded-lg bg-slate-50 p-3">
+                <p className="text-xs font-semibold uppercase text-slate-500">Local review</p>
+                <p className="mt-1 text-slate-600">Uploads, local parsing, and recruiter review all write into the same candidate records.</p>
+              </div>
+            </div>
+          </section>
+        </div>
+      }
+      rightPanelButtonIcon={<Wrench className="h-4 w-4" aria-hidden="true" />}
+      rightPanelButtonLabel="Tools"
+      rightPanelDescription="Add candidates and parse resumes."
+      rightPanelTitle="Tools"
       title="Candidates"
     >
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
-        <section className="space-y-5">
+      <section className="space-y-5">
           {resumeMessage ? (
             <div className={`rounded-lg border px-4 py-3 text-sm font-semibold ${resumeMessage.tone}`}>
               {resumeMessage.message}
@@ -442,35 +475,7 @@ export default async function CandidatesPage({
               ))}
             </div>
           </section>
-        </section>
-
-        <aside className="space-y-5">
-          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm" id="resume-parser">
-            <div className="mb-4 flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-violet-700" aria-hidden="true" />
-              <p className="text-sm font-semibold text-slate-950">Smart resume parser</p>
-            </div>
-            <ResumeParserForm action={parseResumeUpload} jobs={data.jobs} />
-          </section>
-
-          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="mb-4 flex items-center gap-2">
-              <BadgeCheck className="h-4 w-4 text-sky-700" aria-hidden="true" />
-              <p className="text-sm font-semibold text-slate-950">CRM readiness</p>
-            </div>
-            <div className="grid gap-3 text-sm">
-              <div className="rounded-lg bg-slate-50 p-3">
-                <p className="text-xs font-semibold uppercase text-slate-500">Structured profile</p>
-                <p className="mt-1 text-slate-600">Candidate, skills, education, resume document, and applications persist separately.</p>
-              </div>
-              <div className="rounded-lg bg-slate-50 p-3">
-                <p className="text-xs font-semibold uppercase text-slate-500">Local review</p>
-                <p className="mt-1 text-slate-600">Uploads, local parsing, and recruiter review all write into the same candidate records.</p>
-              </div>
-            </div>
-          </section>
-        </aside>
-      </div>
+      </section>
     </WorkspacePageShell>
   );
 }

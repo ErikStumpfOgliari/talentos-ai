@@ -14,6 +14,7 @@ import {
   ShieldAlert,
   Sparkles,
   UserRound,
+  Wrench,
 } from "lucide-react";
 import { AiAnalyzeButton } from "@/components/ai-analyze-button";
 import {
@@ -234,35 +235,14 @@ export default async function ApplicationsInboxPage({
       icon={<Inbox className="h-5 w-5" aria-hidden="true" />}
       organizationName={data.organizationName}
       title="Applications Inbox"
-    >
-      <div className="grid gap-5 2xl:grid-cols-[minmax(0,1fr)_320px]">
-        <section className="space-y-5">
-          {notice ? (
-            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
-              {notice}
-            </div>
-          ) : null}
-
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-            {[
-              { label: "Active intake", value: data.stats.total, icon: Inbox, tone: "text-slate-700" },
-              { label: "New today", value: data.stats.newToday, icon: Clock3, tone: "text-sky-700" },
-              { label: "Manual review", value: data.stats.needsReview, icon: FileSearch, tone: "text-amber-700" },
-              { label: "Strong matches", value: data.stats.highScore, icon: Sparkles, tone: "text-violet-700" },
-              { label: "Avg score", value: `${data.stats.averageScore}%`, icon: CheckCircle2, tone: "text-emerald-700" },
-            ].map((metric) => (
-              <article className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm" key={metric.label}>
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-medium text-slate-500">{metric.label}</p>
-                  <metric.icon className={`h-5 w-5 ${metric.tone}`} aria-hidden="true" />
-                </div>
-                <p className="mt-3 text-2xl font-semibold text-slate-950">{metric.value}</p>
-              </article>
-            ))}
-          </div>
-
+      rightPanel={
+        <div className="space-y-4">
           <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-            <form className="grid gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-[repeat(5,minmax(0,1fr))_auto]" method="get">
+            <div className="mb-4 flex items-center gap-2">
+              <Filter className="h-4 w-4 text-slate-700" aria-hidden="true" />
+              <p className="text-sm font-semibold text-slate-950">Filter applications</p>
+            </div>
+            <form className="grid gap-3" method="get">
               <label className="grid gap-1.5">
                 <span className="text-xs font-semibold uppercase text-slate-500">Job</span>
                 <select className={selectClass} defaultValue={data.filters.jobId ?? ""} name="jobId">
@@ -317,24 +297,27 @@ export default async function ApplicationsInboxPage({
                   ))}
                 </select>
               </label>
-              <div className="flex items-end">
-                <button
-                  className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-                  type="submit"
-                >
-                  <Filter className="h-4 w-4" aria-hidden="true" />
-                  Filter
-                </button>
-              </div>
+              <button
+                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                type="submit"
+              >
+                <Filter className="h-4 w-4" aria-hidden="true" />
+                Apply filters
+              </button>
             </form>
           </section>
 
           <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-            <form action={runBulkApplicationsAction} className="grid gap-3 md:grid-cols-2 xl:grid-cols-3" id={bulkFormId}>
-              <div className="rounded-lg bg-slate-50 p-3">
-                <p className="text-xs font-semibold uppercase text-slate-500">Bulk actions</p>
-                <p className="mt-1 text-sm font-semibold text-slate-950">{data.applications.length} visible applications</p>
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Send className="h-4 w-4 text-slate-700" aria-hidden="true" />
+                <p className="text-sm font-semibold text-slate-950">Bulk actions</p>
               </div>
+              <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">
+                {data.applications.length} visible
+              </span>
+            </div>
+            <form action={runBulkApplicationsAction} className="grid gap-2" id={bulkFormId}>
               <label className="grid gap-1.5">
                 <span className="text-xs font-semibold uppercase text-slate-500">Rejection template</span>
                 <select className={selectClass} name="templateId" defaultValue="">
@@ -346,56 +329,151 @@ export default async function ApplicationsInboxPage({
                   ))}
                 </select>
               </label>
-              <div className="flex items-end">
-                <button
-                  className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
-                  disabled={data.applications.length === 0}
-                  name="bulkAction"
-                  type="submit"
-                  value="screening"
-                >
-                  <Send className="h-4 w-4" aria-hidden="true" />
-                  Screening
-                </button>
-              </div>
-              <div className="flex items-end">
-                <button
-                  className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-sky-200 bg-white px-3 text-sm font-semibold text-sky-700 transition hover:bg-sky-50 disabled:cursor-not-allowed disabled:text-sky-300"
-                  disabled={data.applications.length === 0}
-                  name="bulkAction"
-                  type="submit"
-                  value="schedule"
-                >
-                  <CalendarClock className="h-4 w-4" aria-hidden="true" />
-                  Schedule
-                </button>
-              </div>
-              <div className="flex items-end">
-                <button
-                  className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-emerald-200 bg-white px-3 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:text-emerald-300"
-                  disabled={data.applications.length === 0}
-                  name="bulkAction"
-                  type="submit"
-                  value="reviewed"
-                >
-                  <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-                  Reviewed
-                </button>
-              </div>
-              <div className="flex items-end">
-                <button
-                  className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-rose-200 bg-white px-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:text-rose-300"
-                  disabled={data.applications.length === 0}
-                  name="bulkAction"
-                  type="submit"
-                  value="reject"
-                >
-                  <ShieldAlert className="h-4 w-4" aria-hidden="true" />
-                  Reject
-                </button>
-              </div>
+              <button
+                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+                disabled={data.applications.length === 0}
+                name="bulkAction"
+                type="submit"
+                value="screening"
+              >
+                <Send className="h-4 w-4" aria-hidden="true" />
+                Move to screening
+              </button>
+              <button
+                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-sky-200 bg-white px-3 text-sm font-semibold text-sky-700 transition hover:bg-sky-50 disabled:cursor-not-allowed disabled:text-sky-300"
+                disabled={data.applications.length === 0}
+                name="bulkAction"
+                type="submit"
+                value="schedule"
+              >
+                <CalendarClock className="h-4 w-4" aria-hidden="true" />
+                Create schedule links
+              </button>
+              <button
+                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-emerald-200 bg-white px-3 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:text-emerald-300"
+                disabled={data.applications.length === 0}
+                name="bulkAction"
+                type="submit"
+                value="reviewed"
+              >
+                <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+                Mark resumes reviewed
+              </button>
+              <button
+                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-rose-200 bg-white px-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:text-rose-300"
+                disabled={data.applications.length === 0}
+                name="bulkAction"
+                type="submit"
+                value="reject"
+              >
+                <ShieldAlert className="h-4 w-4" aria-hidden="true" />
+                Reject all visible
+              </button>
             </form>
           </section>
+
+          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="mb-4 flex items-center gap-2">
+              <FileSearch className="h-4 w-4 text-amber-700" aria-hidden="true" />
+              <p className="text-sm font-semibold text-slate-950">Manual review queue</p>
+            </div>
+            <div className="grid gap-2 grid-cols-3">
+              <div className="rounded-lg bg-amber-50 p-3">
+                <p className="text-xs font-semibold uppercase text-amber-700">Pending</p>
+                <p className="mt-1 text-xl font-semibold text-slate-950">{data.stats.needsReview}</p>
+              </div>
+              <div className="rounded-lg bg-rose-50 p-3">
+                <p className="text-xs font-semibold uppercase text-rose-700">Failed</p>
+                <p className="mt-1 text-xl font-semibold text-slate-950">{data.stats.failedParsing}</p>
+              </div>
+              <div className="rounded-lg bg-emerald-50 p-3">
+                <p className="text-xs font-semibold uppercase text-emerald-700">Reviewed</p>
+                <p className="mt-1 text-xl font-semibold text-slate-950">{data.stats.reviewedResumes}</p>
+              </div>
+            </div>
+            <div className="mt-3 grid gap-2">
+              {data.manualReviewQueue.map((item) => (
+                <Link
+                  className="rounded-lg border border-amber-200 bg-amber-50 p-3 transition hover:bg-amber-100"
+                  href={`/candidates/${item.candidateId}`}
+                  key={item.applicationId}
+                >
+                  <p className="truncate text-sm font-semibold text-slate-950">{item.candidateName}</p>
+                  <p className="mt-1 truncate text-xs text-slate-600">{item.jobTitle}</p>
+                  <p className="mt-1 truncate text-xs font-medium text-amber-700">
+                    {item.resumeFileName} - {item.status}
+                  </p>
+                </Link>
+              ))}
+              {data.manualReviewQueue.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-slate-300 p-3">
+                  <p className="text-sm font-semibold text-slate-950">No resumes waiting review</p>
+                  <p className="mt-1 text-xs text-slate-500">New parsing exceptions will appear here.</p>
+                </div>
+              ) : null}
+            </div>
+          </section>
+
+          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="mb-4 flex items-center gap-2">
+              <MailCheck className="h-4 w-4 text-sky-700" aria-hidden="true" />
+              <p className="text-sm font-semibold text-slate-950">Confirmation queue</p>
+            </div>
+            <div className="rounded-lg bg-slate-50 p-3">
+              <p className="text-xs font-semibold uppercase text-slate-500">Queued emails</p>
+              <p className="mt-1 text-2xl font-semibold text-slate-950">{data.stats.queuedConfirmations}</p>
+            </div>
+          </section>
+
+          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="mb-4 flex items-center gap-2">
+              <ShieldAlert className="h-4 w-4 text-rose-700" aria-hidden="true" />
+              <p className="text-sm font-semibold text-slate-950">Rejection templates</p>
+            </div>
+            <div className="grid gap-2">
+              {data.rejectionTemplates.map((template) => (
+                <div className="rounded-lg border border-slate-200 p-3" key={template.id}>
+                  <p className="text-sm font-semibold text-slate-950">{template.name}</p>
+                </div>
+              ))}
+              {data.rejectionTemplates.length === 0 ? (
+                <Link className="rounded-lg border border-dashed border-slate-300 p-3 text-sm font-semibold text-slate-600 hover:bg-slate-50" href="/email-automation#new-template">
+                  Create rejection template
+                </Link>
+              ) : null}
+            </div>
+          </section>
+        </div>
+      }
+      rightPanelButtonIcon={<Wrench className="h-4 w-4" aria-hidden="true" />}
+      rightPanelButtonLabel="Tools"
+      rightPanelTitle="Tools"
+      rightPanelDescription="Filter, bulk actions and review queue."
+    >
+      <section className="space-y-5">
+          {notice ? (
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
+              {notice}
+            </div>
+          ) : null}
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            {[
+              { label: "Active intake", value: data.stats.total, icon: Inbox, tone: "text-slate-700" },
+              { label: "New today", value: data.stats.newToday, icon: Clock3, tone: "text-sky-700" },
+              { label: "Manual review", value: data.stats.needsReview, icon: FileSearch, tone: "text-amber-700" },
+              { label: "Strong matches", value: data.stats.highScore, icon: Sparkles, tone: "text-violet-700" },
+              { label: "Avg score", value: `${data.stats.averageScore}%`, icon: CheckCircle2, tone: "text-emerald-700" },
+            ].map((metric) => (
+              <article className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm" key={metric.label}>
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-medium text-slate-500">{metric.label}</p>
+                  <metric.icon className={`h-5 w-5 ${metric.tone}`} aria-hidden="true" />
+                </div>
+                <p className="mt-3 text-2xl font-semibold text-slate-950">{metric.value}</p>
+              </article>
+            ))}
+          </div>
 
           <section className="grid gap-3">
             {data.applications.map((application) => (
@@ -833,82 +911,7 @@ export default async function ApplicationsInboxPage({
               </div>
             ) : null}
           </section>
-        </section>
-
-        <aside className="space-y-5">
-          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="mb-4 flex items-center gap-2">
-              <FileSearch className="h-4 w-4 text-amber-700" aria-hidden="true" />
-              <p className="text-sm font-semibold text-slate-950">Manual review queue</p>
-            </div>
-            <div className="grid gap-2 sm:grid-cols-3 2xl:grid-cols-1">
-              <div className="rounded-lg bg-amber-50 p-3">
-                <p className="text-xs font-semibold uppercase text-amber-700">Pending</p>
-                <p className="mt-1 text-xl font-semibold text-slate-950">{data.stats.needsReview}</p>
-              </div>
-              <div className="rounded-lg bg-rose-50 p-3">
-                <p className="text-xs font-semibold uppercase text-rose-700">Failed</p>
-                <p className="mt-1 text-xl font-semibold text-slate-950">{data.stats.failedParsing}</p>
-              </div>
-              <div className="rounded-lg bg-emerald-50 p-3">
-                <p className="text-xs font-semibold uppercase text-emerald-700">Reviewed</p>
-                <p className="mt-1 text-xl font-semibold text-slate-950">{data.stats.reviewedResumes}</p>
-              </div>
-            </div>
-            <div className="mt-3 grid gap-2">
-              {data.manualReviewQueue.map((item) => (
-                <Link
-                  className="rounded-lg border border-amber-200 bg-amber-50 p-3 transition hover:bg-amber-100"
-                  href={`/candidates/${item.candidateId}`}
-                  key={item.applicationId}
-                >
-                  <p className="truncate text-sm font-semibold text-slate-950">{item.candidateName}</p>
-                  <p className="mt-1 truncate text-xs text-slate-600">{item.jobTitle}</p>
-                  <p className="mt-1 truncate text-xs font-medium text-amber-700">
-                    {item.resumeFileName} - {item.status}
-                  </p>
-                </Link>
-              ))}
-              {data.manualReviewQueue.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-slate-300 p-3">
-                  <p className="text-sm font-semibold text-slate-950">No resumes waiting review</p>
-                  <p className="mt-1 text-xs text-slate-500">New parsing exceptions will appear here.</p>
-                </div>
-              ) : null}
-            </div>
-          </section>
-
-          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="mb-4 flex items-center gap-2">
-              <MailCheck className="h-4 w-4 text-sky-700" aria-hidden="true" />
-              <p className="text-sm font-semibold text-slate-950">Confirmation queue</p>
-            </div>
-            <div className="rounded-lg bg-slate-50 p-3">
-              <p className="text-xs font-semibold uppercase text-slate-500">Queued emails</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-950">{data.stats.queuedConfirmations}</p>
-            </div>
-          </section>
-
-          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="mb-4 flex items-center gap-2">
-              <ShieldAlert className="h-4 w-4 text-rose-700" aria-hidden="true" />
-              <p className="text-sm font-semibold text-slate-950">Rejection templates</p>
-            </div>
-            <div className="grid gap-2">
-              {data.rejectionTemplates.map((template) => (
-                <div className="rounded-lg border border-slate-200 p-3" key={template.id}>
-                  <p className="text-sm font-semibold text-slate-950">{template.name}</p>
-                </div>
-              ))}
-              {data.rejectionTemplates.length === 0 ? (
-                <Link className="rounded-lg border border-dashed border-slate-300 p-3 text-sm font-semibold text-slate-600 hover:bg-slate-50" href="/email-automation#new-template">
-                  Create rejection template
-                </Link>
-              ) : null}
-            </div>
-          </section>
-        </aside>
-      </div>
+      </section>
     </WorkspacePageShell>
   );
 }

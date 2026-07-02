@@ -20,6 +20,7 @@ import {
   Sparkles,
   UserRound,
   Users,
+  Wrench,
 } from "lucide-react";
 import {
   addCandidateNote,
@@ -176,6 +177,208 @@ export default async function CandidateDetailPage({
       icon={<UserRound className="h-5 w-5" aria-hidden="true" />}
       organizationName={data.organizationName}
       title={data.candidate.name}
+      rightPanel={
+        <div className="space-y-4">
+          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="mb-4 flex items-center gap-2">
+              <Save className="h-4 w-4 text-emerald-700" aria-hidden="true" />
+              <p className="text-sm font-semibold text-slate-950">Edit profile</p>
+            </div>
+            <form action={updateCandidateProfile} className="grid gap-3">
+              <input name="candidateId" type="hidden" value={data.candidate.id} />
+              <Field label="Name">
+                <input className={inputClass} defaultValue={data.candidate.editable.name} name="name" required />
+              </Field>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Field label="Email">
+                  <input className={inputClass} defaultValue={data.candidate.editable.email} name="email" type="email" />
+                </Field>
+                <Field label="Phone">
+                  <input className={inputClass} defaultValue={data.candidate.editable.phone} name="phone" />
+                </Field>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Field label="Title">
+                  <input className={inputClass} defaultValue={data.candidate.editable.currentTitle} name="currentTitle" />
+                </Field>
+                <Field label="Location">
+                  <input className={inputClass} defaultValue={data.candidate.editable.location} name="location" />
+                </Field>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Field label="Source">
+                  <select className={inputClass} defaultValue={data.candidate.editable.source} name="source">
+                    <option value="MANUAL">Manual</option>
+                    <option value="LINKEDIN">LinkedIn</option>
+                    <option value="REFERRAL">Referral</option>
+                    <option value="INBOUND">Inbound</option>
+                    <option value="INDEED">Indeed</option>
+                    <option value="TALENT_POOL">Talent pool</option>
+                    <option value="CAREERS_PAGE">Careers page</option>
+                    <option value="OTHER">Other</option>
+                  </select>
+                </Field>
+                <Field label="Experience">
+                  <input
+                    className={inputClass}
+                    defaultValue={data.candidate.editable.yearsExperience ?? ""}
+                    min="0"
+                    name="yearsExperience"
+                    type="number"
+                  />
+                </Field>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <Field label="Currency">
+                  <input className={inputClass} defaultValue={data.candidate.editable.currency} maxLength={3} name="currency" />
+                </Field>
+                <Field label="Salary">
+                  <input
+                    className={inputClass}
+                    defaultValue={data.candidate.editable.salaryExpectation ?? ""}
+                    min="0"
+                    name="salaryExpectation"
+                    type="number"
+                  />
+                </Field>
+                <Field label="Availability">
+                  <input className={inputClass} defaultValue={data.candidate.editable.availability} name="availability" />
+                </Field>
+              </div>
+              <Field label="Summary">
+                <textarea className={textareaClass} defaultValue={data.candidate.editable.summary} maxLength={TEXT_LIMITS.longText} name="summary" />
+                <span className="text-xs text-slate-500">{LONG_TEXT_LIMIT_HINT}</span>
+              </Field>
+              <Field label="Skills">
+                <textarea className={textareaClass} defaultValue={data.skills.join("\n")} maxLength={TEXT_LIMITS.longText} name="skills" />
+                <span className="text-xs text-slate-500">{LONG_TEXT_LIMIT_HINT}</span>
+              </Field>
+              <button
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                type="submit"
+              >
+                <Save className="h-4 w-4" aria-hidden="true" />
+                Save profile
+              </button>
+            </form>
+          </section>
+
+          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="mb-4 flex items-center gap-2">
+              <RefreshCcw className="h-4 w-4 text-violet-700" aria-hidden="true" />
+              <p className="text-sm font-semibold text-slate-950">Attach resume</p>
+            </div>
+            <CandidateResumeAttachmentForm action={attachCandidateResume} candidateId={data.candidate.id} />
+          </section>
+
+          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="mb-4 flex items-center gap-2">
+              <MessageSquarePlus className="h-4 w-4 text-sky-700" aria-hidden="true" />
+              <p className="text-sm font-semibold text-slate-950">Add note</p>
+            </div>
+            <form action={addCandidateNote} className="grid gap-3">
+              <input name="candidateId" type="hidden" value={data.candidate.id} />
+              <Field label="Context">
+                <select className={inputClass} name="applicationId" defaultValue="">
+                  <option value="">Candidate profile</option>
+                  {data.applications.map((application) => (
+                    <option key={application.id} value={application.id}>
+                      {application.jobTitle}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Visibility">
+                <select className={inputClass} name="visibility" defaultValue="TEAM">
+                  <option value="TEAM">Team</option>
+                  <option value="INTERNAL">Internal</option>
+                </select>
+              </Field>
+              <Field label="Note">
+                <textarea
+                  className={textareaClass}
+                  maxLength={TEXT_LIMITS.longText}
+                  name="body"
+                  placeholder="Add recruiter context, screening notes, or next steps."
+                  required
+                />
+                <span className="text-xs text-slate-500">{LONG_TEXT_LIMIT_HINT}</span>
+              </Field>
+              <button
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+                type="submit"
+              >
+                <MessageSquarePlus className="h-4 w-4" aria-hidden="true" />
+                Save note
+              </button>
+            </form>
+          </section>
+
+          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="mb-4 flex items-center gap-2">
+              <Users className="h-4 w-4 text-violet-700" aria-hidden="true" />
+              <p className="text-sm font-semibold text-slate-950">Notes</p>
+            </div>
+            <div className="space-y-2">
+              {data.notes.map((note) => (
+                <article className="min-w-0 overflow-hidden rounded-lg border border-slate-200 p-3" key={note.id}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-slate-950">{note.context}</p>
+                      <p className="mt-1 truncate text-xs text-slate-500">{note.author} - {note.createdAt}</p>
+                    </div>
+                    <span className="shrink-0 rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">
+                      {note.visibility}
+                    </span>
+                  </div>
+                  <p className="mt-2 break-words text-sm leading-6 text-slate-600">{note.body}</p>
+                </article>
+              ))}
+              {data.notes.length === 0 ? (
+                <p className="rounded-lg bg-slate-50 p-3 text-sm text-slate-500">No notes yet.</p>
+              ) : null}
+            </div>
+          </section>
+
+          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="mb-4 flex items-center gap-2">
+              <Clock3 className="h-4 w-4 text-amber-700" aria-hidden="true" />
+              <p className="text-sm font-semibold text-slate-950">Experience and education</p>
+            </div>
+            <div className="space-y-3">
+              {data.experience.map((experience) => (
+                <article className="min-w-0 overflow-hidden rounded-lg border border-slate-200 p-3" key={experience.id}>
+                  <p className="break-words text-sm font-semibold text-slate-950">{experience.title}</p>
+                  <p className="mt-1 break-words text-xs text-slate-500">{experience.company} - {experience.period}</p>
+                  <p className="mt-2 break-words text-sm leading-6 text-slate-600">{experience.description}</p>
+                </article>
+              ))}
+              {data.education.map((education) => (
+                <article className="min-w-0 overflow-hidden rounded-lg border border-slate-200 p-3" key={education.id}>
+                  <p className="break-words text-sm font-semibold text-slate-950">{education.label}</p>
+                </article>
+              ))}
+              {data.experience.length === 0 && data.education.length === 0 ? (
+                <p className="rounded-lg bg-slate-50 p-3 text-sm text-slate-500">No education or experience details yet.</p>
+              ) : null}
+            </div>
+          </section>
+
+          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="mb-4">
+              <p className="text-sm font-semibold text-slate-950">Danger zone</p>
+              <p className="mt-1 text-xs leading-5 text-slate-500">
+                Remove this candidate and all related recruiting records from this workspace.
+              </p>
+            </div>
+            <DeleteCandidateForm action={deleteCandidate} candidateId={data.candidate.id} candidateName={data.candidate.name} />
+          </section>
+        </div>
+      }
+      rightPanelButtonIcon={<Wrench className="h-4 w-4" aria-hidden="true" />}
+      rightPanelButtonLabel="Tools"
+      rightPanelTitle="Tools"
+      rightPanelDescription="Edit profile, add notes and manage candidate."
     >
       <div className="grid gap-5">
         <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500">
@@ -238,8 +441,7 @@ export default async function CandidateDetailPage({
           </div>
         ) : null}
 
-        <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,390px)]">
-          <div className="min-w-0 space-y-5">
+        <div className="space-y-5">
             <section className="min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
               <div className="mb-4 flex items-center gap-2">
                 <BadgeCheck className="h-4 w-4 text-emerald-700" aria-hidden="true" />
@@ -598,205 +800,7 @@ export default async function CandidateDetailPage({
                 </div>
               </div>
             </section>
-          </div>
-
-          <aside className="min-w-0 space-y-5">
-            <section className="min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-              <div className="mb-4 flex items-center gap-2">
-                <Save className="h-4 w-4 text-emerald-700" aria-hidden="true" />
-                <p className="text-sm font-semibold text-slate-950">Edit profile</p>
-              </div>
-              <form action={updateCandidateProfile} className="grid gap-3">
-                <input name="candidateId" type="hidden" value={data.candidate.id} />
-                <Field label="Name">
-                  <input className={inputClass} defaultValue={data.candidate.editable.name} name="name" required />
-                </Field>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <Field label="Email">
-                    <input className={inputClass} defaultValue={data.candidate.editable.email} name="email" type="email" />
-                  </Field>
-                  <Field label="Phone">
-                    <input className={inputClass} defaultValue={data.candidate.editable.phone} name="phone" />
-                  </Field>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <Field label="Title">
-                    <input className={inputClass} defaultValue={data.candidate.editable.currentTitle} name="currentTitle" />
-                  </Field>
-                  <Field label="Location">
-                    <input className={inputClass} defaultValue={data.candidate.editable.location} name="location" />
-                  </Field>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <Field label="Source">
-                    <select className={inputClass} defaultValue={data.candidate.editable.source} name="source">
-                      <option value="MANUAL">Manual</option>
-                      <option value="LINKEDIN">LinkedIn</option>
-                      <option value="REFERRAL">Referral</option>
-                      <option value="INBOUND">Inbound</option>
-                      <option value="INDEED">Indeed</option>
-                      <option value="TALENT_POOL">Talent pool</option>
-                      <option value="CAREERS_PAGE">Careers page</option>
-                      <option value="OTHER">Other</option>
-                    </select>
-                  </Field>
-                  <Field label="Experience">
-                    <input
-                      className={inputClass}
-                      defaultValue={data.candidate.editable.yearsExperience ?? ""}
-                      min="0"
-                      name="yearsExperience"
-                      type="number"
-                    />
-                  </Field>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <Field label="Currency">
-                    <input className={inputClass} defaultValue={data.candidate.editable.currency} maxLength={3} name="currency" />
-                  </Field>
-                  <Field label="Salary">
-                    <input
-                      className={inputClass}
-                      defaultValue={data.candidate.editable.salaryExpectation ?? ""}
-                      min="0"
-                      name="salaryExpectation"
-                      type="number"
-                    />
-                  </Field>
-                  <Field label="Availability">
-                    <input className={inputClass} defaultValue={data.candidate.editable.availability} name="availability" />
-                  </Field>
-                </div>
-                <Field label="Summary">
-                  <textarea className={textareaClass} defaultValue={data.candidate.editable.summary} maxLength={TEXT_LIMITS.longText} name="summary" />
-                  <span className="text-xs text-slate-500">{LONG_TEXT_LIMIT_HINT}</span>
-                </Field>
-                <Field label="Skills">
-                  <textarea className={textareaClass} defaultValue={data.skills.join("\n")} maxLength={TEXT_LIMITS.longText} name="skills" />
-                  <span className="text-xs text-slate-500">{LONG_TEXT_LIMIT_HINT}</span>
-                </Field>
-                <button
-                  className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-                  type="submit"
-                >
-                  <Save className="h-4 w-4" aria-hidden="true" />
-                  Save profile
-                </button>
-              </form>
-            </section>
-
-            <section className="min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-              <div className="mb-4 flex items-center gap-2">
-                <RefreshCcw className="h-4 w-4 text-violet-700" aria-hidden="true" />
-                <p className="text-sm font-semibold text-slate-950">Attach resume</p>
-              </div>
-              <CandidateResumeAttachmentForm action={attachCandidateResume} candidateId={data.candidate.id} />
-            </section>
-
-            <section className="min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-              <div className="mb-4">
-                <p className="text-sm font-semibold text-slate-950">Danger zone</p>
-                <p className="mt-1 text-xs leading-5 text-slate-500">
-                  Remove this candidate and all related recruiting records from this workspace.
-                </p>
-              </div>
-              <DeleteCandidateForm action={deleteCandidate} candidateId={data.candidate.id} candidateName={data.candidate.name} />
-            </section>
-
-            <section className="min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-              <div className="mb-4 flex items-center gap-2">
-                <MessageSquarePlus className="h-4 w-4 text-sky-700" aria-hidden="true" />
-                <p className="text-sm font-semibold text-slate-950">Add note</p>
-              </div>
-              <form action={addCandidateNote} className="grid gap-3">
-                <input name="candidateId" type="hidden" value={data.candidate.id} />
-                <Field label="Context">
-                  <select className={inputClass} name="applicationId" defaultValue="">
-                    <option value="">Candidate profile</option>
-                    {data.applications.map((application) => (
-                      <option key={application.id} value={application.id}>
-                        {application.jobTitle}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-                <Field label="Visibility">
-                  <select className={inputClass} name="visibility" defaultValue="TEAM">
-                    <option value="TEAM">Team</option>
-                    <option value="INTERNAL">Internal</option>
-                  </select>
-                </Field>
-                <Field label="Note">
-                  <textarea
-                    className={textareaClass}
-                    maxLength={TEXT_LIMITS.longText}
-                    name="body"
-                    placeholder="Add recruiter context, screening notes, or next steps."
-                    required
-                  />
-                  <span className="text-xs text-slate-500">{LONG_TEXT_LIMIT_HINT}</span>
-                </Field>
-                <button
-                  className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-                  type="submit"
-                >
-                  <MessageSquarePlus className="h-4 w-4" aria-hidden="true" />
-                  Save note
-                </button>
-              </form>
-            </section>
-
-            <section className="min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-              <div className="mb-4 flex items-center gap-2">
-                <Users className="h-4 w-4 text-violet-700" aria-hidden="true" />
-                <p className="text-sm font-semibold text-slate-950">Notes</p>
-              </div>
-              <div className="space-y-2">
-                {data.notes.map((note) => (
-                  <article className="min-w-0 overflow-hidden rounded-lg border border-slate-200 p-3" key={note.id}>
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-slate-950">{note.context}</p>
-                        <p className="mt-1 truncate text-xs text-slate-500">{note.author} - {note.createdAt}</p>
-                      </div>
-                      <span className="shrink-0 rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">
-                        {note.visibility}
-                      </span>
-                    </div>
-                    <p className="mt-2 break-words text-sm leading-6 text-slate-600">{note.body}</p>
-                  </article>
-                ))}
-                {data.notes.length === 0 ? (
-                  <p className="rounded-lg bg-slate-50 p-3 text-sm text-slate-500">No notes yet.</p>
-                ) : null}
-              </div>
-            </section>
-
-            <section className="min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-              <div className="mb-4 flex items-center gap-2">
-                <Clock3 className="h-4 w-4 text-amber-700" aria-hidden="true" />
-                <p className="text-sm font-semibold text-slate-950">Experience and education</p>
-              </div>
-              <div className="space-y-3">
-                {data.experience.map((experience) => (
-                  <article className="min-w-0 overflow-hidden rounded-lg border border-slate-200 p-3" key={experience.id}>
-                    <p className="break-words text-sm font-semibold text-slate-950">{experience.title}</p>
-                    <p className="mt-1 break-words text-xs text-slate-500">{experience.company} - {experience.period}</p>
-                    <p className="mt-2 break-words text-sm leading-6 text-slate-600">{experience.description}</p>
-                  </article>
-                ))}
-                {data.education.map((education) => (
-                  <article className="min-w-0 overflow-hidden rounded-lg border border-slate-200 p-3" key={education.id}>
-                    <p className="break-words text-sm font-semibold text-slate-950">{education.label}</p>
-                  </article>
-                ))}
-                {data.experience.length === 0 && data.education.length === 0 ? (
-                  <p className="rounded-lg bg-slate-50 p-3 text-sm text-slate-500">No education or experience details yet.</p>
-                ) : null}
-              </div>
-            </section>
-          </aside>
-        </section>
+        </div>
       </div>
     </WorkspacePageShell>
   );
