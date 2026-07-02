@@ -17,12 +17,13 @@ async function extractTextWithOpenAIVision(
   }
 
   const client = new OpenAI({ apiKey });
-  const model = process.env.OPENAI_RESUME_PARSER_MODEL ?? "gpt-4.1-mini";
+  // Only gpt-4o / gpt-4o-mini support input_file (PDF visual processing).
+  // gpt-4.1-mini does NOT support this feature — hardcode the OCR model.
+  const model = process.env.OPENAI_OCR_MODEL ?? "gpt-4o-mini";
   const base64 = buffer.toString("base64");
 
-  // Use inline file_data — same mechanism as the resume parser — but ask for raw
-  // text instead of structured JSON. This avoids Zod schema failures while still
-  // letting the vision model read image-based PDF pages.
+  // Use inline file_data — the vision model reads each PDF page as an image,
+  // enabling OCR even on Canva / scanned / image-based PDFs.
   const response = await client.responses.create({
     model,
     input: [
