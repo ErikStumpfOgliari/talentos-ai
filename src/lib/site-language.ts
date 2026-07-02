@@ -641,7 +641,7 @@ export const ENGLISH_TO_PORTUGUESE: Record<string, string> = {
   "Rank candidates": "Ranquear candidatos",
   "Rank candidates and schedule the first interview from an active application.": "Ranqueie candidatos e agende a primeira entrevista a partir de uma candidatura ativa.",
   Ranked: "Ranqueado",
-  "Ranked shortlist": "Shortlist ranqueada",
+  "Ranked shortlist": "Lista ranqueada",
   "Raw preview": "Prévia bruta",
   "Real upload plus OpenAI parsing can write into the same tables.": "Upload real mais análise com OpenAI podem gravar nas mesmas tabelas.",
   "Recent activity": "Atividade recente",
@@ -1200,6 +1200,7 @@ export const ENGLISH_TO_PORTUGUESE: Record<string, string> = {
   "AI Matching Engine": "Motor de matching com IA",
   "AI score breakdown": "Detalhamento da pontuação de IA",
   "AI Verdict": "Veredito da IA",
+  "Each candidate is scored across 5 signals: skills match (45%), role description fit (25%), experience level (15%), title alignment (10%), and profile completeness (5%). Scores update automatically when candidates are ranked.": "Cada candidato é pontuado em 5 sinais: compatibilidade de competências (45%), aderência à descrição da vaga (25%), nível de experiência (15%), alinhamento de cargo (10%) e completude do perfil (5%). As pontuações são atualizadas automaticamente quando os candidatos são ranqueados.",
   "AI workflow experience": "Experiência com fluxos de IA",
   "AI-powered": "Com IA",
   "Accessibility": "Acessibilidade",
@@ -1338,6 +1339,7 @@ export const ENGLISH_TO_PORTUGUESE: Record<string, string> = {
   "Secure resume upload failed.": "Falha no upload seguro do currículo.",
   "Secure resume upload is unavailable.": "Upload seguro de currículo indisponível.",
   "Signals": "Sinais",
+  "Skills match": "Compatibilidade de competências",
   "Software Engineering": "Engenharia de Software",
   "Stakeholder Mgmt": "Gestão de stakeholders",
   "Strong communication": "Comunicação forte",
@@ -1347,6 +1349,7 @@ export const ENGLISH_TO_PORTUGUESE: Record<string, string> = {
   "Temporary password": "Senha temporária",
   "The candidate selected a large PDF, but secure direct upload was unavailable. Ask for the resume file again or request pasted resume text.": "O candidato selecionou um PDF grande, mas o upload direto seguro estava indisponível. Peça o arquivo do currículo novamente ou solicite o texto colado.",
   "The candidate's background shows low alignment with this role's requirements.": "O histórico do candidato mostra baixa aderência aos requisitos desta vaga.",
+  "Profile is incomplete — adding resume data and skills will improve the match score.": "O perfil está incompleto - adicionar dados do currículo e competências melhora a pontuação de compatibilidade.",
   "A recruiter is reviewing your profile against the role.": "Um recrutador está avaliando seu perfil em relação à vaga.",
   "The recruiting team has closed this application.": "O time de recrutamento encerrou esta candidatura.",
   "The team is coordinating or reviewing interview steps.": "O time está coordenando ou revisando etapas de entrevista.",
@@ -1389,6 +1392,33 @@ const PORTUGUESE_PATTERNS: Array<[RegExp, (match: RegExpMatchArray) => string]> 
       const subject = translateText(match[1], "pt").replace(/^./, (char) => char.toLowerCase());
       return `O candidato tem ${subject} relevantes, mas não tem experiência e formação para a vaga ${match[2]}.`;
     },
+  ],
+  [
+    /^Strong match \((\d+)%\) for the (.+) role\s+(?:—|â€”|-|\?)\s+profile closely aligns with the core requirements\.$/,
+    (match) =>
+      `Compatibilidade forte (${match[1]}%) para a vaga ${translateText(match[2], "pt")} - o perfil está bem alinhado aos requisitos principais.`,
+  ],
+  [
+    /^Partial match \((\d+)%\) detected for (.+)\s+(?:—|â€”|-|\?)\s+candidate meets some criteria but gaps remain\.$/,
+    (match) =>
+      `Compatibilidade parcial (${match[1]}%) para ${translateText(match[2], "pt")} - o candidato atende alguns critérios, mas ainda existem lacunas.`,
+  ],
+  [
+    /^Limited alignment \((\d+)%\) with the (.+) role\s+(?:—|â€”|-|\?)\s+the candidate does not cover the primary requirements\.$/,
+    (match) =>
+      `Aderência limitada (${match[1]}%) com a vaga ${translateText(match[2], "pt")} - o candidato não cobre os requisitos principais.`,
+  ],
+  [
+    /^Requirements not detected in profile: (.+)\.$/,
+    (match) => `Requisitos não detectados no perfil: ${translateText(match[1], "pt")}.`,
+  ],
+  [
+    /^Experience level likely falls below the (\d+)\+ year threshold expected for this seniority\.$/,
+    (match) => `O nível de experiência provavelmente fica abaixo do limite de ${match[1]}+ anos esperado para esta senioridade.`,
+  ],
+  [
+    /^Detected strengths include: (.+)\.$/,
+    (match) => `Pontos fortes detectados: ${translateText(match[1], "pt")}.`,
   ],
   [/^Source: (.+)$/, (match) => `Fonte: ${translateText(match[1], "pt")}`],
   [/^(.+) - Uploaded (.+)$/, (match) => `${match[1]} - Enviado em ${translateText(match[2], "pt")}`],
@@ -1516,6 +1546,11 @@ const PARTIAL_PORTUGUESE_REPLACEMENTS: Array<[string, string]> = [
   ["Status", "Status"],
   ["Source", "Fonte"],
   ["Experience", "Experiência"],
+  ["skills match", "compatibilidade de competências"],
+  ["role description fit", "aderência à descrição da vaga"],
+  ["experience level", "nível de experiência"],
+  ["title alignment", "alinhamento de cargo"],
+  ["profile completeness", "completude do perfil"],
   ["Education", "Educação"],
   ["Communication & Teamwork", "Comunicação e trabalho em equipe"],
   ["skills", "competências"],
