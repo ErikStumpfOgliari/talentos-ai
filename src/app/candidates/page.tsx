@@ -163,6 +163,20 @@ function getScoreTone(score: number) {
   return "bg-slate-100 text-slate-600 ring-slate-200";
 }
 
+function getRecommendationTone(rec: string | null) {
+  if (rec === "avancar") return "bg-emerald-50 text-emerald-700 ring-emerald-200";
+  if (rec === "talvez") return "bg-amber-50 text-amber-700 ring-amber-200";
+  if (rec === "rejeitar") return "bg-rose-50 text-rose-700 ring-rose-200";
+  return "bg-slate-100 text-slate-600 ring-slate-200";
+}
+
+function getRecommendationLabel(rec: string | null) {
+  if (rec === "avancar") return "Advance";
+  if (rec === "talvez") return "Consider";
+  if (rec === "rejeitar") return "Reject";
+  return null;
+}
+
 function getResumeMessage(status?: string) {
   if (status === "parsed") {
     return {
@@ -309,6 +323,15 @@ export default async function CandidatesPage({
                         <span className={`rounded-full px-2 py-1 text-xs font-semibold ring-1 ${getScoreTone(candidate.latestScore)}`}>
                           {candidate.latestScore > 0 ? `${candidate.latestScore}% match` : "Not ranked"}
                         </span>
+                        {(() => {
+                          const rec = candidate.applications[0]?.aiRecommendation ?? null;
+                          const label = getRecommendationLabel(rec);
+                          return label ? (
+                            <span className={`rounded-full px-2 py-1 text-xs font-semibold ring-1 ${getRecommendationTone(rec)}`}>
+                              {label}
+                            </span>
+                          ) : null;
+                        })()}
                         <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">
                           {candidate.source}
                         </span>
@@ -391,10 +414,21 @@ export default async function CandidatesPage({
                         <div className="mt-2 space-y-2">
                           {candidate.applications.map((application) => (
                             <div className="rounded-md bg-slate-50 px-2 py-2" key={application.id}>
-                              <p className="text-sm font-semibold text-slate-950">{application.jobTitle}</p>
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <p className="text-sm font-semibold text-slate-950">{application.jobTitle}</p>
+                                {application.aiRecommendation ? (
+                                  <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ${getRecommendationTone(application.aiRecommendation)}`}>
+                                    {getRecommendationLabel(application.aiRecommendation)}
+                                  </span>
+                                ) : null}
+                              </div>
                               <p className="mt-1 text-xs text-slate-500">
                                 {application.stage} - {application.status}
+                                {application.matchScore > 0 ? ` · ${application.matchScore}%` : ""}
                               </p>
+                              {application.aiSummary ? (
+                                <p className="mt-1.5 text-xs leading-5 text-slate-600">{application.aiSummary}</p>
+                              ) : null}
                             </div>
                           ))}
                           {candidate.applications.length === 0 ? (

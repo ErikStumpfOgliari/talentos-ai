@@ -9,6 +9,8 @@ export type CandidatesPageApplication = {
   status: string;
   matchScore: number;
   aiAnalysisStatus: string;
+  aiRecommendation: string | null;
+  aiSummary: string;
 };
 
 export type CandidatesPageCandidate = {
@@ -176,6 +178,8 @@ export async function getCandidatesPageData(organizationId?: string): Promise<Ca
       status: formatEnum(application.status),
       matchScore: application.matchScore ?? 0,
       aiAnalysisStatus: application.aiAnalysisStatus,
+      aiRecommendation: application.aiRecommendation,
+      aiSummary: application.aiSummary ?? "",
     }));
     const latestResume = candidate.resumes[0];
     const latestResumeDownloadUrl =

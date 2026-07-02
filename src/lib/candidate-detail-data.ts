@@ -100,6 +100,13 @@ export type CandidateDetailData = {
     appliedAt: string;
     stageEnteredAt: string;
     aiAnalysisStatus: string;
+    aiRecommendation: string | null;
+    aiFitLevel: string | null;
+    aiSummary: string;
+    aiExperienceSummary: string;
+    aiSkillsFound: string[];
+    aiRiskPoints: string[];
+    aiAnalyzedAt: string | null;
   }[];
   resumes: {
     downloadUrl: string | null;
@@ -637,12 +644,25 @@ export async function getCandidateDetailData({
         status: formatEnum(application.status),
         source: formatEnum(application.source),
         matchScore: application.matchScore ?? 0,
-        strengths: readStringArray(explanation.strengths),
-        gaps: readStringArray(explanation.gaps),
+        strengths: Array.isArray(application.aiMatchedRequirements) && application.aiMatchedRequirements.length > 0
+          ? readStringArray(application.aiMatchedRequirements)
+          : readStringArray(explanation.strengths),
+        gaps: Array.isArray(application.aiMissingRequirements) && application.aiMissingRequirements.length > 0
+          ? readStringArray(application.aiMissingRequirements)
+          : readStringArray(explanation.gaps),
         notes: readStringArray(explanation.notes),
         appliedAt: formatDate(application.appliedAt),
         stageEnteredAt: formatDate(application.stageEnteredAt),
         aiAnalysisStatus: application.aiAnalysisStatus,
+        aiRecommendation: application.aiRecommendation,
+        aiFitLevel: application.aiFitLevel,
+        aiSummary: application.aiSummary ?? "",
+        aiExperienceSummary: application.aiExperienceSummary ?? "",
+        aiSkillsFound: readStringArray(application.aiSkillsFound),
+        aiRiskPoints: readStringArray(application.aiRiskPoints),
+        aiAnalyzedAt: application.aiAnalyzedAt
+          ? formatDateTime(application.aiAnalyzedAt, candidate.organization.timezone)
+          : null,
       };
     }),
     resumes: candidate.resumes.map((resume) => ({

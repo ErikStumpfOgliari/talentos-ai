@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
+  AlertTriangle,
   BadgeCheck,
   BriefcaseBusiness,
   CalendarDays,
@@ -73,6 +74,20 @@ function getStatusTone(status: string) {
   }
 
   return "bg-slate-100 text-slate-600 ring-slate-200";
+}
+
+function getRecommendationTone(rec: string | null) {
+  if (rec === "avancar") return "bg-emerald-50 text-emerald-700 ring-emerald-200";
+  if (rec === "talvez") return "bg-amber-50 text-amber-700 ring-amber-200";
+  if (rec === "rejeitar") return "bg-rose-50 text-rose-700 ring-rose-200";
+  return "bg-slate-100 text-slate-600 ring-slate-200";
+}
+
+function getRecommendationLabel(rec: string | null) {
+  if (rec === "avancar") return "Advance";
+  if (rec === "talvez") return "Consider";
+  if (rec === "rejeitar") return "Reject";
+  return rec ?? "Unknown";
 }
 
 function Field({
@@ -283,40 +298,117 @@ export default async function CandidateDetailPage({
                         </div>
                       </div>
                       <div className="flex shrink-0 flex-col items-end gap-2">
-                        <span className={`w-fit rounded-full px-2 py-1 text-xs font-semibold ring-1 ${getScoreTone(application.matchScore)}`}>
-                          {application.matchScore > 0 ? `${application.matchScore}% match` : "Not ranked"}
-                        </span>
+                        <div className="flex flex-wrap justify-end gap-2">
+                          <span className={`w-fit rounded-full px-2 py-1 text-xs font-semibold ring-1 ${getScoreTone(application.matchScore)}`}>
+                            {application.matchScore > 0 ? `${application.matchScore}% match` : "Not ranked"}
+                          </span>
+                          {application.aiRecommendation ? (
+                            <span className={`w-fit rounded-full px-2 py-1 text-xs font-semibold ring-1 ${getRecommendationTone(application.aiRecommendation)}`}>
+                              {getRecommendationLabel(application.aiRecommendation)}
+                            </span>
+                          ) : null}
+                        </div>
                         <AiAnalyzeButton applicationId={application.id} />
                       </div>
                     </div>
-                    <div className="mt-4 grid gap-3 md:grid-cols-2">
-                      <div className="rounded-lg bg-slate-50 p-3">
-                        <p className="text-xs font-semibold uppercase text-emerald-700">Strengths</p>
-                        <ul className="mt-2 space-y-1.5 text-sm text-slate-600">
-                          {(application.strengths.length ? application.strengths : ["No strengths saved yet."]).map((item) => (
-                            <li className="flex gap-2" key={item}>
-                              <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" aria-hidden="true" />
-                              <span className="min-w-0 break-words">{item}</span>
-                            </li>
-                          ))}
-                        </ul>
+
+                    {application.aiAnalysisStatus === "SUCCESS" ? (
+                      <div className="mt-4 space-y-3">
+                        {application.aiSummary ? (
+                          <p className="text-sm leading-6 text-slate-700">{application.aiSummary}</p>
+                        ) : null}
+                        <div className="grid gap-3 md:grid-cols-2">
+                          <div className="rounded-lg bg-emerald-50 p-3">
+                            <p className="text-xs font-semibold uppercase text-emerald-700">Matched requirements</p>
+                            <ul className="mt-2 space-y-1.5 text-sm text-slate-600">
+                              {(application.strengths.length ? application.strengths : ["No requirements matched."]).map((item) => (
+                                <li className="flex gap-2" key={item}>
+                                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" aria-hidden="true" />
+                                  <span className="min-w-0 break-words">{item}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                          <div className="rounded-lg bg-amber-50 p-3">
+                            <p className="text-xs font-semibold uppercase text-amber-700">Missing requirements</p>
+                            <ul className="mt-2 space-y-1.5 text-sm text-slate-600">
+                              {(application.gaps.length ? application.gaps : ["No gaps identified."]).map((item) => (
+                                <li className="flex gap-2" key={item}>
+                                  <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />
+                                  <span className="min-w-0 break-words">{item}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                        {application.aiSkillsFound.length > 0 ? (
+                          <div className="rounded-lg bg-slate-50 p-3">
+                            <p className="mb-2 text-xs font-semibold uppercase text-slate-500">Skills found in resume</p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {application.aiSkillsFound.map((skill) => (
+                                <span className="rounded-md bg-violet-100 px-2 py-1 text-xs font-medium text-violet-700" key={skill}>
+                                  {skill}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        ) : null}
+                        {application.aiExperienceSummary ? (
+                          <div className="rounded-lg bg-slate-50 p-3">
+                            <p className="mb-1 text-xs font-semibold uppercase text-slate-500">Experience summary</p>
+                            <p className="text-sm leading-6 text-slate-600">{application.aiExperienceSummary}</p>
+                          </div>
+                        ) : null}
+                        {application.aiRiskPoints.length > 0 ? (
+                          <div className="rounded-lg bg-rose-50 p-3">
+                            <p className="mb-2 text-xs font-semibold uppercase text-rose-700">Points of attention</p>
+                            <ul className="space-y-1.5 text-sm text-slate-600">
+                              {application.aiRiskPoints.map((point) => (
+                                <li className="flex gap-2" key={point}>
+                                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-rose-500" aria-hidden="true" />
+                                  <span className="min-w-0 break-words">{point}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ) : null}
                       </div>
-                      <div className="rounded-lg bg-slate-50 p-3">
-                        <p className="text-xs font-semibold uppercase text-amber-700">Gaps</p>
-                        <ul className="mt-2 space-y-1.5 text-sm text-slate-600">
-                          {(application.gaps.length ? application.gaps : ["No gaps saved yet."]).map((item) => (
-                            <li className="flex gap-2" key={item}>
-                              <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />
-                              <span className="min-w-0 break-words">{item}</span>
-                            </li>
-                          ))}
-                        </ul>
+                    ) : application.aiAnalysisStatus === "PROCESSING" ? (
+                      <div className="mt-4 rounded-lg bg-violet-50 px-3 py-2 text-sm text-violet-700">Analysis in progress…</div>
+                    ) : application.aiAnalysisStatus === "FAILED" ? (
+                      <div className="mt-4 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">Last analysis failed. Try re-analyzing above.</div>
+                    ) : (
+                      <div className="mt-4 grid gap-3 md:grid-cols-2">
+                        <div className="rounded-lg bg-slate-50 p-3">
+                          <p className="text-xs font-semibold uppercase text-emerald-700">Strengths</p>
+                          <ul className="mt-2 space-y-1.5 text-sm text-slate-600">
+                            {(application.strengths.length ? application.strengths : ["No strengths saved yet."]).map((item) => (
+                              <li className="flex gap-2" key={item}>
+                                <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" aria-hidden="true" />
+                                <span className="min-w-0 break-words">{item}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div className="rounded-lg bg-slate-50 p-3">
+                          <p className="text-xs font-semibold uppercase text-amber-700">Gaps</p>
+                          <ul className="mt-2 space-y-1.5 text-sm text-slate-600">
+                            {(application.gaps.length ? application.gaps : ["No gaps saved yet."]).map((item) => (
+                              <li className="flex gap-2" key={item}>
+                                <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />
+                                <span className="min-w-0 break-words">{item}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
                       </div>
-                    </div>
+                    )}
+
                     <div className="mt-3 flex flex-wrap gap-4 text-xs text-slate-500">
                       <span>Applied {application.appliedAt}</span>
                       <span>Stage entered {application.stageEnteredAt}</span>
                       <span>Job {application.jobStatus}</span>
+                      {application.aiAnalyzedAt ? <span>AI analyzed {application.aiAnalyzedAt}</span> : null}
                     </div>
                   </article>
                 ))}
