@@ -85,9 +85,8 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
 
   return (
     <button
-      aria-label={isDark ? "Ativar modo claro" : "Ativar modo escuro"}
+      aria-label={isDark ? "Activate light mode" : "Activate dark mode"}
       className={`theme-toggle ${className}`}
-      data-no-translate
       data-theme={theme}
       onClick={toggleTheme}
       type="button"
@@ -96,7 +95,7 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
         <Sun className="theme-toggle-sun h-4 w-4" />
         <Moon className="theme-toggle-moon h-4 w-4" />
       </span>
-      <span className="sr-only">{isDark ? "Ativar modo claro" : "Ativar modo escuro"}</span>
+      <span className="sr-only">{isDark ? "Activate light mode" : "Activate dark mode"}</span>
     </button>
   );
 }

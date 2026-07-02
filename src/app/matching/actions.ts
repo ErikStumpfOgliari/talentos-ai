@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { recruitingRoles, requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { scoreCandidateForJob } from "@/lib/candidate-matching";
+import { ApplicationStatus } from "@/generated/prisma/client";
 
 function readString(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -101,4 +102,67 @@ export async function rankCandidatesForJob(formData: FormData) {
   revalidatePath("/matching");
 
   redirect(`/matching?jobId=${job.id}&ranked=1`);
+}
+
+export async function applyToJobFromMatching(formData: FormData) {
+  const session = await requireRole(recruitingRoles);
+  const organization = session.organization;
+  const candidateId = readString(formData, "candidateId");
+  const jobId = readString(formData, "jobId");
+
+  if (!candidateId || !jobId) {
+    throw new Error("Candidate and job are required.");
+  }
+
+  const [job, candidate] = await Promise.all([
+    prisma.job.findFirst({
+      where: { id: jobId, organizationId: organization.id },
+      include: {
+        pipelineStages: { orderBy: { position: "asc" }, take: 1 },
+      },
+    }),
+    prisma.candidate.findFirst({
+      where: { id: candidateId, organizationId: organization.id },
+      include: {
+        education: true,
+        experience: true,
+        resumes: { orderBy: { createdAt: "desc" }, take: 2 },
+        skills: { include: { skill: true }, orderBy: { createdAt: "asc" } },
+      },
+    }),
+  ]);
+
+  if (!job || !candidate) {
+    throw new Error("Job or candidate not found for this organization.");
+  }
+
+  const match = await scoreCandidateForJob(job, candidate);
+  const stageId = job.pipelineStages[0]?.id;
+
+  await prisma.application.upsert({
+    where: { jobId_candidateId: { jobId: job.id, candidateId: candidate.id } },
+    update: {
+      stageId,
+      status: ApplicationStatus.ACTIVE,
+      source: candidate.source,
+      matchScore: match.score,
+      matchExplanation: match.explanation,
+    },
+    create: {
+      organizationId: organization.id,
+      jobId: job.id,
+      candidateId: candidate.id,
+      stageId,
+      status: ApplicationStatus.ACTIVE,
+      source: candidate.source,
+      matchScore: match.score,
+      matchExplanation: match.explanation,
+    },
+  });
+
+  revalidatePath("/matching");
+  revalidatePath("/applications");
+  revalidatePath("/candidates");
+
+  redirect(`/matching?jobId=${job.id}&applied=${candidate.id}`);
 }

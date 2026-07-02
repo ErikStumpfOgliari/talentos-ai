@@ -6,13 +6,14 @@ import {
   CheckCircle2,
   Gauge,
   Layers3,
+  Plus,
   SlidersHorizontal,
   Sparkles,
   Target,
   UserRound,
   Users,
 } from "lucide-react";
-import { rankCandidatesForJob } from "@/app/matching/actions";
+import { applyToJobFromMatching, rankCandidatesForJob } from "@/app/matching/actions";
 import { AiAnalyzeButton } from "@/components/ai-analyze-button";
 import { WorkspacePanelTabs } from "@/components/workspace-panel-tabs";
 import { WorkspacePageShell } from "@/components/workspace-page-shell";
@@ -240,7 +241,7 @@ function MatchingToolsPanel({
 export default async function MatchingPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ jobId?: string; ranked?: string }>;
+  searchParams?: Promise<{ jobId?: string; ranked?: string; applied?: string }>;
 }) {
   const params = await searchParams;
   const session = await requireRole(recruitingRoles);
@@ -281,6 +282,10 @@ export default async function MatchingPage({
           {params?.ranked ? (
             <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
               Candidate ranking saved to the ATS pipeline.
+            </div>
+          ) : params?.applied ? (
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
+              Candidate added to this role and scored. AI analysis is now available on the candidate card.
             </div>
           ) : null}
 
@@ -459,7 +464,20 @@ export default async function MatchingPage({
 
                       {candidate.applicationId ? (
                         <AiAnalyzeButton applicationId={candidate.applicationId} />
-                      ) : null}
+                      ) : (
+                        <form action={applyToJobFromMatching}>
+                          <input name="candidateId" type="hidden" value={candidate.id} />
+                          <input name="jobId" type="hidden" value={selectedJobId} />
+                          <button
+                            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+                            disabled={!selectedJobId}
+                            type="submit"
+                          >
+                            <Plus className="h-4 w-4" aria-hidden="true" />
+                            Add to role
+                          </button>
+                        </form>
+                      )}
 
                       <Link
                         className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
