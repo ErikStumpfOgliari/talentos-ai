@@ -241,6 +241,14 @@ textarea {
   background-color: rgb(244 63 94 / 0.13);
 }
 
+[data-color-theme="dark"] [data-app-theme-scope] .bg-violet-700 {
+  background-color: rgb(109 40 217 / 0.22);
+}
+
+[data-color-theme="dark"] [data-app-theme-scope] .border-violet-300 {
+  border-color: rgb(139 92 246 / 0.3);
+}
+
 [data-color-theme="dark"] [data-app-theme-scope] .text-emerald-700,
 [data-color-theme="dark"] [data-app-theme-scope] .text-emerald-800 {
   color: #66f0c6;
@@ -262,6 +270,14 @@ textarea {
 [data-color-theme="dark"] [data-app-theme-scope] .text-rose-700,
 [data-color-theme="dark"] [data-app-theme-scope] .text-rose-800 {
   color: #fda4af;
+}
+
+body.theme-dark [data-app-theme-scope] .bg-violet-700 {
+  background-color: rgb(109 40 217 / 0.22) !important;
+}
+
+body.theme-dark [data-app-theme-scope] .border-violet-300 {
+  border-color: rgb(139 92 246 / 0.3) !important;
 }
 
 body.theme-dark .dashboard-shell,
