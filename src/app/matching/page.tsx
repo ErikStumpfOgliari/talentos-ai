@@ -86,15 +86,15 @@ function buildAiVerdict(candidate: MatchingPageCandidate, jobTitle: string): str
   }
 
   if (candidate.signals.semanticSimilarity < 0.2) {
-    parts.push("Candidate background has minimal semantic overlap with the job description language.");
+    parts.push("The candidate's background shows low alignment with this role's requirements.");
   }
 
   if (candidate.signals.profileCompleteness < 0.5) {
-    parts.push("Profile is incomplete — enriching resume data would improve scoring precision.");
+    parts.push("Profile is incomplete — adding resume data and skills will improve the match score.");
   }
 
   if (candidate.matchedSkills.length > 0) {
-    parts.push(`Confirmed signals: ${candidate.matchedSkills.slice(0, 3).join(", ")}.`);
+    parts.push(`Detected strengths include: ${candidate.matchedSkills.slice(0, 3).join(", ")}.`);
   }
 
   return parts.join(" ");
@@ -314,24 +314,23 @@ export default async function MatchingPage({
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-white">AI Matching Engine</p>
                 <p className="mt-1 text-xs leading-5 text-slate-400">
-                  Scores are computed across 5 weighted signals: skill coverage (45%), semantic similarity via embeddings (25%),
-                  experience fit (15%), title alignment (10%), and profile completeness (5%).
-                  When OpenAI embeddings are configured, vector cosine similarity replaces token-overlap for higher precision matching.
+                  Each candidate is scored across 5 signals: skills match (45%), role description fit (25%), experience level (15%),
+                  title alignment (10%), and profile completeness (5%). Scores update automatically when candidates are ranked.
                 </p>
               </div>
             </div>
             <div className="mt-4 grid grid-cols-3 gap-3 border-t border-white/10 pt-4 text-xs">
               <div>
-                <p className="font-semibold uppercase tracking-wide text-slate-400">Embedding model</p>
-                <p className="mt-1 font-semibold text-white">text-embedding-3-small</p>
+                <p className="font-semibold uppercase tracking-wide text-slate-400">Analysis</p>
+                <p className="mt-1 font-semibold text-white">AI-powered</p>
               </div>
               <div>
                 <p className="font-semibold uppercase tracking-wide text-slate-400">Signals</p>
-                <p className="mt-1 font-semibold text-white">5 weighted dimensions</p>
+                <p className="mt-1 font-semibold text-white">5 dimensions</p>
               </div>
               <div>
                 <p className="font-semibold uppercase tracking-wide text-slate-400">Output</p>
-                <p className="mt-1 font-semibold text-white">Score-sorted shortlist</p>
+                <p className="mt-1 font-semibold text-white">Ranked shortlist</p>
               </div>
             </div>
           </div>
@@ -347,15 +346,10 @@ export default async function MatchingPage({
             <div className="grid gap-5">
               {data.candidates.map((candidate, index) => (
                 <article className="min-w-0 overflow-hidden rounded-lg border border-slate-200 p-4" key={candidate.id}>
-                  <div className="grid gap-4 2xl:grid-cols-[72px_minmax(0,1fr)_260px]">
+                  <div className="grid gap-4 2xl:grid-cols-[56px_minmax(0,1fr)_260px]">
 
-                    <div className="flex gap-3 2xl:flex-col 2xl:gap-2">
-                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-slate-950 text-sm font-semibold text-white">
-                        #{index + 1}
-                      </div>
-                      <span className="self-center rounded-md bg-violet-50 px-2 py-1 text-xs font-semibold text-violet-700 ring-1 ring-violet-200 2xl:self-start">
-                        {candidate.mode}
-                      </span>
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-slate-950 text-sm font-semibold text-white">
+                      #{index + 1}
                     </div>
 
                     <div className="min-w-0">
@@ -440,20 +434,20 @@ export default async function MatchingPage({
                       <div className="min-w-0 rounded-lg border border-slate-200 p-3">
                         <div className="mb-3 flex items-center gap-2">
                           <BrainCircuit className="h-3.5 w-3.5 text-violet-700" aria-hidden="true" />
-                          <p className="text-xs font-semibold uppercase text-slate-500">Signal breakdown</p>
+                          <p className="text-xs font-semibold uppercase text-slate-500">AI score breakdown</p>
                         </div>
                         <div className="grid gap-2">
-                          <SignalRow label="Skill coverage" value={candidate.signals.skillCoverage} />
-                          <SignalRow label="Semantic fit" value={candidate.signals.semanticSimilarity} />
+                          <SignalRow label="Skills match" value={candidate.signals.skillCoverage} />
+                          <SignalRow label="Role description fit" value={candidate.signals.semanticSimilarity} />
                           <SignalRow label="Experience" value={candidate.signals.experienceFit} />
-                          <SignalRow label="Title match" value={candidate.signals.titleFit} />
-                          <SignalRow label="Profile quality" value={candidate.signals.profileCompleteness} />
+                          <SignalRow label="Title alignment" value={candidate.signals.titleFit} />
+                          <SignalRow label="Profile completeness" value={candidate.signals.profileCompleteness} />
                         </div>
                       </div>
 
                       {candidate.strengths.length > 0 ? (
                         <div className="min-w-0 rounded-lg border border-slate-200 p-3">
-                          <p className="text-xs font-semibold uppercase text-emerald-700">Confirmed signals</p>
+                          <p className="text-xs font-semibold uppercase text-emerald-700">Key strengths</p>
                           <ul className="mt-2 space-y-1.5 text-sm text-slate-600">
                             {candidate.strengths.slice(0, 2).map((strength) => (
                               <li className="break-words" key={strength}>{strength}</li>

@@ -241,6 +241,74 @@ textarea {
   background-color: rgb(244 63 94 / 0.13);
 }
 
+[data-color-theme="dark"] [data-app-theme-scope] .bg-violet-50,
+[data-color-theme="dark"] [data-app-theme-scope] .bg-violet-50\/70 {
+  background-color: rgb(139 92 246 / 0.13);
+}
+
+[data-color-theme="dark"] [data-app-theme-scope] .bg-violet-100 {
+  background-color: rgb(139 92 246 / 0.18);
+}
+
+[data-color-theme="dark"] [data-app-theme-scope] .border-emerald-200 {
+  border-color: rgb(16 185 129 / 0.28);
+}
+
+[data-color-theme="dark"] [data-app-theme-scope] .border-sky-200 {
+  border-color: rgb(14 165 233 / 0.28);
+}
+
+[data-color-theme="dark"] [data-app-theme-scope] .border-amber-200 {
+  border-color: rgb(245 158 11 / 0.28);
+}
+
+[data-color-theme="dark"] [data-app-theme-scope] .border-rose-100,
+[data-color-theme="dark"] [data-app-theme-scope] .border-rose-200 {
+  border-color: rgb(244 63 94 / 0.28);
+}
+
+[data-color-theme="dark"] [data-app-theme-scope] .border-violet-100,
+[data-color-theme="dark"] [data-app-theme-scope] .border-violet-200 {
+  border-color: rgb(139 92 246 / 0.22);
+}
+
+[data-color-theme="dark"] [data-app-theme-scope] .ring-emerald-200 {
+  --tw-ring-color: rgb(16 185 129 / 0.28);
+}
+
+[data-color-theme="dark"] [data-app-theme-scope] .ring-sky-200 {
+  --tw-ring-color: rgb(14 165 233 / 0.28);
+}
+
+[data-color-theme="dark"] [data-app-theme-scope] .ring-amber-200 {
+  --tw-ring-color: rgb(245 158 11 / 0.28);
+}
+
+[data-color-theme="dark"] [data-app-theme-scope] .ring-rose-200 {
+  --tw-ring-color: rgb(244 63 94 / 0.28);
+}
+
+[data-color-theme="dark"] [data-app-theme-scope] .ring-violet-100,
+[data-color-theme="dark"] [data-app-theme-scope] .ring-violet-200 {
+  --tw-ring-color: rgb(139 92 246 / 0.26);
+}
+
+[data-color-theme="dark"] [data-app-theme-scope] .hover\:bg-emerald-50:hover {
+  background-color: rgb(16 185 129 / 0.18);
+}
+
+[data-color-theme="dark"] [data-app-theme-scope] .hover\:bg-sky-50:hover {
+  background-color: rgb(14 165 233 / 0.18);
+}
+
+[data-color-theme="dark"] [data-app-theme-scope] .hover\:bg-amber-100:hover {
+  background-color: rgb(245 158 11 / 0.18);
+}
+
+[data-color-theme="dark"] [data-app-theme-scope] .hover\:bg-rose-50:hover,
+[data-color-theme="dark"] [data-app-theme-scope] .hover\:bg-rose-100:hover {
+  background-color: rgb(244 63 94 / 0.18);
+}
 
 [data-color-theme="dark"] [data-app-theme-scope] .text-emerald-700,
 [data-color-theme="dark"] [data-app-theme-scope] .text-emerald-800 {
@@ -323,6 +391,116 @@ body.theme-dark [data-app-theme-scope] textarea {
   background-color: #0a131d !important;
   border-color: rgb(126 145 159 / 0.32) !important;
   color: #f4f8fb !important;
+}
+
+body.theme-dark [data-app-theme-scope] .bg-emerald-50 {
+  background-color: rgb(16 185 129 / 0.13) !important;
+}
+
+body.theme-dark [data-app-theme-scope] .bg-sky-50 {
+  background-color: rgb(14 165 233 / 0.13) !important;
+}
+
+body.theme-dark [data-app-theme-scope] .bg-amber-50 {
+  background-color: rgb(245 158 11 / 0.13) !important;
+}
+
+body.theme-dark [data-app-theme-scope] .bg-rose-50 {
+  background-color: rgb(244 63 94 / 0.13) !important;
+}
+
+body.theme-dark [data-app-theme-scope] .bg-violet-50,
+body.theme-dark [data-app-theme-scope] .bg-violet-50\/70 {
+  background-color: rgb(139 92 246 / 0.13) !important;
+}
+
+body.theme-dark [data-app-theme-scope] .bg-violet-100 {
+  background-color: rgb(139 92 246 / 0.18) !important;
+}
+
+body.theme-dark [data-app-theme-scope] .border-emerald-200 {
+  border-color: rgb(16 185 129 / 0.28) !important;
+}
+
+body.theme-dark [data-app-theme-scope] .border-sky-200 {
+  border-color: rgb(14 165 233 / 0.28) !important;
+}
+
+body.theme-dark [data-app-theme-scope] .border-amber-200 {
+  border-color: rgb(245 158 11 / 0.28) !important;
+}
+
+body.theme-dark [data-app-theme-scope] .border-rose-100,
+body.theme-dark [data-app-theme-scope] .border-rose-200 {
+  border-color: rgb(244 63 94 / 0.28) !important;
+}
+
+body.theme-dark [data-app-theme-scope] .border-violet-100,
+body.theme-dark [data-app-theme-scope] .border-violet-200 {
+  border-color: rgb(139 92 246 / 0.22) !important;
+}
+
+body.theme-dark [data-app-theme-scope] .ring-emerald-200 {
+  --tw-ring-color: rgb(16 185 129 / 0.28);
+}
+
+body.theme-dark [data-app-theme-scope] .ring-sky-200 {
+  --tw-ring-color: rgb(14 165 233 / 0.28);
+}
+
+body.theme-dark [data-app-theme-scope] .ring-amber-200 {
+  --tw-ring-color: rgb(245 158 11 / 0.28);
+}
+
+body.theme-dark [data-app-theme-scope] .ring-rose-200 {
+  --tw-ring-color: rgb(244 63 94 / 0.28);
+}
+
+body.theme-dark [data-app-theme-scope] .ring-violet-100,
+body.theme-dark [data-app-theme-scope] .ring-violet-200 {
+  --tw-ring-color: rgb(139 92 246 / 0.26);
+}
+
+body.theme-dark [data-app-theme-scope] .text-emerald-700,
+body.theme-dark [data-app-theme-scope] .text-emerald-800 {
+  color: #66f0c6 !important;
+}
+
+body.theme-dark [data-app-theme-scope] .text-sky-700,
+body.theme-dark [data-app-theme-scope] .text-sky-800 {
+  color: #7dd3fc !important;
+}
+
+body.theme-dark [data-app-theme-scope] .text-violet-700,
+body.theme-dark [data-app-theme-scope] .text-violet-800 {
+  color: #c4b5fd !important;
+}
+
+body.theme-dark [data-app-theme-scope] .text-amber-700,
+body.theme-dark [data-app-theme-scope] .text-amber-800 {
+  color: #fcd77f !important;
+}
+
+body.theme-dark [data-app-theme-scope] .text-rose-700,
+body.theme-dark [data-app-theme-scope] .text-rose-800 {
+  color: #fda4af !important;
+}
+
+body.theme-dark [data-app-theme-scope] .hover\:bg-emerald-50:hover {
+  background-color: rgb(16 185 129 / 0.18) !important;
+}
+
+body.theme-dark [data-app-theme-scope] .hover\:bg-sky-50:hover {
+  background-color: rgb(14 165 233 / 0.18) !important;
+}
+
+body.theme-dark [data-app-theme-scope] .hover\:bg-amber-100:hover {
+  background-color: rgb(245 158 11 / 0.18) !important;
+}
+
+body.theme-dark [data-app-theme-scope] .hover\:bg-rose-50:hover,
+body.theme-dark [data-app-theme-scope] .hover\:bg-rose-100:hover {
+  background-color: rgb(244 63 94 / 0.18) !important;
 }
 
 [data-color-theme="dark"] [data-public-theme-scope] {
