@@ -30,6 +30,15 @@ export type MatchingPageCandidate = {
   gaps: string[];
   matchedSkills: string[];
   missingSkills: string[];
+  applicationId: string | null;
+  signals: {
+    skillCoverage: number;
+    semanticSimilarity: number;
+    experienceFit: number;
+    titleFit: number;
+    profileCompleteness: number;
+    desiredYears: number;
+  };
 };
 
 export type MatchingPageData = {
@@ -218,6 +227,8 @@ export async function getMatchingPageData(jobId?: string, organizationId?: strin
         gaps: explanation.gaps,
         matchedSkills: explanation.matchedSkills,
         missingSkills: explanation.missingSkills,
+        applicationId: application?.id ?? null,
+        signals: explanation.signals,
       };
     })
     .sort((left, right) => right.score - left.score);

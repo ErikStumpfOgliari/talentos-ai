@@ -12,7 +12,7 @@ import {
   Search,
   Sparkles,
   Users,
-  Wrench,
+  SlidersHorizontal,
 } from "lucide-react";
 import { createCandidate, deleteCandidate, parseResumeUpload } from "@/app/candidates/actions";
 import { AiAnalyzeButton } from "@/components/ai-analyze-button";
@@ -260,22 +260,22 @@ export default async function CandidatesPage({
       icon={<Users className="h-5 w-5" aria-hidden="true" />}
       organizationName={data.organizationName}
       rightPanel={
-        <div className="space-y-4">
-          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="divide-y divide-slate-200">
+          <section className="py-5 first:pt-0 last:pb-0">
             <div className="mb-4 flex items-center gap-2">
               <Plus className="h-4 w-4 text-emerald-700" aria-hidden="true" />
               <p className="text-sm font-semibold text-slate-950">Add candidate</p>
             </div>
             <AddCandidateForm jobs={data.jobs} />
           </section>
-          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm" id="resume-parser">
+          <section className="py-5 first:pt-0 last:pb-0" id="resume-parser">
             <div className="mb-4 flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-violet-700" aria-hidden="true" />
               <p className="text-sm font-semibold text-slate-950">Smart resume parser</p>
             </div>
             <ResumeParserForm action={parseResumeUpload} jobs={data.jobs} />
           </section>
-          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <section className="py-5 first:pt-0 last:pb-0">
             <div className="mb-4 flex items-center gap-2">
               <BadgeCheck className="h-4 w-4 text-sky-700" aria-hidden="true" />
               <p className="text-sm font-semibold text-slate-950">CRM readiness</p>
@@ -293,7 +293,7 @@ export default async function CandidatesPage({
           </section>
         </div>
       }
-      rightPanelButtonIcon={<Wrench className="h-4 w-4" aria-hidden="true" />}
+      rightPanelButtonIcon={<SlidersHorizontal className="h-4 w-4" aria-hidden="true" />}
       rightPanelButtonLabel="Tools"
       rightPanelDescription="Add candidates and parse resumes."
       rightPanelTitle="Tools"

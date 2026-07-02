@@ -14,7 +14,7 @@ import {
   ShieldAlert,
   Sparkles,
   UserRound,
-  Wrench,
+  SlidersHorizontal,
 } from "lucide-react";
 import { AiAnalyzeButton } from "@/components/ai-analyze-button";
 import {
@@ -236,8 +236,8 @@ export default async function ApplicationsInboxPage({
       organizationName={data.organizationName}
       title="Applications Inbox"
       rightPanel={
-        <div className="space-y-4">
-          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="divide-y divide-slate-200">
+          <section className="py-5 first:pt-0 last:pb-0">
             <div className="mb-4 flex items-center gap-2">
               <Filter className="h-4 w-4 text-slate-700" aria-hidden="true" />
               <p className="text-sm font-semibold text-slate-950">Filter applications</p>
@@ -307,7 +307,7 @@ export default async function ApplicationsInboxPage({
             </form>
           </section>
 
-          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <section className="py-5 first:pt-0 last:pb-0">
             <div className="mb-3 flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <Send className="h-4 w-4 text-slate-700" aria-hidden="true" />
@@ -372,7 +372,7 @@ export default async function ApplicationsInboxPage({
             </form>
           </section>
 
-          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <section className="py-5 first:pt-0 last:pb-0">
             <div className="mb-4 flex items-center gap-2">
               <FileSearch className="h-4 w-4 text-amber-700" aria-hidden="true" />
               <p className="text-sm font-semibold text-slate-950">Manual review queue</p>
@@ -414,7 +414,7 @@ export default async function ApplicationsInboxPage({
             </div>
           </section>
 
-          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <section className="py-5 first:pt-0 last:pb-0">
             <div className="mb-4 flex items-center gap-2">
               <MailCheck className="h-4 w-4 text-sky-700" aria-hidden="true" />
               <p className="text-sm font-semibold text-slate-950">Confirmation queue</p>
@@ -425,7 +425,7 @@ export default async function ApplicationsInboxPage({
             </div>
           </section>
 
-          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <section className="py-5 first:pt-0 last:pb-0">
             <div className="mb-4 flex items-center gap-2">
               <ShieldAlert className="h-4 w-4 text-rose-700" aria-hidden="true" />
               <p className="text-sm font-semibold text-slate-950">Rejection templates</p>
@@ -445,7 +445,7 @@ export default async function ApplicationsInboxPage({
           </section>
         </div>
       }
-      rightPanelButtonIcon={<Wrench className="h-4 w-4" aria-hidden="true" />}
+      rightPanelButtonIcon={<SlidersHorizontal className="h-4 w-4" aria-hidden="true" />}
       rightPanelButtonLabel="Tools"
       rightPanelTitle="Tools"
       rightPanelDescription="Filter, bulk actions and review queue."

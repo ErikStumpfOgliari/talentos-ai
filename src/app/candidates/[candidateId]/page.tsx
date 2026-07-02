@@ -20,7 +20,7 @@ import {
   Sparkles,
   UserRound,
   Users,
-  Wrench,
+  SlidersHorizontal,
 } from "lucide-react";
 import {
   addCandidateNote,
@@ -178,8 +178,8 @@ export default async function CandidateDetailPage({
       organizationName={data.organizationName}
       title={data.candidate.name}
       rightPanel={
-        <div className="space-y-4">
-          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="divide-y divide-slate-200">
+          <section className="py-5 first:pt-0 last:pb-0">
             <div className="mb-4 flex items-center gap-2">
               <Save className="h-4 w-4 text-emerald-700" aria-hidden="true" />
               <p className="text-sm font-semibold text-slate-950">Edit profile</p>
@@ -263,7 +263,7 @@ export default async function CandidateDetailPage({
             </form>
           </section>
 
-          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <section className="py-5 first:pt-0 last:pb-0">
             <div className="mb-4 flex items-center gap-2">
               <RefreshCcw className="h-4 w-4 text-violet-700" aria-hidden="true" />
               <p className="text-sm font-semibold text-slate-950">Attach resume</p>
@@ -271,7 +271,7 @@ export default async function CandidateDetailPage({
             <CandidateResumeAttachmentForm action={attachCandidateResume} candidateId={data.candidate.id} />
           </section>
 
-          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <section className="py-5 first:pt-0 last:pb-0">
             <div className="mb-4 flex items-center gap-2">
               <MessageSquarePlus className="h-4 w-4 text-sky-700" aria-hidden="true" />
               <p className="text-sm font-semibold text-slate-950">Add note</p>
@@ -314,7 +314,7 @@ export default async function CandidateDetailPage({
             </form>
           </section>
 
-          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <section className="py-5 first:pt-0 last:pb-0">
             <div className="mb-4 flex items-center gap-2">
               <Users className="h-4 w-4 text-violet-700" aria-hidden="true" />
               <p className="text-sm font-semibold text-slate-950">Notes</p>
@@ -340,7 +340,7 @@ export default async function CandidateDetailPage({
             </div>
           </section>
 
-          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <section className="py-5 first:pt-0 last:pb-0">
             <div className="mb-4 flex items-center gap-2">
               <Clock3 className="h-4 w-4 text-amber-700" aria-hidden="true" />
               <p className="text-sm font-semibold text-slate-950">Experience and education</p>
@@ -364,7 +364,7 @@ export default async function CandidateDetailPage({
             </div>
           </section>
 
-          <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <section className="py-5 first:pt-0 last:pb-0">
             <div className="mb-4">
               <p className="text-sm font-semibold text-slate-950">Danger zone</p>
               <p className="mt-1 text-xs leading-5 text-slate-500">
@@ -375,7 +375,7 @@ export default async function CandidateDetailPage({
           </section>
         </div>
       }
-      rightPanelButtonIcon={<Wrench className="h-4 w-4" aria-hidden="true" />}
+      rightPanelButtonIcon={<SlidersHorizontal className="h-4 w-4" aria-hidden="true" />}
       rightPanelButtonLabel="Tools"
       rightPanelTitle="Tools"
       rightPanelDescription="Edit profile, add notes and manage candidate."

@@ -1,20 +1,23 @@
 import Link from "next/link";
 import {
   BarChart3,
-  CheckCircle2,
+  BrainCircuit,
   BriefcaseBusiness,
-  Layers3,
+  CheckCircle2,
   Gauge,
+  Layers3,
   SlidersHorizontal,
   Sparkles,
   Target,
+  UserRound,
   Users,
 } from "lucide-react";
 import { rankCandidatesForJob } from "@/app/matching/actions";
+import { AiAnalyzeButton } from "@/components/ai-analyze-button";
 import { WorkspacePanelTabs } from "@/components/workspace-panel-tabs";
 import { WorkspacePageShell } from "@/components/workspace-page-shell";
 import { recruitingRoles, requireRole } from "@/lib/auth";
-import { getMatchingPageData } from "@/lib/matching-data";
+import { getMatchingPageData, type MatchingPageCandidate } from "@/lib/matching-data";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +46,57 @@ function ProgressBar({ value }: { value: number }) {
       <div className="h-2 rounded-full bg-emerald-500" style={{ width: `${Math.max(2, Math.min(100, value))}%` }} />
     </div>
   );
+}
+
+function SignalRow({ label, value }: { label: string; value: number }) {
+  const pct = Math.round(value * 100);
+  const barColor = pct >= 65 ? "bg-emerald-500" : pct >= 35 ? "bg-sky-500" : "bg-amber-400";
+
+  return (
+    <div className="grid gap-1">
+      <div className="flex items-center justify-between text-xs">
+        <span className="text-slate-500">{label}</span>
+        <span className="font-semibold text-slate-950">{pct}%</span>
+      </div>
+      <div className="h-1.5 rounded-full bg-slate-100">
+        <div className={`h-1.5 rounded-full ${barColor}`} style={{ width: `${Math.max(2, pct)}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function buildAiVerdict(candidate: MatchingPageCandidate, jobTitle: string): string {
+  const parts: string[] = [];
+
+  if (candidate.score >= 80) {
+    parts.push(`Strong match (${candidate.score}%) for the ${jobTitle} role — profile closely aligns with the core requirements.`);
+  } else if (candidate.score >= 55) {
+    parts.push(`Partial match (${candidate.score}%) detected for ${jobTitle} — candidate meets some criteria but gaps remain.`);
+  } else {
+    parts.push(`Limited alignment (${candidate.score}%) with the ${jobTitle} role — the candidate does not cover the primary requirements.`);
+  }
+
+  if (candidate.missingSkills.length > 0) {
+    parts.push(`Requirements not detected in profile: ${candidate.missingSkills.slice(0, 3).join(", ")}.`);
+  }
+
+  if (candidate.signals.experienceFit < 0.65 && candidate.signals.desiredYears > 0) {
+    parts.push(`Experience level likely falls below the ${candidate.signals.desiredYears}+ year threshold expected for this seniority.`);
+  }
+
+  if (candidate.signals.semanticSimilarity < 0.2) {
+    parts.push("Candidate background has minimal semantic overlap with the job description language.");
+  }
+
+  if (candidate.signals.profileCompleteness < 0.5) {
+    parts.push("Profile is incomplete — enriching resume data would improve scoring precision.");
+  }
+
+  if (candidate.matchedSkills.length > 0) {
+    parts.push(`Confirmed signals: ${candidate.matchedSkills.slice(0, 3).join(", ")}.`);
+  }
+
+  return parts.join(" ");
 }
 
 type MatchingPageData = Awaited<ReturnType<typeof getMatchingPageData>>;
@@ -247,25 +301,58 @@ export default async function MatchingPage({
             ))}
           </div>
 
-          <section className="min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="mb-4 flex flex-col gap-3 2xl:flex-row 2xl:items-center 2xl:justify-between">
+          <div className="rounded-lg bg-slate-950 p-5 text-white">
+            <div className="flex items-start gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/10">
+                <BrainCircuit className="h-4 w-4 text-violet-300" aria-hidden="true" />
+              </div>
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-slate-950">Ranked shortlist</p>
-                <p className="mt-1 truncate text-xs text-slate-500">
-                  {data.selectedJob ? `${data.selectedJob.title} - ${data.selectedJob.location}` : "No open role selected"}
+                <p className="text-sm font-semibold text-white">AI Matching Engine</p>
+                <p className="mt-1 text-xs leading-5 text-slate-400">
+                  Scores are computed across 5 weighted signals: skill coverage (45%), semantic similarity via embeddings (25%),
+                  experience fit (15%), title alignment (10%), and profile completeness (5%).
+                  When OpenAI embeddings are configured, vector cosine similarity replaces token-overlap for higher precision matching.
                 </p>
               </div>
             </div>
+            <div className="mt-4 grid grid-cols-3 gap-3 border-t border-white/10 pt-4 text-xs">
+              <div>
+                <p className="font-semibold uppercase tracking-wide text-slate-400">Embedding model</p>
+                <p className="mt-1 font-semibold text-white">text-embedding-3-small</p>
+              </div>
+              <div>
+                <p className="font-semibold uppercase tracking-wide text-slate-400">Signals</p>
+                <p className="mt-1 font-semibold text-white">5 weighted dimensions</p>
+              </div>
+              <div>
+                <p className="font-semibold uppercase tracking-wide text-slate-400">Output</p>
+                <p className="mt-1 font-semibold text-white">Score-sorted shortlist</p>
+              </div>
+            </div>
+          </div>
 
-            <div className="grid gap-3">
+          <section className="min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="mb-5 min-w-0">
+              <p className="text-sm font-semibold text-slate-950">Ranked shortlist</p>
+              <p className="mt-1 truncate text-xs text-slate-500">
+                {data.selectedJob ? `${data.selectedJob.title} · ${data.selectedJob.location}` : "No open role selected"}
+              </p>
+            </div>
+
+            <div className="grid gap-5">
               {data.candidates.map((candidate, index) => (
                 <article className="min-w-0 overflow-hidden rounded-lg border border-slate-200 p-4" key={candidate.id}>
                   <div className="grid gap-4 2xl:grid-cols-[72px_minmax(0,1fr)_260px]">
-                    <div className="flex xl:block">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-slate-950 text-sm font-semibold text-white">
+
+                    <div className="flex gap-3 2xl:flex-col 2xl:gap-2">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-slate-950 text-sm font-semibold text-white">
                         #{index + 1}
                       </div>
+                      <span className="self-center rounded-md bg-violet-50 px-2 py-1 text-xs font-semibold text-violet-700 ring-1 ring-violet-200 2xl:self-start">
+                        {candidate.mode}
+                      </span>
                     </div>
+
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <h2 className="break-words text-base font-semibold text-slate-950">{candidate.name}</h2>
@@ -277,49 +364,110 @@ export default async function MatchingPage({
                         </span>
                       </div>
                       <p className="mt-1 break-words text-sm font-medium text-slate-600">{candidate.currentTitle}</p>
-                      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
+                      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
                         <span className="break-words">{candidate.location}</span>
                         <span>{candidate.yearsExperience}</span>
                         <span>{candidate.source}</span>
                         <span>{candidate.stage}</span>
                       </div>
                       <p className="mt-3 max-w-3xl break-words text-sm leading-6 text-slate-600">{candidate.summary}</p>
-                      <div className="mt-4 flex flex-wrap gap-1.5">
-                        {candidate.skills.slice(0, 8).map((skill) => (
-                          <span className="dashboard-chip rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600" key={skill}>
-                            {skill}
-                          </span>
-                        ))}
+
+                      <div className="mt-4 grid gap-2">
+                        {candidate.matchedSkills.length > 0 ? (
+                          <div>
+                            <p className="mb-1.5 text-xs font-semibold uppercase text-emerald-700">Matched requirements</p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {candidate.matchedSkills.map((skill) => (
+                                <span className="rounded-md bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 ring-1 ring-emerald-200" key={skill}>
+                                  {skill}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        ) : null}
+                        {candidate.missingSkills.length > 0 ? (
+                          <div>
+                            <p className="mb-1.5 text-xs font-semibold uppercase text-rose-700">Missing requirements</p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {candidate.missingSkills.map((skill) => (
+                                <span className="rounded-md bg-rose-50 px-2 py-1 text-xs font-medium text-rose-700 ring-1 ring-rose-200" key={skill}>
+                                  {skill}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        ) : null}
+                        {candidate.matchedSkills.length === 0 && candidate.missingSkills.length === 0 ? (
+                          <div className="flex flex-wrap gap-1.5">
+                            {candidate.skills.slice(0, 8).map((skill) => (
+                              <span className="rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600" key={skill}>
+                                {skill}
+                              </span>
+                            ))}
+                          </div>
+                        ) : null}
+                      </div>
+
+                      <div className="mt-4 rounded-lg bg-violet-50 p-3 ring-1 ring-violet-100">
+                        <div className="mb-2 flex items-center gap-2">
+                          <BrainCircuit className="h-3.5 w-3.5 text-violet-700" aria-hidden="true" />
+                          <p className="text-xs font-semibold uppercase text-violet-700">AI Verdict</p>
+                        </div>
+                        <p className="text-sm leading-6 text-slate-700">
+                          {buildAiVerdict(candidate, data.selectedJob?.title ?? "this role")}
+                        </p>
                       </div>
                     </div>
+
                     <div className="grid content-start gap-3">
                       <div className="rounded-lg bg-slate-50 p-3">
                         <div className="flex items-center justify-between gap-3">
-                          <p className="text-xs font-semibold uppercase text-slate-500">Score</p>
-                          <p className="text-sm font-semibold text-slate-950">{candidate.score}%</p>
+                          <p className="text-xs font-semibold uppercase text-slate-500">Match score</p>
+                          <span className={`rounded-full px-2 py-1 text-xs font-semibold ring-1 ${getScoreTone(candidate.score)}`}>
+                            {candidate.score}%
+                          </span>
                         </div>
                         <div className="mt-3">
                           <ProgressBar value={candidate.score} />
                         </div>
-                        <p className="mt-2 text-xs font-medium text-slate-500">{candidate.mode}</p>
                       </div>
+
                       <div className="min-w-0 rounded-lg border border-slate-200 p-3">
-                        <p className="text-xs font-semibold uppercase text-emerald-700">Strengths</p>
-                        <ul className="mt-2 space-y-1.5 text-sm text-slate-600">
-                          {candidate.strengths.slice(0, 3).map((strength) => (
-                            <li className="break-words" key={strength}>{strength}</li>
-                          ))}
-                        </ul>
+                        <div className="mb-3 flex items-center gap-2">
+                          <BrainCircuit className="h-3.5 w-3.5 text-violet-700" aria-hidden="true" />
+                          <p className="text-xs font-semibold uppercase text-slate-500">Signal breakdown</p>
+                        </div>
+                        <div className="grid gap-2">
+                          <SignalRow label="Skill coverage" value={candidate.signals.skillCoverage} />
+                          <SignalRow label="Semantic fit" value={candidate.signals.semanticSimilarity} />
+                          <SignalRow label="Experience" value={candidate.signals.experienceFit} />
+                          <SignalRow label="Title match" value={candidate.signals.titleFit} />
+                          <SignalRow label="Profile quality" value={candidate.signals.profileCompleteness} />
+                        </div>
                       </div>
-                      <div className="min-w-0 rounded-lg border border-slate-200 p-3">
-                        <p className="text-xs font-semibold uppercase text-amber-700">Review</p>
-                        <ul className="mt-2 space-y-1.5 text-sm text-slate-600">
-                          {candidate.gaps.slice(0, 3).map((gap) => (
-                            <li className="break-words" key={gap}>{gap}</li>
-                          ))}
-                          {candidate.gaps.length === 0 ? <li>No major gaps detected.</li> : null}
-                        </ul>
-                      </div>
+
+                      {candidate.strengths.length > 0 ? (
+                        <div className="min-w-0 rounded-lg border border-slate-200 p-3">
+                          <p className="text-xs font-semibold uppercase text-emerald-700">Confirmed signals</p>
+                          <ul className="mt-2 space-y-1.5 text-sm text-slate-600">
+                            {candidate.strengths.slice(0, 2).map((strength) => (
+                              <li className="break-words" key={strength}>{strength}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
+
+                      {candidate.applicationId ? (
+                        <AiAnalyzeButton applicationId={candidate.applicationId} />
+                      ) : null}
+
+                      <Link
+                        className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+                        href={`/candidates/${candidate.id}`}
+                      >
+                        <UserRound className="h-4 w-4" aria-hidden="true" />
+                        Profile
+                      </Link>
                     </div>
                   </div>
                 </article>
@@ -335,7 +483,6 @@ export default async function MatchingPage({
             </div>
           </section>
         </section>
-
       </div>
     </WorkspacePageShell>
   );
