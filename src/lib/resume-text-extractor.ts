@@ -51,12 +51,15 @@ async function extractTextWithOpenAIVision(
       ],
     });
 
-    return response.output_text ?? "";
+    const text = response.output_text ?? "";
+    console.info(`OCR result length: ${text.length} chars for ${fileName}`);
+    return text;
   } finally {
     // Always clean up the uploaded file regardless of success or failure
     if (uploadedFileId) {
       await client.files.delete(uploadedFileId).catch((err: unknown) => {
-        console.warn("Failed to delete OpenAI file:", err instanceof Error ? err.message : String(err));
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error(`OCR file cleanup failed (id=${uploadedFileId}):`, msg);
       });
     }
   }
@@ -85,7 +88,10 @@ export async function extractResumeText(
       const text = await extractTextWithOpenAIVision(buffer, mimeType, fileName);
       return text;
     } catch (error) {
-      console.warn("OpenAI Vision OCR failed:", error instanceof Error ? error.message : String(error));
+      const msg = error instanceof Error ? error.message : String(error);
+      const status = (error as Record<string, unknown>)?.status;
+      const body = (error as Record<string, unknown>)?.error;
+      console.error(`OCR failed for ${fileName} | status=${status} | msg=${msg} | body=${JSON.stringify(body)}`);
     }
 
     return "";
