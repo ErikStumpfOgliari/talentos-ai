@@ -80,9 +80,10 @@ export function AiAnalyzeButton({ applicationId }: { applicationId: string }) {
       ) : null}
 
       {error ? (
-        <p className="rounded-md border border-rose-200 bg-rose-50 px-2 py-1 text-xs font-medium leading-5 text-rose-700">
-          {error}
-        </p>
+        <div className="rounded-md border border-rose-200 bg-rose-50 px-2 py-2 text-xs leading-5 text-rose-700">
+          <p className="font-semibold">Analysis unavailable</p>
+          <p className="mt-0.5">{error}</p>
+        </div>
       ) : null}
     </div>
   );

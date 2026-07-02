@@ -123,11 +123,14 @@ export async function POST(
 
     stage = "validate_text";
 
-    // Profile data can be short (just a name/title); any non-empty text is enough.
-    // Only enforce the 300-char minimum when we're working from the actual resume file.
+    const profileIsRich =
+      application.candidate.skills.length > 0 ||
+      application.candidate.experience.length > 0 ||
+      application.candidate.education.length > 0;
+
     const isTextUsable =
       textSource === "profile"
-        ? resumeText.trim().length > 0
+        ? profileIsRich
         : validateResumeText(resumeText).valid;
 
     if (!isTextUsable) {
@@ -136,15 +139,12 @@ export async function POST(
         data: { aiAnalysisStatus: AiAnalysisStatus.FAILED },
       });
 
-      return NextResponse.json(
-        {
-          error:
-            textSource === "profile"
-              ? "No candidate data found. Complete the candidate profile before running analysis."
-              : validateResumeText(resumeText).reason,
-        },
-        { status: 422 },
-      );
+      const reason =
+        textSource === "profile"
+          ? "Resume text could not be extracted (PDF may be image-based). No skills, experience, or education found in the candidate profile either. Ask the candidate to upload a text-based PDF or DOCX, or fill in the profile manually."
+          : validateResumeText(resumeText).reason;
+
+      return NextResponse.json({ error: reason }, { status: 422 });
     }
 
     stage = "groq_analyze";
