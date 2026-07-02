@@ -19,49 +19,33 @@ async function extractTextWithOpenAIVision(
   const client = new OpenAI({ apiKey });
   const base64 = buffer.toString("base64");
 
-  // gpt-4.1-mini does NOT support input_file for visual PDFs.
-  // Try gpt-4.1 (full) first — same billing tier as mini but vision-capable.
-  // Fall back to gpt-4o-mini which has confirmed PDF visual support.
-  const ocrModels = process.env.OPENAI_OCR_MODEL
-    ? [process.env.OPENAI_OCR_MODEL]
-    : ["gpt-4.1", "gpt-4o-mini"];
+  // gpt-4o-mini is the cheapest OpenAI model that supports visual PDF reading
+  // via input_file (processes each PDF page as an image). ~$0.003 per PDF.
+  const model = process.env.OPENAI_OCR_MODEL ?? "gpt-4o-mini";
 
-  let lastError: unknown;
-
-  for (const model of ocrModels) {
-    try {
-      const response = await client.responses.create({
-        model,
-        input: [
+  const response = await client.responses.create({
+    model,
+    input: [
+      {
+        role: "user",
+        content: [
           {
-            role: "user",
-            content: [
-              {
-                type: "input_file" as const,
-                filename: fileName,
-                file_data: `data:${mimeType};base64,${base64}`,
-              },
-              {
-                type: "input_text" as const,
-                text: "Extract all text from this document exactly as it appears. Return only the raw text content, preserving line breaks and sections. Do not add any explanation, header, or formatting of your own.",
-              },
-            ],
+            type: "input_file" as const,
+            filename: fileName,
+            file_data: `data:${mimeType};base64,${base64}`,
+          },
+          {
+            type: "input_text" as const,
+            text: "Extract all text from this document exactly as it appears. Return only the raw text content, preserving line breaks and sections. Do not add any explanation, header, or formatting of your own.",
           },
         ],
-      });
+      },
+    ],
+  });
 
-      const text = response.output_text ?? "";
-      console.info(`OCR ok: ${text.length} chars | model=${model} | file=${fileName}`);
-      return text;
-    } catch (err) {
-      const status = (err as Record<string, unknown>)?.status ?? "?";
-      const code = ((err as Record<string, unknown>)?.error as Record<string, unknown>)?.code ?? "?";
-      console.warn(`OCR fail: model=${model} status=${status} code=${code}`);
-      lastError = err;
-    }
-  }
-
-  throw lastError;
+  const text = response.output_text ?? "";
+  console.info(`OCR ok: ${text.length} chars | model=${model} | file=${fileName}`);
+  return text;
 }
 
 export async function extractResumeText(
