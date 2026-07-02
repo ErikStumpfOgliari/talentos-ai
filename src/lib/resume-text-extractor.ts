@@ -72,9 +72,9 @@ export async function extractResumeText(
       return text;
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
-      const status = (error as Record<string, unknown>)?.status;
-      const body = (error as Record<string, unknown>)?.error;
-      console.error(`OCR failed for ${fileName} | status=${status} | msg=${msg} | body=${JSON.stringify(body)}`);
+      const status = (error as Record<string, unknown>)?.status ?? "?";
+      const code = ((error as Record<string, unknown>)?.error as Record<string, unknown>)?.code ?? "";
+      console.error(`OCR:${status}:${code}:${msg.slice(0, 120)}`);
     }
 
     return "";
