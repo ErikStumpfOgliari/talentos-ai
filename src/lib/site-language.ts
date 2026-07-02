@@ -1410,15 +1410,27 @@ const PORTUGUESE_PATTERNS: Array<[RegExp, (match: RegExpMatchArray) => string]> 
   ],
   [
     /^Requirements not detected in profile: (.+)\.$/,
-    (match) => `Requisitos não detectados no perfil: ${translateText(match[1], "pt")}.`,
+    (match) =>
+      `Requisitos não detectados no perfil: ${match[1]
+        .split(", ")
+        .map((requirement) => translateText(requirement, "pt"))
+        .join(", ")}.`,
   ],
   [
     /^Experience level likely falls below the (\d+)\+ year threshold expected for this seniority\.$/,
     (match) => `O nível de experiência provavelmente fica abaixo do limite de ${match[1]}+ anos esperado para esta senioridade.`,
   ],
   [
+    /^Profile is incomplete\s+(?:—|â€”|-|\?)\s+adding resume data and skills will improve the match score\.$/,
+    () => "O perfil está incompleto - adicionar dados do currículo e competências melhora a pontuação de compatibilidade.",
+  ],
+  [
     /^Detected strengths include: (.+)\.$/,
-    (match) => `Pontos fortes detectados: ${translateText(match[1], "pt")}.`,
+    (match) =>
+      `Pontos fortes detectados: ${match[1]
+        .split(", ")
+        .map((strength) => translateText(strength, "pt"))
+        .join(", ")}.`,
   ],
   [/^Source: (.+)$/, (match) => `Fonte: ${translateText(match[1], "pt")}`],
   [/^(.+) - Uploaded (.+)$/, (match) => `${match[1]} - Enviado em ${translateText(match[2], "pt")}`],
@@ -1588,6 +1600,35 @@ function applyPartialPortugueseTranslations(text: string) {
   return translated === text ? null : translated;
 }
 
+function translateSentenceSequence(text: string, language: SiteLanguage) {
+  if (!/[.!?]\s+\S/.test(text)) {
+    return null;
+  }
+
+  const segments = text.match(/[^.!?]+[.!?]+(?:\s+|$)|[^.!?]+$/g);
+
+  if (!segments || segments.length < 2) {
+    return null;
+  }
+
+  let changed = false;
+  const translated = segments
+    .map((segment) => {
+      const suffix = segment.match(/\s+$/)?.[0] ?? "";
+      const body = segment.slice(0, segment.length - suffix.length);
+      const translatedBody = translateText(body, language);
+
+      if (translatedBody !== body) {
+        changed = true;
+      }
+
+      return `${translatedBody}${suffix}`;
+    })
+    .join("");
+
+  return changed ? translated : null;
+}
+
 export function getLanguageCopy(language: SiteLanguage, key: string) {
   return SITE_COPY[language][key] ?? SITE_COPY.en[key] ?? key;
 }
@@ -1614,6 +1655,12 @@ export function translateText(text: string, language: SiteLanguage): string {
     if (match) {
       return translate(match);
     }
+  }
+
+  const sentenceSequence = translateSentenceSequence(text, language);
+
+  if (sentenceSequence) {
+    return sentenceSequence;
   }
 
   if (text.includes(" - ")) {
