@@ -16,6 +16,7 @@ import {
   PublicSiteFooter,
   PublicSiteHeader,
 } from "@/components/public-site-shell";
+import { BILLING_TRIAL_DAYS, billingPlans } from "@/lib/billing";
 
 const timeline = [
   {
@@ -231,6 +232,41 @@ export default function LandingPage() {
               </article>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section className="mx-auto grid max-w-7xl gap-6 px-4 py-14 lg:px-6">
+        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="text-sm font-semibold uppercase text-slate-500">Planos</p>
+            <h2 className="mt-2 text-3xl font-semibold text-slate-950 md:text-4xl">
+              Comece com {BILLING_TRIAL_DAYS} dias grátis.
+            </h2>
+          </div>
+          <Link className="inline-flex h-10 w-fit items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50" href="/pricing">
+            Ver todos os planos
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Link>
+        </div>
+        <div className="grid gap-3 md:grid-cols-3">
+          {billingPlans.map((plan) => (
+            <Link
+              className={`rounded-lg border p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-md ${
+                plan.highlighted ? "border-slate-950 bg-slate-950 text-white" : "border-slate-200 bg-white text-slate-950"
+              }`}
+              href={`/signup?plan=${plan.slug}`}
+              key={plan.plan}
+            >
+              <p className={`text-xs font-semibold uppercase ${plan.highlighted ? "text-emerald-200" : "text-slate-500"}`}>
+                {plan.subtitle}
+              </p>
+              <p className="mt-2 text-lg font-semibold">{plan.label}</p>
+              <p className="mt-3 text-2xl font-semibold">{plan.priceLabel}</p>
+              <p className={`mt-2 text-sm leading-6 ${plan.highlighted ? "text-slate-300" : "text-slate-600"}`}>
+                {plan.description}
+              </p>
+            </Link>
+          ))}
         </div>
       </section>
 

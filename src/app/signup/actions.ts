@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import {
   AuthFactorMethod,
+  Plan,
 } from "@/generated/prisma/client";
 import { sendTransactionalEmail } from "@/lib/email-provider";
 import { hashPassword } from "@/lib/passwords";
@@ -26,6 +27,10 @@ function normalizeEmail(value: string) {
   return value.trim().toLowerCase();
 }
 
+function readPlan(value: string) {
+  return Object.values(Plan).includes(value as Plan) ? (value as Plan) : Plan.PRO;
+}
+
 function redirectWithError(error: string): never {
   redirect(`/signup?error=${encodeURIComponent(error)}`);
 }
@@ -42,6 +47,7 @@ export async function createWorkspaceSignup(formData: FormData) {
   const region = readString(formData, "region");
   const postalCode = readString(formData, "postalCode");
   const country = readString(formData, "country");
+  const plan = readPlan(readString(formData, "plan"));
 
   try {
     await checkSecurityRateLimit({
@@ -95,6 +101,7 @@ export async function createWorkspaceSignup(formData: FormData) {
     organizationName,
     passwordHash,
     phone,
+    plan,
     postalCode,
     preferredAuthFactor: AuthFactorMethod.EMAIL_CODE,
     region,

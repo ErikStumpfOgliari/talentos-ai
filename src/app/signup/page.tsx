@@ -7,6 +7,7 @@ import { SignupWorkspaceForm } from "@/app/signup/signup-workspace-form";
 import { InterellisMark } from "@/components/interellis-mark";
 import { PublicSiteHeader } from "@/components/public-site-shell";
 import { getCurrentSession } from "@/lib/auth";
+import { getBillingPlanBySlug } from "@/lib/billing";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +34,7 @@ function getErrorMessage(error?: string) {
 export default async function SignupPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ error?: string }>;
+  searchParams?: Promise<{ error?: string; plan?: string }>;
 }) {
   const session = await getCurrentSession();
 
@@ -43,6 +44,7 @@ export default async function SignupPage({
 
   const params = await searchParams;
   const errorMessage = getErrorMessage(params?.error);
+  const selectedPlan = getBillingPlanBySlug(params?.plan) ?? undefined;
 
   return (
     <main className="min-h-screen overflow-hidden bg-slate-950 text-white">
@@ -74,7 +76,7 @@ export default async function SignupPage({
           </div>
 
           <section className="flex min-w-0 items-center justify-center py-4">
-            <SignupWorkspaceForm errorMessage={errorMessage} />
+            <SignupWorkspaceForm errorMessage={errorMessage} selectedPlan={selectedPlan} />
           </section>
         </section>
       </div>

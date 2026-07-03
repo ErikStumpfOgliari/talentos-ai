@@ -24,8 +24,17 @@ type SignupValues = {
   organizationName: string;
   password: string;
   phone: string;
+  plan: string;
   postalCode: string;
   region: string;
+};
+
+type SignupPlanSummary = {
+  label: string;
+  plan: string;
+  priceLabel: string;
+  slug: string;
+  subtitle: string;
 };
 
 const inputClass =
@@ -41,6 +50,7 @@ const initialValues: SignupValues = {
   organizationName: "",
   password: "",
   phone: "",
+  plan: "PRO",
   postalCode: "",
   region: "",
 };
@@ -84,13 +94,23 @@ function HiddenFields({
         </>
       ) : null}
       <input name="preferredAuthFactor" type="hidden" value="EMAIL_CODE" />
+      <input name="plan" type="hidden" value={values.plan} />
     </>
   );
 }
 
-export function SignupWorkspaceForm({ errorMessage }: { errorMessage: string | null }) {
+export function SignupWorkspaceForm({
+  errorMessage,
+  selectedPlan,
+}: {
+  errorMessage: string | null;
+  selectedPlan?: SignupPlanSummary;
+}) {
   const [step, setStep] = useState<SignupStep>("account");
-  const [values, setValues] = useState<SignupValues>(initialValues);
+  const [values, setValues] = useState<SignupValues>(() => ({
+    ...initialValues,
+    plan: selectedPlan?.plan ?? initialValues.plan,
+  }));
   const formRef = useRef<HTMLFormElement>(null);
   const stepIndex = getStepIndex(step);
 
@@ -239,6 +259,20 @@ export function SignupWorkspaceForm({ errorMessage }: { errorMessage: string | n
                 value={values.organizationName}
               />
             </label>
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold uppercase text-slate-500">Plano selecionado</p>
+                  <p className="mt-1 text-sm font-semibold text-slate-950">
+                    {selectedPlan ? `${selectedPlan.label} - ${selectedPlan.priceLabel}` : "Intermediário - R$ 197/mês"}
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">30 dias grátis antes da cobrança recorrente.</p>
+                </div>
+                <Link className="shrink-0 rounded-lg px-2 py-1 text-xs font-semibold text-slate-600 transition hover:bg-white hover:text-slate-950" href="/pricing">
+                  Trocar
+                </Link>
+              </div>
+            </div>
             <button
               className="mt-2 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-3 text-sm font-semibold text-white transition hover:scale-[1.02] hover:bg-slate-800 active:scale-[0.98]"
               onClick={() => goToNextStep("address")}

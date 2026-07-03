@@ -78,7 +78,7 @@ async function createVerifiedWorkspaceSignup(payload: PendingSignupPayload) {
       data: {
         name: payload.organizationName,
         slug,
-        plan: Plan.PRO,
+        plan: payload.plan ?? Plan.PRO,
         timezone: "America/Sao_Paulo",
       },
     });

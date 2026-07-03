@@ -95,9 +95,9 @@ export default async function SettingsPage({
               <div className="grid gap-3 md:grid-cols-2">
                 <Field label="Plan">
                   <select className={inputClass} defaultValue={data.organization.plan.toUpperCase()} name="plan">
-                    <option value="FREE">Free</option>
-                    <option value="PRO">Pro</option>
-                    <option value="ENTERPRISE">Enterprise</option>
+                    <option value="FREE">Básico</option>
+                    <option value="PRO">Intermediário</option>
+                    <option value="ENTERPRISE">Avançado</option>
                   </select>
                 </Field>
                 <Field label="Timezone">

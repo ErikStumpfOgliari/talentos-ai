@@ -1,5 +1,6 @@
 import { CalendarSyncStatus, EmailStatus, ParserStatus } from "@/generated/prisma/client";
 import { canUseOpenAIProvider, getAIProviderMode } from "@/lib/ai-provider";
+import { getBillingGatewayStatus } from "@/lib/billing";
 import { getEmailProviderStatus } from "@/lib/email-provider";
 import { isGoogleCalendarConfigured } from "@/lib/google-calendar";
 import { defaultOrganizationSlug } from "@/lib/organization";
@@ -235,6 +236,7 @@ function buildIntegrations({
   const calendarReady = googleConfigured || calendarConnections > 0;
   const aiProviderMode = getAIProviderMode();
   const localAIEnabled = aiProviderMode === "local";
+  const billingGateway = getBillingGatewayStatus();
 
   return [
     {
@@ -266,6 +268,14 @@ function buildIntegrations({
       label: "Google Calendar",
       status: calendarConnections > 0 ? "Connected" : googleConfigured ? "OAuth ready" : "Not configured",
       tone: getConfiguredTone(calendarReady),
+    },
+    {
+      actionHref: "/billing",
+      detail: billingGateway.detail,
+      id: "billing",
+      label: billingGateway.label,
+      status: billingGateway.status,
+      tone: billingGateway.tone,
     },
     {
       actionHref: "/candidates",

@@ -20,6 +20,7 @@ type PublicSiteHeaderProps = {
 const navLinks = [
   { href: "/", label: "Home" },
   { href: "/signup", label: "For companies" },
+  { href: "/pricing", label: "Pricing" },
   { href: "/careers", label: "Open roles" },
   { href: "/candidate-status", label: "Application status" },
 ];
@@ -110,6 +111,9 @@ export function PublicSiteFooter() {
           </Link>
           <Link className="rounded-lg px-2.5 py-1.5 transition hover:-translate-y-0.5 hover:scale-[1.03] hover:bg-slate-100 hover:text-slate-950" href="/signup">
             Create workspace
+          </Link>
+          <Link className="rounded-lg px-2.5 py-1.5 transition hover:-translate-y-0.5 hover:scale-[1.03] hover:bg-slate-100 hover:text-slate-950" href="/pricing">
+            Pricing
           </Link>
           <Link className="rounded-lg px-2.5 py-1.5 transition hover:-translate-y-0.5 hover:scale-[1.03] hover:bg-slate-100 hover:text-slate-950" href="/careers">
             Open roles

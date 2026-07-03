@@ -1,6 +1,6 @@
 import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes, randomInt, randomUUID, timingSafeEqual } from "crypto";
 import { cookies } from "next/headers";
-import { AuthFactorMethod } from "@/generated/prisma/client";
+import { AuthFactorMethod, Plan } from "@/generated/prisma/client";
 import {
   PENDING_SIGNUP_COOKIE_NAME,
   PENDING_SIGNUP_MAX_AGE_SECONDS,
@@ -29,6 +29,7 @@ export type PendingSignupPayload = {
   organizationName: string;
   passwordHash: string;
   phone: string;
+  plan?: Plan;
   postalCode: string;
   preferredAuthFactor: AuthFactorMethod;
   region: string;
