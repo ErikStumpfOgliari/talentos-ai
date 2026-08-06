@@ -414,18 +414,42 @@ export async function clearSessionCookie() {
   await expireSessionCookies(cookieStore);
 }
 
-export async function requireSession() {
+export type SessionGuardOptions = {
+  /**
+   * Pula a checagem de billing. Use APENAS em páginas/ações que precisam ficar
+   * acessíveis quando o trial vence ou a assinatura está bloqueada — ou seja, a
+   * própria tela de cobrança (/billing) e suas actions. Sem isso, o usuário
+   * bloqueado não conseguiria pagar (loop de redirect).
+   */
+  skipBillingCheck?: boolean;
+};
+
+export async function requireSession(options?: SessionGuardOptions) {
   const session = await getCurrentSession();
 
   if (!session) {
     redirect("/login");
   }
 
+  if (!options?.skipBillingCheck) {
+    // Chokepoint único de billing: toda página protegida passa por aqui.
+    // Import dinâmico evita ciclo de módulos com libs que dependem de auth.
+    const { getBillingState } = await import("@/lib/subscription");
+    const billing = await getBillingState(session.organization.id);
+
+    if (!billing.hasAccess) {
+      redirect(`/billing?blocked=${encodeURIComponent(billing.reason)}`);
+    }
+  }
+
   return session;
 }
 
-export async function requireRole(allowedRoles: readonly MembershipRole[]) {
-  const session = await requireSession();
+export async function requireRole(
+  allowedRoles: readonly MembershipRole[],
+  options?: SessionGuardOptions,
+) {
+  const session = await requireSession(options);
 
   if (!allowedRoles.includes(session.membership.role)) {
     redirect("/dashboard");

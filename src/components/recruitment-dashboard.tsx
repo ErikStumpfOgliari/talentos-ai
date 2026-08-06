@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { AppNavigationMenu, AppNavigationSidebar } from "@/components/app-navigation-menu";
 import { useSiteLanguage } from "@/components/site-language-provider";
 import { ThemeToggle } from "@/components/site-theme-provider";
@@ -468,7 +468,7 @@ function useDashboardInteractions() {
   }, []);
 }
 
-export function RecruitmentDashboard({ data }: { data: DashboardData }) {
+export function RecruitmentDashboard({ data, trialBanner }: { data: DashboardData; trialBanner?: ReactNode }) {
   const { analytics, candidates, emailTemplates, initialPipeline, interviews, jobs, pipelineStages } = data;
   useDashboardInteractions();
   const { t } = useSiteLanguage();
@@ -588,6 +588,7 @@ export function RecruitmentDashboard({ data }: { data: DashboardData }) {
           </header>
 
           <div className="space-y-5 p-4 lg:p-6">
+            {trialBanner}
             <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {analytics.metrics.map((metric, index) => {
                 const MetricIcon = [BriefcaseBusiness, Users, Sparkles, Clock3][index] ?? BarChart3;

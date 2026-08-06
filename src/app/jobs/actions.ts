@@ -8,7 +8,9 @@ import {
   WorkMode,
 } from "@/generated/prisma/client";
 import { recruitingRoles, requireRole } from "@/lib/auth";
+import { PlanLimitError } from "@/lib/billing-guard";
 import { prisma } from "@/lib/prisma";
+import { canAddActiveJob, getBillingState } from "@/lib/subscription";
 import { limitText } from "@/lib/text-limits";
 
 function readString(formData: FormData, key: string) {
@@ -55,6 +57,30 @@ export async function createJob(formData: FormData) {
   const hiringManagerId = readOptionalString(formData, "hiringManagerId");
   const salaryMin = readNumber(formData, "salaryMin");
   const salaryMax = readNumber(formData, "salaryMax");
+
+  // Trava real de plano: bloqueia se o trial venceu ou se estourou o limite de vagas ativas.
+  const billing = await getBillingState(organization.id);
+
+  if (!billing.hasAccess) {
+    throw new PlanLimitError(
+      "Seu teste grátis terminou. Escolha um plano em Cobrança para publicar vagas.",
+      "billing_blocked",
+    );
+  }
+
+  if (status === JobStatus.ACTIVE) {
+    const activeJobs = await prisma.job.count({
+      where: { organizationId: organization.id, status: JobStatus.ACTIVE },
+    });
+    const check = canAddActiveJob(billing, activeJobs);
+
+    if (!check.allowed) {
+      throw new PlanLimitError(
+        `Seu plano permite até ${check.limit} vagas ativas. Faça upgrade em Cobrança para publicar mais.`,
+        "job_limit",
+      );
+    }
+  }
 
   const job = await prisma.job.create({
     data: {

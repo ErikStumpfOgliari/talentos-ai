@@ -19,12 +19,12 @@ export type BillingPlan = {
 export const billingPlans: BillingPlan[] = [
   {
     checkoutEnvKeys: ["PAGBANK_BASIC_CHECKOUT_URL", "PAGBANK_CHECKOUT_BASIC_URL"],
-    description: "Para recrutadores independentes e equipes pequenas que querem organizar vagas, candidatos e pipeline.",
+    description: "Para recrutadores independentes e equipes pequenas que precisam de uma base simples para organizar processos seletivos.",
     features: [
       "Até 3 vagas ativas",
       "Até 150 candidatos",
       "Página pública de carreiras",
-      "Pipeline ATS completo",
+      "Pipeline manual de candidatos",
       "Suporte por email",
     ],
     label: "Básico",
@@ -32,11 +32,11 @@ export const billingPlans: BillingPlan[] = [
     priceCents: 4900,
     priceLabel: "R$ 49/mês",
     slug: "basico",
-    subtitle: "Essencial para começar",
+    subtitle: "Entrada acessível",
   },
   {
     checkoutEnvKeys: ["PAGBANK_INTERMEDIATE_CHECKOUT_URL", "PAGBANK_CHECKOUT_INTERMEDIATE_URL"],
-    description: "Para empresas em crescimento que precisam de IA, automações e mais capacidade operacional.",
+    description: "Para empresas que querem usar IA e automações para ganhar velocidade sem aumentar a complexidade da operação.",
     features: [
       "Até 15 vagas ativas",
       "Até 1.000 candidatos",
@@ -51,25 +51,25 @@ export const billingPlans: BillingPlan[] = [
     priceCents: 9900,
     priceLabel: "R$ 99/mês",
     slug: "intermediario",
-    subtitle: "Mais vendido",
+    subtitle: "Teste grátis de 30 dias",
   },
   {
     checkoutEnvKeys: ["PAGBANK_ADVANCED_CHECKOUT_URL", "PAGBANK_CHECKOUT_ADVANCED_URL"],
-    description: "Para operações robustas, agências e empresas que contratam com alto volume e precisam de prioridade.",
+    description: "Para agências e empresas com alto volume de contratação, múltiplas frentes de recrutamento e necessidade de escala.",
     features: [
-      "Vagas e candidatos ampliados",
-      "IA e automações completas",
+      "Vagas ilimitadas",
+      "Candidatos ilimitados",
+      "IA, automações e relatórios completos",
       "Usuários e permissões avançadas",
       "Onboarding prioritário",
       "Suporte prioritário",
-      "Integração assistida",
     ],
     label: "Avançado",
     plan: Plan.ENTERPRISE,
     priceCents: 19900,
     priceLabel: "R$ 199/mês",
     slug: "avancado",
-    subtitle: "Operação completa",
+    subtitle: "Escala ilimitada",
   },
 ];
 
