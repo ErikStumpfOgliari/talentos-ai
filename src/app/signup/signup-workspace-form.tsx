@@ -264,7 +264,7 @@ export function SignupWorkspaceForm({
                 <div className="min-w-0">
                   <p className="text-xs font-semibold uppercase text-slate-500">Plano selecionado</p>
                   <p className="mt-1 text-sm font-semibold text-slate-950">
-                    {selectedPlan ? `${selectedPlan.label} - ${selectedPlan.priceLabel}` : "Intermediário - R$ 99/mês"}
+                    {selectedPlan ? `${selectedPlan.label} - ${selectedPlan.priceLabel}` : "Intermediário - R$ 69,90/mês"}
                   </p>
                   <p className="mt-1 text-xs leading-5 text-slate-500">30 dias grátis antes da cobrança recorrente.</p>
                 </div>

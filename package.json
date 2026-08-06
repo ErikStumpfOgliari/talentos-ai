@@ -11,6 +11,7 @@
     "security:audit": "tsx scripts/security-audit.ts",
     "smoke": "tsx scripts/smoke.ts",
     "storage:check": "tsx scripts/check-resume-storage.ts",
+    "billing:activate": "tsx scripts/activate-subscription.ts",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:rls": "prisma db execute --file prisma/rls-hardening.sql",
