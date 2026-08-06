@@ -13,6 +13,15 @@ enum Plan {
   ENTERPRISE
 }
 
+enum BillingStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  SUSPENDED
+  CANCELED
+  EXPIRED
+}
+
 enum MembershipRole {
   OWNER
   ADMIN
@@ -169,6 +178,19 @@ model Organization {
   timezone  String   @default("America/Sao_Paulo")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // Billing / subscription lifecycle.
+  // `plan` = plano com acesso liberado hoje (durante o trial = PRO/Intermediário).
+  // `selectedPlan` = plano que o cliente escolheu pagar ao fim do trial.
+  billingStatus         BillingStatus @default(TRIALING)
+  selectedPlan          Plan?
+  trialStartedAt        DateTime?
+  trialEndsAt           DateTime?
+  currentPeriodEnd      DateTime?
+  lastPaymentStatus     String?
+  pagbankCustomerId     String?
+  pagbankSubscriptionId String?
+  billingRemindersSent  Json?
 
   applications    Application[]
   auditEvents     AuditEvent[]
@@ -768,4 +790,21 @@ model AuditEvent {
 
   @@index([organizationId, createdAt])
   @@index([entityType, entityId])
+}
+
+model WebhookEvent {
+  id             String    @id @default(cuid())
+  provider       String    @default("pagbank")
+  externalId     String
+  eventType      String
+  organizationId String?
+  status         String    @default("received")
+  payload        Json?
+  error          String?
+  processedAt    DateTime?
+  createdAt      DateTime  @default(now())
+
+  @@unique([provider, externalId])
+  @@index([organizationId, createdAt])
+  @@index([status])
 }

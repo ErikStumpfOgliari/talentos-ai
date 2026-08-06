@@ -10,8 +10,10 @@ import {
   PipelineCategory,
 } from "@/generated/prisma/client";
 import { automationRoles, requireRole } from "@/lib/auth";
+import { assertFeature } from "@/lib/billing-guard";
 import { deliverEmailMessage, queueTemplateEmail } from "@/lib/email-automation";
 import { prisma } from "@/lib/prisma";
+import { getBillingState } from "@/lib/subscription";
 import { limitText } from "@/lib/text-limits";
 
 function readString(formData: FormData, key: string) {
@@ -85,6 +87,11 @@ export async function createEmailTemplate(formData: FormData) {
 export async function createAutomationRule(formData: FormData) {
   const session = await requireRole(automationRoles);
   const organization = session.organization;
+
+  // Automação de emails é recurso do plano Intermediário+. Bloqueia no Básico.
+  const billing = await getBillingState(organization.id);
+  assertFeature(billing, "emailAutomation", "A automação de emails está disponível a partir do plano Intermediário. Faça upgrade em Cobrança.");
+
   const name = readString(formData, "name");
   const templateId = readString(formData, "templateId");
 

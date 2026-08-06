@@ -3,12 +3,14 @@
 import { redirect } from "next/navigation";
 import {
   AuthFactorMethod,
+  BillingStatus,
   EmailTrigger,
   MembershipRole,
   MembershipStatus,
-  Plan,
 } from "@/generated/prisma/client";
 import { setSessionCookie } from "@/lib/auth";
+import { sendBillingEmail } from "@/lib/billing-notifications";
+import { BILLING_TRIAL_DAYS, TRIAL_PLAN } from "@/lib/subscription";
 import { verifyEmailCode } from "@/lib/auth-verification";
 import { clearPendingAuthCookie, getPendingAuth } from "@/lib/pending-auth";
 import {
@@ -73,12 +75,23 @@ async function createVerifiedWorkspaceSignup(payload: PendingSignupPayload) {
 
   const slug = await getUniqueOrganizationSlug(payload.organizationName);
 
+  const trialStartedAt = new Date();
+  const trialEndsAt = new Date(trialStartedAt);
+  trialEndsAt.setDate(trialEndsAt.getDate() + BILLING_TRIAL_DAYS);
+
   const { organization, user } = await prisma.$transaction(async (tx) => {
     const createdOrganization = await tx.organization.create({
       data: {
         name: payload.organizationName,
         slug,
-        plan: payload.plan ?? Plan.PRO,
+        // Durante o trial o acesso é sempre do plano Intermediário (TRIAL_PLAN),
+        // independentemente do plano que o cliente pretende assinar depois.
+        plan: TRIAL_PLAN,
+        selectedPlan: payload.plan ?? null,
+        billingStatus: BillingStatus.TRIALING,
+        trialStartedAt,
+        trialEndsAt,
+        billingRemindersSent: { welcome: true },
         timezone: "America/Sao_Paulo",
       },
     });
@@ -285,6 +298,9 @@ export async function completeSignupVerification(formData: FormData) {
     await clearPendingSignupCookie();
     redirect("/signup?error=email");
   }
+
+  // Email de boas-vindas ao trial (best-effort, nunca bloqueia o login).
+  await sendBillingEmail(result.organization.id, "welcome");
 
   await setSessionCookie(result.user.id, result.organization.id);
   await clearPendingSignupCookie();

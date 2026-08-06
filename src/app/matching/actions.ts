@@ -3,8 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { recruitingRoles, requireRole } from "@/lib/auth";
+import { assertFeature } from "@/lib/billing-guard";
 import { prisma } from "@/lib/prisma";
 import { scoreCandidateForJob } from "@/lib/candidate-matching";
+import { getBillingState } from "@/lib/subscription";
 import { ApplicationStatus } from "@/generated/prisma/client";
 
 function readString(formData: FormData, key: string) {
@@ -15,6 +17,11 @@ function readString(formData: FormData, key: string) {
 export async function rankCandidatesForJob(formData: FormData) {
   const session = await requireRole(recruitingRoles);
   const organization = session.organization;
+
+  // "Matching com IA" é recurso do plano Intermediário+. Bloqueia no Básico.
+  const billing = await getBillingState(organization.id);
+  assertFeature(billing, "aiMatching", "O Matching com IA está disponível a partir do plano Intermediário. Faça upgrade em Cobrança.");
+
   const jobId = readString(formData, "jobId");
 
   if (!jobId) {
