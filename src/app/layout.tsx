@@ -7,6 +7,9 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Aptelys by Interellis | CRM de recrutamento com IA",
   description: "CRM de recrutamento e plataforma ATS SaaS com IA da Interellis.",
+  verification: {
+    google: "rcZ0eGypatakO8iPZqiWIV1Gds4qKz3_vTpAu9y49J4",
+  },
 };
 
 export default function RootLayout({
