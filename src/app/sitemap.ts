@@ -8,6 +8,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   // Apenas páginas públicas (acessíveis sem login).
   return [
     { url: `${baseUrl}/`, lastModified: now, changeFrequency: "weekly", priority: 1 },
+    { url: `${baseUrl}/pricing`, lastModified: now, changeFrequency: "weekly", priority: 0.9 },
     { url: `${baseUrl}/careers`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
     { url: `${baseUrl}/signup`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
   ];
