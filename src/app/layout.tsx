@@ -5,6 +5,7 @@ import { SiteThemeProvider } from "@/components/site-theme-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://aptelys.com"),
   title: "Aptelys by Interellis | CRM de recrutamento com IA",
   description: "CRM de recrutamento e plataforma ATS SaaS com IA da Interellis.",
   verification: {

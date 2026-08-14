@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -17,6 +18,15 @@ import {
 } from "@/lib/billing";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Planos e Preços — Aptelys",
+  description:
+    "Planos da Aptelys com 30 dias grátis e cobrança recorrente via PagBank: Básico R$49, Intermediário R$69,90 e Avançado R$110/mês. Recrutamento com IA, ATS e automação.",
+  alternates: {
+    canonical: "/pricing",
+  },
+};
 
 export default function PricingPage() {
   return (
